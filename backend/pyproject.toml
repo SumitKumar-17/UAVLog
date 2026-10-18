@@ -16,4 +16,5 @@ dependencies = [
   "sqlglot>=25",
   "pgvector>=0.3",
   "duckdb>=1.1",
+  "pymavlink>=2.4",
 ]
