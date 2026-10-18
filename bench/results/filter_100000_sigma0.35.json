@@ -1,6 +1,6 @@
 {
  "meta": {
-  "taken_at": "2026-10-18T10:14:46.575595+00:00",
+  "taken_at": "2026-10-18T10:29:27.924726+00:00",
   "n_vectors": 100000,
   "queries": 200,
   "k": 10,
@@ -46,7 +46,7 @@
    "partitions": 15
   },
   "diskann with labels": {
-   "error": "QueryCanceled: canceling statement due to statement timeout"
+   "build_s": 620.7984127998352
   }
  },
  "points": [
@@ -669,6 +669,36 @@
    "short_queries": 0,
    "p50_ms": 0.7636830014234874,
    "p95_ms": 0.8171187015250325
+  },
+  {
+   "strategy": "diskann labels, list=100, rescore=200",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 0.7686274509803922,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 5.030038999393582,
+   "p95_ms": 7.629919547798636
+  },
+  {
+   "strategy": "diskann labels, list=100, rescore=200",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 0.4628865979381444,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 8.458532001895946,
+   "p95_ms": 12.043748400901677
+  },
+  {
+   "strategy": "diskann labels, list=100, rescore=200",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 4.081846000190126,
+   "p95_ms": 4.2613429013727
   }
  ]
 }
