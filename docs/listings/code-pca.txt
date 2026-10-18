@@ -1,0 +1,16 @@
+med = np.nanmedian(X, axis=0)
+q75, q25 = np.nanpercentile(X, 75, axis=0), np.nanpercentile(X, 25, axis=0)
+scale = np.where((q75 - q25) > 1e-9, q75 - q25, np.where(np.nanstd(X, axis=0) > 1e-9, np.nanstd(X, axis=0), 1.0))
+Z = np.clip((X - med) / scale, -5, 5)
+Z = np.where(np.isnan(Z), 0.0, Z)
+pca_mean = Z.mean(axis=0)
+_, _, vt = np.linalg.svd(Z - pca_mean, full_matrices=False)
+k = min(DIMS, vt.shape[0])
+comp = np.zeros((DIMS, len(names)))
+comp[:k] = vt[:k]
+S = (Z - pca_mean) @ comp.T
+S /= np.maximum(np.linalg.norm(S, axis=1, keepdims=True), 1e-9)
+var = np.var((Z - pca_mean) @ vt.T, axis=0)
+print(f"PCA keeps {100 * var[:k].sum() / var.sum():.0f}% of the variance in {k} dimensions", flush=True)
+
+scaler = {"names": names, "median": med.tolist(), "scale": scale.tolist(), "pca_mean": pca_mean.tolist(), "components": comp.tolist(), "dims": DIMS}

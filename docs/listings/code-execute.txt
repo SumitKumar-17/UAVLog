@@ -1,0 +1,25 @@
+def run(pool, sql: str, mode: str = "semantic", max_cost: float = MAX_COST) -> Result:
+    role = ROLES[mode]
+    source, set_role = _connection_source(pool, mode)
+    with source.connection() as c:
+        try:
+            with c.transaction():
+                c.execute("SET TRANSACTION READ ONLY")
+                if set_role:
+                    c.execute(f"SET LOCAL ROLE {role}")
+                c.execute(f"SET LOCAL statement_timeout = {TIMEOUT_MS}")
+                c.execute("SET LOCAL idle_in_transaction_session_timeout = 10000")
+                cost = float(c.execute("EXPLAIN (FORMAT JSON) " + sql).fetchone()[0][0]["Plan"]["Total Cost"])
+                if cost > max_cost:
+                    raise ExecError(f"The planner estimates this query is too expensive (cost {cost:,.0f}, limit {max_cost:,.0f}). "
+                                    "Filter telemetry by flight_id and signal, or use signal_summary for comparisons across flights.")
+                t0 = time.time()
+                cur = c.execute(sql)
+                fetched = cur.fetchmany(MAX_ROWS + 1)
+                cols = [d.name for d in cur.description]
+                run_ms = (time.time() - t0) * 1000
+        except ExecError:
+            raise
+        except Exception as e:  # database error text is useful to the model for self-repair
+            raise ExecError(f"{type(e).__name__}: {str(e).splitlines()[0]}") from e
+    return Result(cols, [[_plain(v) for v in r] for r in fetched[:MAX_ROWS]], len(fetched) > MAX_ROWS, cost, run_ms)

@@ -1,0 +1,26 @@
+    used_tables: list[str] = []
+    for t in root.find_all(exp.Table):
+        if not isinstance(t.this, exp.Identifier):
+            raise GuardError("Table-valued functions are not allowed in FROM.")
+        name, schema = t.name.lower(), (t.db or "").lower()
+        if t.args.get("catalog"):
+            raise GuardError("Catalog-qualified table names are not allowed.")
+        if not schema and name in cte_names:
+            continue
+        if schema and schema != policy.schema:
+            raise GuardError(f"Schema '{schema}' is not available. Use only the {policy.schema} views: {', '.join(sorted(policy.tables))}.")
+        if name not in policy.tables:
+            raise GuardError(f"'{name}' is not available. Use only: {', '.join(sorted(policy.tables))}.")
+        t.set("db", exp.to_identifier(policy.schema))  # qualify, so search_path never matters
+        used_tables.append(name)
+    if len(used_tables) > MAX_TABLES:
+        raise GuardError(f"The query references {len(used_tables)} tables; the limit is {MAX_TABLES}.")
+
+    funcs: list[str] = []
+    for n in root.walk():
+        # boolean connectors (AND/OR) are Func subclasses in sqlglot but are operators, not calls
+        if isinstance(n, exp.Func) and not isinstance(n, (exp.Table, exp.Connector)):
+            name = _fn_name(n)
+            if name and name not in FUNCTIONS:
+                raise GuardError(f"Function '{name.replace('j_s_o_n', 'json').replace('current_version', 'version')}' is not allowed.")
+            funcs.append(name)

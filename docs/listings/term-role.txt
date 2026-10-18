@@ -1,0 +1,12 @@
+uavlog=# -- what the restricted role can and cannot do
+ERROR:  permission denied for table flight
+BEGIN
+SET
+ flights_visible
+-----------------
+             300
+(1 row)
+
+BEGIN
+SET
+ERROR:  permission denied for function pg_read_file

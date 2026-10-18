@@ -1,0 +1,34 @@
+-- One signal of one flight, as min/max buckets
+SELECT time_bucket(make_interval(secs => 1.0), ts) AS bucket, min(value), max(value), avg(value)
+FROM canonical_telemetry
+WHERE flight_id = '41868bf1-4fcb-4259-a4c5-129603d0f708' AND signal = 'battery.voltage'
+GROUP BY 1 ORDER BY 1
+
+Sort  (cost=3259.19..3259.69 rows=200 width=32) (actual time=4.980..5.086 rows=901 loops=1)
+  Sort Key: (time_bucket('00:00:01'::interval, t.ts))
+  Sort Method: quicksort  Memory: 67kB
+  Buffers: shared hit=522
+  ->  HashAggregate  (cost=3248.55..3251.55 rows=200 width=32) (actual time=4.575..4.781 rows=901 loops=1)
+        Group Key: time_bucket('00:00:01'::interval, t.ts)
+        Batches: 1  Memory Usage: 313kB
+        Buffers: shared hit=519
+        ->  Nested Loop  (cost=10.68..3217.58 rows=1239 width=32) (actual time=0.621..3.351 rows=4502 loops=1)
+              Buffers: shared hit=519
+              ->  Nested Loop  (cost=0.28..7.36 rows=1 width=18) (actual time=0.034..0.061 rows=2 loops=1)
+                    Join Filter: (m.concept_id = c.id)
+                    Rows Removed by Join Filter: 50
+                    Buffers: shared hit=4
+                    ->  Index Scan using field_mapping_pkey on field_mapping m  (cost=0.14..4.22 rows=52 width=22) (actual time=0.011..0.022 rows=52 loops=1)
+                          Buffers: shared hit=2
+                    ->  Materialize  (cost=0.14..2.37 rows=1 width=4) (actual time=0.000..0.000 rows=1 loops=52)
+                          Buffers: shared hit=2
+                          ->  Index Scan using concept_key_key on concept c  (cost=0.14..2.36 rows=1 width=4) (actual time=0.013..0.014 rows=1 loops=1)
+                                Index Cond: (key = 'battery.voltage'::text)
+                                Filter: (kind = 'signal'::text)
+                                Buffers: shared hit=2
+              ->  Append  (cost=10.40..1956.27 rows=125085 width=18) (actual time=0.496..1.344 rows=2251 loops=2)
+                    Buffers: shared hit=515
+                    ->  Custom Scan (ColumnarScan) on _hyper_1_66_chunk t_1  (cost=10.40..10.40 rows=1000 width=18) (actual time=0.005..0.006 rows=0 loops=2)
+                          Buffers: shared hit=4
+   ...
+Execution Time: 8.440 ms

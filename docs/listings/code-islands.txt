@@ -1,0 +1,7 @@
+ISLANDS = """
+WITH s AS (SELECT ts, value, (value {op} %(thr)s) AS flag FROM {src}
+           WHERE flight_id = %(fid)s AND signal = %(sig)s),
+g AS (SELECT *, row_number() OVER (ORDER BY ts) - row_number() OVER (PARTITION BY flag ORDER BY ts) AS grp FROM s)
+SELECT min(ts), max(ts), min(value), max(value) FROM g
+WHERE flag AND EXISTS (SELECT 1 FROM s WHERE NOT flag)  -- an event is a deviation from a baseline seen in the same flight
+GROUP BY grp HAVING max(ts) - min(ts) >= make_interval(secs => %(min_s)s) ORDER BY 1"""

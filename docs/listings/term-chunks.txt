@@ -1,0 +1,12 @@
+uavlog=# SELECT chunk_name, range_start::date, range_end::date, is_compressed FROM timescaledb_information.ch...
+     chunk_name     | range_start | range_end  | is_compressed
+--------------------+-------------+------------+---------------
+ _hyper_1_66_chunk  | 1970-01-01  | 1970-01-08 | t
+ _hyper_1_38_chunk  | 1970-01-15  | 1970-01-22 | t
+ _hyper_1_90_chunk  | 2005-08-25  | 2005-09-01 | t
+ _hyper_1_133_chunk | 2014-12-04  | 2014-12-11 | t
+ _hyper_1_158_chunk | 2019-08-22  | 2019-08-29 | t
+ _hyper_1_100_chunk | 2021-02-18  | 2021-02-25 | t
+ _hyper_1_160_chunk | 2022-04-07  | 2022-04-14 | t
+ _hyper_1_162_chunk | 2023-04-13  | 2023-04-20 | t
+(8 rows)

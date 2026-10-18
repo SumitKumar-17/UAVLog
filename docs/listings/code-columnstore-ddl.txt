@@ -1,0 +1,8 @@
+    # One segment = one signal of one flight, ordered by time: matches the dominant access path
+    # (a single flight's single signal over a time range) and compresses well (smooth series).
+    op.execute("""
+    ALTER TABLE telemetry SET (
+        timescaledb.enable_columnstore = true,
+        timescaledb.segmentby = 'flight_id, vendor_field_id',
+        timescaledb.orderby = 'ts'
+    )""")

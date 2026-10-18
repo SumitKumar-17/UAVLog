@@ -1,0 +1,8 @@
+   "id": "t11",
+   "category": "events",
+   "question": "What is the second most common event kind?",
+   "answerable": true,
+   "semantic_sql": "SELECT kind FROM semantic.events GROUP BY kind ORDER BY count(*) DESC OFFSET 1 LIMIT 1",
+   "raw_sql": "SELECT c.key FROM event e JOIN concept c ON c.id = e.kind_id GROUP BY c.key ORDER BY count(*) DESC OFFSET 1 LIMIT 1"
+  },
+  {

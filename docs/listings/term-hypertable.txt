@@ -1,0 +1,17 @@
+uavlog=# SELECT hypertable_name, num_dimensions, num_chunks, compression_enabled FROM timescaledb_information...
+ hypertable_name | num_dimensions | num_chunks | compression_enabled
+-----------------+----------------+------------+---------------------
+ telemetry       |              1 |        134 | t
+(1 row)
+
+uavlog=# SELECT column_name, time_interval FROM timescaledb_information.dimensions;
+ hypertable_name | column_name | time_interval
+-----------------+-------------+---------------
+ telemetry       | ts          | 7 days
+(1 row)
+
+uavlog=# SELECT * FROM timescaledb_information.hypertable_columnstore_settings;
+ hypertable |         segmentby         | orderby
+------------+---------------------------+---------
+ telemetry  | flight_id,vendor_field_id | ts
+(1 row)

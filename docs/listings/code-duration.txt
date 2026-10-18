@@ -1,0 +1,5 @@
+def robust_duration_s(u: ULog) -> float:
+    """Log length from the data alone. u.last_timestamp is the max over every message, so one message with a garbage
+    timestamp (seen: 1.4e13 s) ruins it; the 75th percentile of each topic's last timestamp is not moved by a few outliers."""
+    lasts = [int(d.data["timestamp"][-1]) for d in u.data_list if len(d.data["timestamp"])]
+    return (float(np.percentile(lasts, 75)) - u.start_timestamp) / 1e6 if lasts else 0.0

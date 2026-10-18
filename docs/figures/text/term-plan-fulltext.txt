@@ -1,0 +1,23 @@
+-- Events matching any of several words
+SELECT id, description FROM event
+WHERE tsv @@ to_tsquery('english', 'motor | propeller | rotor')
+ORDER BY ts_rank_cd(tsv, to_tsquery('english', 'motor | propeller | rotor')) DESC
+LIMIT 10
+
+Limit  (cost=185.98..186.00 rows=10 width=55) (actual time=2.038..2.040 rows=10 loops=1)
+  Buffers: shared hit=145
+  ->  Sort  (cost=185.98..186.82 rows=337 width=55) (actual time=2.037..2.038 rows=10 loops=1)
+        Sort Key: (ts_rank_cd(tsv, '''motor'' | ''propel'' | ''rotor'''::tsquery)) DESC
+        Sort Method: top-N heapsort  Memory: 25kB
+        Buffers: shared hit=145
+        ->  Bitmap Heap Scan on event  (cost=11.64..178.70 rows=337 width=55) (actual time=0.129..1.963 rows=336 loops=1)
+              Recheck Cond: (tsv @@ '''motor'' | ''propel'' | ''rotor'''::tsquery)
+              Heap Blocks: exact=135
+              Buffers: shared hit=142
+              ->  Bitmap Index Scan on event_tsv  (cost=0.00..11.56 rows=337 width=0) (actual time=0.074..0.074 rows=373 loops=1)
+                    Index Cond: (tsv @@ '''motor'' | ''propel'' | ''rotor'''::tsquery)
+                    Buffers: shared hit=7
+Planning:
+  Buffers: shared hit=57
+Planning Time: 0.985 ms
+Execution Time: 2.063 ms

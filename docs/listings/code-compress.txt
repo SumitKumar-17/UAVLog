@@ -1,0 +1,6 @@
+    chunks = [r[0] for r in c.execute(
+        "SELECT c.relid::regclass::text FROM _timescaledb_catalog.chunk c "
+        "JOIN _timescaledb_catalog.hypertable h ON h.id = c.hypertable_id "
+        "WHERE h.table_name = 'telemetry' AND (c.status & 1 = 0 OR c.status & 8 = 8) ORDER BY c.id")]
+    if a.limit:
+        chunks = chunks[: a.limit]

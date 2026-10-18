@@ -1,0 +1,10 @@
+git shortlog -sn; git ls-files | wc -l
+commits: 203
+tracked files: 257
+.py    4644 lines
+.ts     231 lines
+.tsx   1803 lines
+.sql      0 lines
+.sh      53 lines
+.cjs    223 lines
+.md    2982 lines
