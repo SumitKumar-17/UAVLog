@@ -140,7 +140,8 @@ def search_events(q: str, p=Depends(pool), client=Depends(llm), k: int = Query(1
         res = search(c, client, q, k=k, kinds=kind, min_severity=min_severity, hw=hw, mode=mode)
     for r in res:
         r["t"] = r["t"].total_seconds()
-        r["flight_id"] = r.pop("flight")  # source_ref
+        r["source_ref"] = r.pop("flight")
+        r["flight_id"] = r.pop("flight_uuid")
     return {"query": q, "mode": mode, "results": res}
 
 

@@ -20,7 +20,7 @@ fts AS (
     SELECT e.id, row_number() OVER (ORDER BY ts_rank_cd(e.tsv, q.tq) DESC) AS r
     FROM event e, q WHERE e.tsv @@ q.tq {filt}
     ORDER BY ts_rank_cd(e.tsv, q.tq) DESC LIMIT %(pool)s)
-SELECT e.id, c.key AS kind, e.severity, e.description, f.source_ref AS flight, e.ts_start - f.started_at AS t,
+SELECT e.id, c.key AS kind, e.severity, e.description, f.source_ref AS flight, f.id::text AS flight_uuid, e.ts_start - f.started_at AS t,
        %(wv)s * coalesce(1.0 / (%(rrf)s + vec.r), 0) + %(wf)s * coalesce(1.0 / (%(rrf)s + fts.r), 0) AS score, vec.r AS vec_rank, fts.r AS fts_rank
 FROM vec FULL OUTER JOIN fts ON vec.id = fts.id
 JOIN event e ON e.id = coalesce(vec.id, fts.id)
