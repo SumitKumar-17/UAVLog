@@ -1,0 +1,8 @@
+flowchart LR
+    S["snapshot file or URL"] --> V["verify SHA-256"]
+    V --> C["check TimescaleDB version<br/>and pgvector"]
+    C --> N["create a NEW database<br/>timescaledb_pre_restore"]
+    N --> R["pg_restore<br/>timescaledb_post_restore"]
+    R --> K{"row counts match<br/>the manifest?"}
+    K -- no --> X["stop: live database untouched"]
+    K -- yes --> W["stop API, rename live to old<br/>and new to live, migrate"]

@@ -1,0 +1,10 @@
+flowchart LR
+    Q["question"] --> P["prompt built from<br/>view and column comments"]
+    P --> M["language model<br/>temperature 0"]
+    M --> G["1 guard: sqlglot<br/>one SELECT, allow-lists,<br/>SQL rebuilt from the parse tree"]
+    G --> C["2 cost admission<br/>EXPLAIN under the restricted role<br/>planner cost under 100,000"]
+    C --> X["3 run: read-only transaction<br/>role sees only semantic views<br/>8 second timeout"]
+    X --> R["rows and a plain summary"]
+    G -. refused .-> M
+    C -. too expensive .-> M
+    X -. error .-> M

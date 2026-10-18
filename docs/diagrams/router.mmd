@@ -1,0 +1,8 @@
+flowchart TD
+    Q["query text and filters"] --> E["EXPLAIN the filter alone:<br/>how many events survive?"]
+    E --> D{"about 1,500 or fewer?"}
+    D -- yes --> X["exact path<br/>filter first, then sort by distance<br/>exact, and fast because few rows survive"]
+    D -- no --> A["approximate path<br/>HNSW index with iterative scan"]
+    X --> F["fuse with full-text<br/>weight 0.1"]
+    A --> F
+    F --> O["ranked events"]

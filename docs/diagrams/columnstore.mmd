@@ -1,0 +1,13 @@
+flowchart TB
+    subgraph ROW["Rowstore chunk: one tuple per sample, 176 bytes with its index"]
+        direction LR
+        R1["flight A, 10:00:00.0, battery, 24.1"] --- R2["flight A, 10:00:00.0, roll, 0.3"] --- R3["flight B, 11:20:05.2, battery, 22.7"] --- R4["..."]
+    end
+    subgraph COL["Columnstore chunk: one compressed batch per (flight, signal), 5 bytes per sample"]
+        direction LR
+        S1["segment: flight A, battery<br/>ts array, delta-of-delta<br/>value array, XOR or dictionary<br/>min and max of ts kept as metadata"]
+        S2["segment: flight A, roll<br/>ts array<br/>value array"]
+        S3["segment: flight B, battery<br/>ts array<br/>value array"]
+    end
+    ROW -->|"compress_chunk: segmentby flight_id, vendor_field_id<br/>orderby ts"| COL
+    COL --> Q["a query for one signal of one flight<br/>reads one segment and skips the rest"]

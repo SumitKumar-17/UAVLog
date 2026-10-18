@@ -1,0 +1,10 @@
+stateDiagram-v2
+    [*] --> pending: enqueue
+    pending --> running: claim, FOR UPDATE SKIP LOCKED
+    running --> done: work and status commit in ONE transaction
+    running --> pending: error with attempts left
+    running --> failed: attempts exhausted
+    running --> pending: lease expired, worker crashed
+    failed --> pending: retry-failed
+    pending --> missing: input file absent
+    missing --> pending: file arrives

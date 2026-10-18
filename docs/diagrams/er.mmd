@@ -1,0 +1,74 @@
+erDiagram
+    flight ||--o{ telemetry : "has samples"
+    flight ||--o{ event : "has"
+    flight ||--o| flight_signature : "summarised by"
+    flight ||--o{ flight_task : "stage state"
+    flight ||--o{ note : "annotated by"
+    vendor_field ||--o{ telemetry : "measured as"
+    vendor_field ||--o{ field_mapping : "mapped by"
+    concept ||--o{ field_mapping : "canonical signal"
+    concept ||--o{ concept_relation : "src and dst"
+    concept ||--o{ event : "kind"
+    flight {
+        uuid id PK
+        text source_ref UK
+        text autopilot
+        timestamptz started_at
+        float8 duration_s
+        text log_sha256 UK
+        jsonb metadata
+    }
+    telemetry {
+        uuid flight_id FK
+        timestamptz ts "hypertable dimension"
+        smallint vendor_field_id FK
+        float8 value
+    }
+    vendor_field {
+        smallint id PK
+        text autopilot
+        text topic
+        text field
+    }
+    field_mapping {
+        smallint vendor_field_id FK
+        int concept_id FK
+        float8 scale
+        float8 offset
+        text note
+    }
+    concept {
+        int id PK
+        text key UK
+        text kind
+    }
+    concept_relation {
+        int src_id FK
+        int dst_id FK
+        text rel
+    }
+    event {
+        bigint id PK
+        uuid flight_id FK
+        int kind_id FK
+        smallint severity
+        text description
+        tsvector tsv
+        vector embedding
+    }
+    flight_signature {
+        uuid flight_id PK
+        real_array features
+        vector signature
+    }
+    flight_task {
+        uuid flight_id FK
+        text stage
+        text status
+    }
+    note {
+        bigint id PK
+        uuid flight_id FK
+        float8 t_s
+        text body
+    }
