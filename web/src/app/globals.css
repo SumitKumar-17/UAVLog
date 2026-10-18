@@ -12,6 +12,7 @@
   --rule: #cbd5dd;
   --rule-soft: #dbe3e9;
   --route: #b0136f;          /* selection and the time cursor only, like a route on an aeronautical chart */
+  --on-route: #ffffff;
   --data: #2a78d6;
   --good: #0ca30c;
   --warning: #fab219;
@@ -39,6 +40,7 @@
     --rule: #2a3d50;
     --rule-soft: #1f3040;
     --route: #ec6fb7;
+    --on-route: #0f1a24;
     --data: #3987e5;
     --m-position: #3987e5;
     --m-manual: #d95926;
@@ -61,6 +63,7 @@
   --rule: #2a3d50;
   --rule-soft: #1f3040;
   --route: #ec6fb7;
+  --on-route: #0f1a24;
   --data: #3987e5;
   --m-position: #3987e5;
   --m-manual: #d95926;
@@ -82,6 +85,7 @@
   --color-rule: var(--rule);
   --color-rule-soft: var(--rule-soft);
   --color-route: var(--route);
+  --color-on-route: var(--on-route);
   --color-data: var(--data);
   --color-warning: var(--warning);
   --color-serious: var(--serious);
