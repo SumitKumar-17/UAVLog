@@ -28,7 +28,7 @@ RULES = [
 OPS = {"<", "<=", ">", ">="}
 
 ISLANDS = """
-WITH s AS (SELECT ts, value, (value {op} %(thr)s) AS flag FROM canonical_telemetry
+WITH s AS (SELECT ts, value, (value {op} %(thr)s) AS flag FROM {src}
            WHERE flight_id = %(fid)s AND signal = %(sig)s),
 g AS (SELECT *, row_number() OVER (ORDER BY ts) - row_number() OVER (PARTITION BY flag ORDER BY ts) AS grp FROM s)
 SELECT min(ts), max(ts), min(value), max(value) FROM g
@@ -36,11 +36,12 @@ WHERE flag AND EXISTS (SELECT 1 FROM s WHERE NOT flag)  -- an event is a deviati
 GROUP BY grp HAVING max(ts) - min(ts) >= make_interval(secs => %(min_s)s) ORDER BY 1"""
 
 
-def rule_events(conn, flight_id) -> list[dict]:
+def rule_events(conn, flight_id, source: str = "canonical_telemetry") -> list[dict]:
+    """`source` is a relation name chosen by the caller (never user input); the fault-injection evaluation points it at injected copies."""
     out = []
     for r in RULES:
         assert r.op in OPS
-        for t0, t1, lo, hi in conn.execute(ISLANDS.format(op=r.op),
+        for t0, t1, lo, hi in conn.execute(ISLANDS.format(op=r.op, src=source),
                                            {"thr": r.threshold, "fid": flight_id, "sig": r.signal, "min_s": r.min_s}):
             dur = (t1 - t0).total_seconds()
             out.append({"kind": r.kind, "ts_start": t0, "ts_end": t1, "severity": r.severity, "source": "rule",
