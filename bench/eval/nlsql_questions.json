@@ -1,5 +1,5 @@
 {
- "note": "Gold SQL is written twice (semantic views, raw tables); the two are cross-checked for equal results by eval_nlsql.py --check-gold. unanswerable: success is a refusal.",
+ "note": "Gold SQL is written twice (semantic views, raw tables); the two are cross-checked for equal results by eval_nlsql.py --check-gold. unanswerable: success is a refusal. DEV SET: used to find systematic problems (a Decimal comparison bug, one ambiguous question, a prompt side effect). Final numbers come from the held-out test set.",
  "questions": [
   {
    "id": "c01",
@@ -172,7 +172,7 @@
   {
    "id": "j03",
    "category": "joins",
-   "question": "What is the average number of critical events per flight, to two decimals?",
+   "question": "Counting all flights, what is the average number of critical events per flight, to two decimals?",
    "answerable": true,
    "semantic_sql": "SELECT round(count(*)::numeric / (SELECT count(*) FROM semantic.flights), 2) FROM semantic.events WHERE severity = 2",
    "raw_sql": "SELECT round(count(*)::numeric / (SELECT count(*) FROM flight), 2) FROM event WHERE severity = 2"
