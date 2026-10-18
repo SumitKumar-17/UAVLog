@@ -1,0 +1,51 @@
+{
+ "meta": {
+  "taken_at": "2026-10-18T11:09:54.381394+00:00",
+  "rows": 70731891,
+  "runs": 5,
+  "threads": 4,
+  "duckdb": "1.5.6",
+  "versions": {
+   "timescaledb": "2.30.2"
+  },
+  "export_s": null
+ },
+ "storage_bytes": {
+  "PostgreSQL rowstore + index (before compression)": 12459106304,
+  "TimescaleDB columnstore": 384589824,
+  "Parquet (zstd, sorted)": 391880566,
+  "DuckDB native file": 700461056
+ },
+ "queries_p50_ms": {
+  "TimescaleDB columnstore": {
+   "Q1 one signal of one flight, 1 s buckets": 25.35455899851513,
+   "Q2 one signal across all flights": 69.1504239985079,
+   "Q3 every signal of one flight": 18.74559000134468,
+   "Q4 one signal in a 90 day window": 3.7601929980155546,
+   "Q5 count and mean per signal, all data": 811.8380129999423,
+   "Q6 min/max/mean per flight and signal (the summary build)": 1007.4746080026671
+  },
+  "DuckDB over Parquet": {
+   "Q1 one signal of one flight, 1 s buckets": 25.305506998847704,
+   "Q2 one signal across all flights": 30.590207999921404,
+   "Q3 every signal of one flight": 45.667107002373086,
+   "Q4 one signal in a 90 day window": 28.39423700061161,
+   "Q5 count and mean per signal, all data": 1057.8160080003727,
+   "Q6 min/max/mean per flight and signal (the summary build)": 2605.3369080000266
+  },
+  "DuckDB native table": {
+   "Q1 one signal of one flight, 1 s buckets": 4.892281998763792,
+   "Q2 one signal across all flights": 12.853647996962536,
+   "Q3 every signal of one flight": 22.537471002578968,
+   "Q4 one signal in a 90 day window": 4.540586000075564,
+   "Q5 count and mean per signal, all data": 478.2779759989353,
+   "Q6 min/max/mean per flight and signal (the summary build)": 2003.9870110012998
+  }
+ },
+ "load_rows_per_s": {
+  "TimescaleDB COPY into a hypertable (uncompressed)": 286792.02120646613,
+  "DuckDB row-by-row INSERT (200k rows, for contrast)": 602.8230526024521,
+  "DuckDB bulk INSERT from Parquet": 6153564.466019645,
+  "DuckDB write to Parquet": 4034707.9012016477
+ }
+}

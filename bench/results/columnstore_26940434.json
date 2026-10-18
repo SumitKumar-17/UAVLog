@@ -1,0 +1,189 @@
+{
+ "meta": {
+  "taken_at": "2026-10-18T10:47:21.402467+00:00",
+  "rows": 26940434,
+  "flights": 100,
+  "runs": 7,
+  "median_of": 7,
+  "versions": {
+   "timescaledb": "2.30.2"
+  }
+ },
+ "results": [
+  {
+   "variant": "rowstore + b-tree (baseline)",
+   "chunk_interval": "7 days",
+   "chunks": 72,
+   "size_mb": 3630.81728,
+   "bytes_per_row": 134.7720411631082,
+   "load_s": 112.1570737361908,
+   "compress_s": null,
+   "Q1 one signal of one flight, 1 s buckets": {
+    "p50_ms": 10.764021000795765,
+    "p95_ms": 15.306556500217992
+   },
+   "Q2 one signal across all flights": {
+    "p50_ms": 1518.6012699996354,
+    "p95_ms": 2011.8033355982334
+   },
+   "Q3 every signal of one flight": {
+    "p50_ms": 65.13882299987017,
+    "p95_ms": 70.78446650084516
+   },
+   "Q4 one signal in a 90 day window": {
+    "p50_ms": 246.30641200201353,
+    "p95_ms": 272.8117383998324
+   }
+  },
+  {
+   "variant": "columnstore: segment (flight, signal), order ts [current]",
+   "chunk_interval": "7 days",
+   "chunks": 72,
+   "size_mb": 147.030016,
+   "bytes_per_row": 5.457596414371053,
+   "load_s": 109.25147223472595,
+   "compress_s": 37.88683748245239,
+   "Q1 one signal of one flight, 1 s buckets": {
+    "p50_ms": 12.34464299704996,
+    "p95_ms": 12.94635609992838
+   },
+   "Q2 one signal across all flights": {
+    "p50_ms": 15.979554002115037,
+    "p95_ms": 19.85937409917824
+   },
+   "Q3 every signal of one flight": {
+    "p50_ms": 10.754487000667723,
+    "p95_ms": 11.646361300518038
+   },
+   "Q4 one signal in a 90 day window": {
+    "p50_ms": 2.6997610002581496,
+    "p95_ms": 3.047545798472129
+   }
+  },
+  {
+   "variant": "columnstore: segment flight, order (signal, ts)",
+   "chunk_interval": "7 days",
+   "chunks": 72,
+   "size_mb": 149.315584,
+   "bytes_per_row": 5.542434245862557,
+   "load_s": 100.93660116195679,
+   "compress_s": 37.01731586456299,
+   "Q1 one signal of one flight, 1 s buckets": {
+    "p50_ms": 12.93213800090598,
+    "p95_ms": 13.245734601514414
+   },
+   "Q2 one signal across all flights": {
+    "p50_ms": 18.007973998464877,
+    "p95_ms": 18.375201501112315
+   },
+   "Q3 every signal of one flight": {
+    "p50_ms": 11.551973002497107,
+    "p95_ms": 11.78243610120262
+   },
+   "Q4 one signal in a 90 day window": {
+    "p50_ms": 3.1621789967175573,
+    "p95_ms": 3.250679000848322
+   }
+  },
+  {
+   "variant": "columnstore: segment signal, order (flight, ts)",
+   "chunk_interval": "7 days",
+   "chunks": 72,
+   "size_mb": 154.402816,
+   "bytes_per_row": 5.731266838537197,
+   "load_s": 106.56993126869202,
+   "compress_s": 34.99859261512756,
+   "Q1 one signal of one flight, 1 s buckets": {
+    "p50_ms": 13.012078998144716,
+    "p95_ms": 13.701962000777712
+   },
+   "Q2 one signal across all flights": {
+    "p50_ms": 20.306546000938397,
+    "p95_ms": 20.47190410012263
+   },
+   "Q3 every signal of one flight": {
+    "p50_ms": 14.126434001809685,
+    "p95_ms": 14.269651799986605
+   },
+   "Q4 one signal in a 90 day window": {
+    "p50_ms": 2.1720370023103897,
+    "p95_ms": 2.32845089994953
+   }
+  },
+  {
+   "variant": "columnstore: no segmentby, order (flight, signal, ts)",
+   "chunk_interval": "7 days",
+   "chunks": 72,
+   "size_mb": 156.581888,
+   "bytes_per_row": 5.812151652790746,
+   "load_s": 99.86995482444763,
+   "compress_s": 39.04610252380371,
+   "Q1 one signal of one flight, 1 s buckets": {
+    "p50_ms": 15.009886003099382,
+    "p95_ms": 15.493245201287209
+   },
+   "Q2 one signal across all flights": {
+    "p50_ms": 29.713649000768783,
+    "p95_ms": 30.326042500746553
+   },
+   "Q3 every signal of one flight": {
+    "p50_ms": 13.72075700055575,
+    "p95_ms": 13.829449197874055
+   },
+   "Q4 one signal in a 90 day window": {
+    "p50_ms": 3.592741999455029,
+    "p95_ms": 3.6447023008804535
+   }
+  },
+  {
+   "variant": "columnstore: current, 1 day chunks",
+   "chunk_interval": "1 day",
+   "chunks": 109,
+   "size_mb": 149.987328,
+   "bytes_per_row": 5.567368662286584,
+   "load_s": 100.3509373664856,
+   "compress_s": 40.72927665710449,
+   "Q1 one signal of one flight, 1 s buckets": {
+    "p50_ms": 16.250027998466976,
+    "p95_ms": 17.11501380050322
+   },
+   "Q2 one signal across all flights": {
+    "p50_ms": 15.309010999772,
+    "p95_ms": 21.997399802421562
+   },
+   "Q3 every signal of one flight": {
+    "p50_ms": 12.276074001420056,
+    "p95_ms": 12.403788600568078
+   },
+   "Q4 one signal in a 90 day window": {
+    "p50_ms": 3.3694390003802255,
+    "p95_ms": 3.5730522988160374
+   }
+  },
+  {
+   "variant": "columnstore: current, 30 day chunks",
+   "chunk_interval": "30 days",
+   "chunks": 34,
+   "size_mb": 142.688256,
+   "bytes_per_row": 5.296434942362102,
+   "load_s": 107.2824113368988,
+   "compress_s": 32.181843280792236,
+   "Q1 one signal of one flight, 1 s buckets": {
+    "p50_ms": 9.18011499743443,
+    "p95_ms": 9.383615401384304
+   },
+   "Q2 one signal across all flights": {
+    "p50_ms": 8.301129000756191,
+    "p95_ms": 8.809120399382664
+   },
+   "Q3 every signal of one flight": {
+    "p50_ms": 5.668014997354476,
+    "p95_ms": 7.4307305021648045
+   },
+   "Q4 one signal in a 90 day window": {
+    "p50_ms": 2.353595002205111,
+    "p95_ms": 3.3572664997336688
+   }
+  }
+ ]
+}
