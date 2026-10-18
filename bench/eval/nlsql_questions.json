@@ -1,0 +1,301 @@
+{
+ "note": "Gold SQL is written twice (semantic views, raw tables); the two are cross-checked for equal results by eval_nlsql.py --check-gold. unanswerable: success is a refusal.",
+ "questions": [
+  {
+   "id": "c01",
+   "category": "counting",
+   "question": "How many flights are in the corpus?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.flights",
+   "raw_sql": "SELECT count(*) FROM flight"
+  },
+  {
+   "id": "c02",
+   "category": "counting",
+   "question": "How many events were recorded in total?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.events",
+   "raw_sql": "SELECT count(*) FROM event"
+  },
+  {
+   "id": "c03",
+   "category": "counting",
+   "question": "How many flights had a motor failure detected?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(DISTINCT flight_id) FROM semantic.events WHERE kind = 'motor_failure_detected'",
+   "raw_sql": "SELECT count(DISTINCT e.flight_id) FROM event e JOIN concept c ON c.id = e.kind_id WHERE c.key = 'motor_failure_detected'"
+  },
+  {
+   "id": "c04",
+   "category": "counting",
+   "question": "How many failsafe events were there?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.events WHERE kind = 'failsafe_activated'",
+   "raw_sql": "SELECT count(*) FROM event e JOIN concept c ON c.id = e.kind_id WHERE c.key = 'failsafe_activated'"
+  },
+  {
+   "id": "c05",
+   "category": "counting",
+   "question": "How many distinct boards are in the data?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(DISTINCT board) FROM semantic.flights",
+   "raw_sql": "SELECT count(DISTINCT metadata->>'sys_hw') FROM flight"
+  },
+  {
+   "id": "c06",
+   "category": "counting",
+   "question": "How many flights had both a takeoff and a landing event?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM (SELECT flight_id FROM semantic.events WHERE kind = 'takeoff' INTERSECT SELECT flight_id FROM semantic.events WHERE kind = 'landing') x",
+   "raw_sql": "SELECT count(*) FROM (SELECT e.flight_id FROM event e JOIN concept c ON c.id = e.kind_id WHERE c.key = 'takeoff' INTERSECT SELECT e.flight_id FROM event e JOIN concept c ON c.id = e.kind_id WHERE c.key = 'landing') x"
+  },
+  {
+   "id": "c07",
+   "category": "counting",
+   "question": "How many flights have no recorded events at all?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.flights f WHERE NOT EXISTS (SELECT 1 FROM semantic.events e WHERE e.flight_id = f.flight_id)",
+   "raw_sql": "SELECT count(*) FROM flight f WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.flight_id = f.id)"
+  },
+  {
+   "id": "a01",
+   "category": "aggregates",
+   "question": "What is the average flight duration in minutes, to one decimal?",
+   "answerable": true,
+   "semantic_sql": "SELECT round(avg(duration_s)::numeric / 60, 1) FROM semantic.flights",
+   "raw_sql": "SELECT round(avg(duration_s)::numeric / 60, 1) FROM flight"
+  },
+  {
+   "id": "a02",
+   "category": "aggregates",
+   "question": "What is the median flight duration in seconds?",
+   "answerable": true,
+   "semantic_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY duration_s) FROM semantic.flights",
+   "raw_sql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY duration_s) FROM flight"
+  },
+  {
+   "id": "a03",
+   "category": "aggregates",
+   "question": "How many flights are longer than 10 minutes?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.flights WHERE duration_s > 600",
+   "raw_sql": "SELECT count(*) FROM flight WHERE duration_s > 600"
+  },
+  {
+   "id": "a04",
+   "category": "aggregates",
+   "question": "What percentage of flights had at least one critical event? One decimal.",
+   "answerable": true,
+   "semantic_sql": "SELECT round(100.0 * count(DISTINCT flight_id) / (SELECT count(*) FROM semantic.flights), 1) FROM semantic.events WHERE severity = 2",
+   "raw_sql": "SELECT round(100.0 * count(DISTINCT flight_id) / (SELECT count(*) FROM flight), 1) FROM event WHERE severity = 2"
+  },
+  {
+   "id": "a05",
+   "category": "aggregates",
+   "question": "Which board has the most flights?",
+   "answerable": true,
+   "semantic_sql": "SELECT board FROM semantic.flights GROUP BY board ORDER BY count(*) DESC LIMIT 1",
+   "raw_sql": "SELECT metadata->>'sys_hw' FROM flight GROUP BY 1 ORDER BY count(*) DESC LIMIT 1"
+  },
+  {
+   "id": "a06",
+   "category": "aggregates",
+   "question": "What is the log id of the longest flight?",
+   "answerable": true,
+   "semantic_sql": "SELECT log_id FROM semantic.flights ORDER BY duration_s DESC LIMIT 1",
+   "raw_sql": "SELECT source_ref FROM flight ORDER BY duration_s DESC LIMIT 1"
+  },
+  {
+   "id": "e01",
+   "category": "events",
+   "question": "What is the most common event kind?",
+   "answerable": true,
+   "semantic_sql": "SELECT kind FROM semantic.events GROUP BY kind ORDER BY count(*) DESC LIMIT 1",
+   "raw_sql": "SELECT c.key FROM event e JOIN concept c ON c.id = e.kind_id GROUP BY c.key ORDER BY count(*) DESC LIMIT 1"
+  },
+  {
+   "id": "e02",
+   "category": "events",
+   "question": "How many critical events are there for each failure mode?",
+   "answerable": true,
+   "semantic_sql": "SELECT failure_mode, count(*) FROM semantic.events WHERE severity = 2 AND failure_mode IS NOT NULL GROUP BY failure_mode",
+   "raw_sql": "SELECT fm.key, count(*) FROM event e JOIN concept c ON c.id = e.kind_id JOIN concept_relation r ON r.src_id = c.id AND r.rel = 'indicates' JOIN concept fm ON fm.id = r.dst_id AND fm.kind = 'failure_mode' WHERE e.severity = 2 GROUP BY fm.key"
+  },
+  {
+   "id": "e03",
+   "category": "events",
+   "question": "How many events happened in the first 10 seconds of a flight?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.events WHERE start_s < 10",
+   "raw_sql": "SELECT count(*) FROM event e JOIN flight f ON f.id = e.flight_id WHERE e.ts_start - f.started_at < interval '10 seconds'"
+  },
+  {
+   "id": "e04",
+   "category": "events",
+   "question": "How many error messages from the autopilot mention the EKF?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.events WHERE kind = 'log_error' AND description ILIKE '%ekf%'",
+   "raw_sql": "SELECT count(*) FROM event e JOIN concept c ON c.id = e.kind_id WHERE c.key = 'log_error' AND e.description ILIKE '%ekf%'"
+  },
+  {
+   "id": "e05",
+   "category": "events",
+   "question": "How many events mention the word timestamp in their description?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.events WHERE description ILIKE '%timestamp%'",
+   "raw_sql": "SELECT count(*) FROM event WHERE description ILIKE '%timestamp%'"
+  },
+  {
+   "id": "e06",
+   "category": "events",
+   "question": "How many warning-level events are there?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.events WHERE severity_label = 'warning'",
+   "raw_sql": "SELECT count(*) FROM event WHERE severity = 1"
+  },
+  {
+   "id": "j01",
+   "category": "joins",
+   "question": "Which board had the most vibration_high events?",
+   "answerable": true,
+   "semantic_sql": "SELECT f.board FROM semantic.events e JOIN semantic.flights f USING (flight_id) WHERE e.kind = 'vibration_high' GROUP BY f.board ORDER BY count(*) DESC LIMIT 1",
+   "raw_sql": "SELECT f.metadata->>'sys_hw' FROM event e JOIN concept c ON c.id = e.kind_id JOIN flight f ON f.id = e.flight_id WHERE c.key = 'vibration_high' GROUP BY 1 ORDER BY count(*) DESC LIMIT 1"
+  },
+  {
+   "id": "j02",
+   "category": "joins",
+   "question": "How many battery_low events happened on flights of the PX4_FMU_V6X board?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.events e JOIN semantic.flights f USING (flight_id) WHERE e.kind = 'battery_low' AND f.board = 'PX4_FMU_V6X'",
+   "raw_sql": "SELECT count(*) FROM event e JOIN concept c ON c.id = e.kind_id JOIN flight f ON f.id = e.flight_id WHERE c.key = 'battery_low' AND f.metadata->>'sys_hw' = 'PX4_FMU_V6X'"
+  },
+  {
+   "id": "j03",
+   "category": "joins",
+   "question": "What is the average number of critical events per flight, to two decimals?",
+   "answerable": true,
+   "semantic_sql": "SELECT round(count(*)::numeric / (SELECT count(*) FROM semantic.flights), 2) FROM semantic.events WHERE severity = 2",
+   "raw_sql": "SELECT round(count(*)::numeric / (SELECT count(*) FROM flight), 2) FROM event WHERE severity = 2"
+  },
+  {
+   "id": "l01",
+   "category": "labels",
+   "question": "How many flights did the pilot label with vibration as a cause?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.flights WHERE 'vibration' = ANY(pilot_error_labels)",
+   "raw_sql": "SELECT count(*) FROM flight WHERE metadata->'error_labels' @> '[2]'::jsonb"
+  },
+  {
+   "id": "l02",
+   "category": "labels",
+   "question": "How many flights did the pilot rate as good?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.flights WHERE pilot_rating = 'good'",
+   "raw_sql": "SELECT count(*) FROM flight WHERE metadata->>'rating' = 'good'"
+  },
+  {
+   "id": "l03",
+   "category": "labels",
+   "question": "How many flights have written pilot feedback?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.flights WHERE pilot_feedback IS NOT NULL",
+   "raw_sql": "SELECT count(*) FROM flight WHERE btrim(coalesce(metadata->>'feedback', '')) <> ''"
+  },
+  {
+   "id": "s01",
+   "category": "signals",
+   "question": "How many flights recorded a battery voltage below 15 volts at some point?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(DISTINCT flight_id) FROM semantic.signal_summary WHERE signal = 'battery.voltage' AND min_value < 15",
+   "raw_sql": "SELECT count(*) FROM (SELECT t.flight_id, min(t.value*m.scale+m.\"offset\") AS lo, max(t.value*m.scale+m.\"offset\") AS hi FROM telemetry t JOIN field_mapping m ON m.vendor_field_id = t.vendor_field_id JOIN concept c ON c.id = m.concept_id AND c.kind = 'signal' WHERE c.key = 'battery.voltage' GROUP BY t.flight_id) s WHERE lo < 15"
+  },
+  {
+   "id": "s02",
+   "category": "signals",
+   "question": "What is the highest accelerometer vibration value recorded in any flight?",
+   "answerable": true,
+   "semantic_sql": "SELECT max(max_value) FROM semantic.signal_summary WHERE signal = 'vibration.accel'",
+   "raw_sql": "SELECT max(hi) FROM (SELECT t.flight_id, min(t.value*m.scale+m.\"offset\") AS lo, max(t.value*m.scale+m.\"offset\") AS hi FROM telemetry t JOIN field_mapping m ON m.vendor_field_id = t.vendor_field_id JOIN concept c ON c.id = m.concept_id AND c.kind = 'signal' WHERE c.key = 'vibration.accel' GROUP BY t.flight_id) s"
+  },
+  {
+   "id": "s03",
+   "category": "signals",
+   "question": "How many flights had GPS horizontal accuracy worse than 5 meters at some point?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(DISTINCT flight_id) FROM semantic.signal_summary WHERE signal = 'gps.eph' AND max_value > 5",
+   "raw_sql": "SELECT count(*) FROM (SELECT t.flight_id, min(t.value*m.scale+m.\"offset\") AS lo, max(t.value*m.scale+m.\"offset\") AS hi FROM telemetry t JOIN field_mapping m ON m.vendor_field_id = t.vendor_field_id JOIN concept c ON c.id = m.concept_id AND c.kind = 'signal' WHERE c.key = 'gps.eph' GROUP BY t.flight_id) s WHERE hi > 5"
+  },
+  {
+   "id": "s04",
+   "category": "signals",
+   "question": "Which flight had the highest battery voltage ever recorded? Give its log id.",
+   "answerable": true,
+   "semantic_sql": "SELECT f.log_id FROM semantic.signal_summary s JOIN semantic.flights f USING (flight_id) WHERE s.signal = 'battery.voltage' ORDER BY s.max_value DESC LIMIT 1",
+   "raw_sql": "SELECT f.source_ref FROM (SELECT t.flight_id, max(t.value*m.scale+m.\"offset\") AS hi FROM telemetry t JOIN field_mapping m ON m.vendor_field_id = t.vendor_field_id JOIN concept c ON c.id = m.concept_id AND c.kind = 'signal' WHERE c.key = 'battery.voltage' GROUP BY t.flight_id) s JOIN flight f ON f.id = s.flight_id ORDER BY s.hi DESC LIMIT 1"
+  },
+  {
+   "id": "s05",
+   "category": "signals",
+   "question": "Which board had the highest average of its flights' peak vibration?",
+   "answerable": true,
+   "semantic_sql": "SELECT f.board FROM semantic.signal_summary s JOIN semantic.flights f USING (flight_id) WHERE s.signal = 'vibration.accel' GROUP BY f.board HAVING count(*) >= 1 ORDER BY avg(s.max_value) DESC LIMIT 1",
+   "raw_sql": "SELECT f.metadata->>'sys_hw' FROM (SELECT t.flight_id, min(t.value*m.scale+m.\"offset\") AS lo, max(t.value*m.scale+m.\"offset\") AS hi FROM telemetry t JOIN field_mapping m ON m.vendor_field_id = t.vendor_field_id JOIN concept c ON c.id = m.concept_id AND c.kind = 'signal' WHERE c.key = 'vibration.accel' GROUP BY t.flight_id) s JOIN flight f ON f.id = s.flight_id GROUP BY 1 ORDER BY avg(s.hi) DESC LIMIT 1"
+  },
+  {
+   "id": "o01",
+   "category": "ontology",
+   "question": "What unit is the vibration.accel signal measured in?",
+   "answerable": true,
+   "semantic_sql": "SELECT unit FROM semantic.signals WHERE signal = 'vibration.accel'",
+   "raw_sql": "SELECT unit FROM concept WHERE kind = 'signal' AND key = 'vibration.accel'"
+  },
+  {
+   "id": "o02",
+   "category": "ontology",
+   "question": "How many canonical signals belong to the power subsystem?",
+   "answerable": true,
+   "semantic_sql": "SELECT count(*) FROM semantic.signals WHERE subsystem = 'power'",
+   "raw_sql": "SELECT count(*) FROM concept s JOIN concept_relation r ON r.src_id = s.id AND r.rel = 'part_of' JOIN concept sub ON sub.id = r.dst_id WHERE s.kind = 'signal' AND sub.key = 'power'"
+  },
+  {
+   "id": "o03",
+   "category": "ontology",
+   "question": "Which failure modes can the battery.voltage signal indicate?",
+   "answerable": true,
+   "semantic_sql": "SELECT related_concept FROM semantic.ontology WHERE concept = 'battery.voltage' AND relation = 'indicates'",
+   "raw_sql": "SELECT d.key FROM concept_relation r JOIN concept s ON s.id = r.src_id JOIN concept d ON d.id = r.dst_id WHERE s.key = 'battery.voltage' AND r.rel = 'indicates'"
+  },
+  {
+   "id": "o04",
+   "category": "ontology",
+   "question": "List every subsystem that has at least one signal.",
+   "answerable": true,
+   "semantic_sql": "SELECT DISTINCT subsystem FROM semantic.signals WHERE subsystem IS NOT NULL",
+   "raw_sql": "SELECT DISTINCT sub.key FROM concept s JOIN concept_relation r ON r.src_id = s.id AND r.rel = 'part_of' JOIN concept sub ON sub.id = r.dst_id WHERE s.kind = 'signal' AND sub.kind = 'subsystem'"
+  },
+  {
+   "id": "u01",
+   "category": "unanswerable",
+   "question": "What was the wind speed during the longest flight?",
+   "answerable": false,
+   "semantic_sql": null,
+   "raw_sql": null
+  },
+  {
+   "id": "u02",
+   "category": "unanswerable",
+   "question": "Who was the pilot of flight a871246e?",
+   "answerable": false,
+   "semantic_sql": null,
+   "raw_sql": null
+  },
+  {
+   "id": "u03",
+   "category": "unanswerable",
+   "question": "How much did the most expensive drone in the corpus cost?",
+   "answerable": false,
+   "semantic_sql": null,
+   "raw_sql": null
+  }
+ ]
+}
