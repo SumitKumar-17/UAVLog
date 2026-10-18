@@ -1,0 +1,3450 @@
+{
+  "taken_at": "2026-10-18T08:12:48.912607+00:00",
+  "events": 3846,
+  "embed_model": "openai/text-embedding-3-small",
+  "queries": 65,
+  "hard_queries": 39,
+  "skipped_concepts": [],
+  "relevant_sizes": {
+    "motor": 11,
+    "attitude": 101,
+    "gps": 30,
+    "battery": 171,
+    "vibration": 102,
+    "estimator": 302,
+    "failsafe": 277,
+    "takeoff": 292,
+    "landing": 277,
+    "arming": 326,
+    "mode": 960,
+    "compass": 37,
+    "sensor": 109,
+    "rc": 14
+  },
+  "modes": {
+    "hybrid": {
+      "all": {
+        "p5": {
+          "mean": 0.7046153846153845,
+          "lo": 0.6061538461538462,
+          "hi": 0.7969999999999996,
+          "n": 65
+        },
+        "p10": {
+          "mean": 0.6923076923076923,
+          "lo": 0.5923076923076923,
+          "hi": 0.7861538461538461,
+          "n": 65
+        },
+        "ndcg10": {
+          "mean": 0.6994680560487037,
+          "lo": 0.601224082797119,
+          "hi": 0.7932847447542589,
+          "n": 65
+        },
+        "mrr": {
+          "mean": 0.7673330095455602,
+          "lo": 0.666650958263509,
+          "hi": 0.8592828545723282,
+          "n": 65
+        },
+        "miss": {
+          "mean": 0.16923076923076924,
+          "lo": 0.09230769230769231,
+          "hi": 0.26153846153846155,
+          "n": 65
+        },
+        "flights10": {
+          "mean": 0.8323076923076924,
+          "lo": 0.7907307692307692,
+          "hi": 0.8723076923076923,
+          "n": 65
+        }
+      },
+      "easy": {
+        "p5": {
+          "mean": 0.8846153846153846,
+          "lo": 0.7769230769230769,
+          "hi": 0.9769230769230769,
+          "n": 26
+        },
+        "p10": {
+          "mean": 0.8692307692307693,
+          "lo": 0.7500000000000001,
+          "hi": 0.9576923076923076,
+          "n": 26
+        },
+        "ndcg10": {
+          "mean": 0.8806792765042122,
+          "lo": 0.777816751674591,
+          "hi": 0.963604589470459,
+          "n": 26
+        },
+        "mrr": {
+          "mean": 0.9465811965811965,
+          "lo": 0.8589743589743589,
+          "hi": 1.0,
+          "n": 26
+        },
+        "miss": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n": 26
+        },
+        "flights10": {
+          "mean": 0.8192307692307692,
+          "lo": 0.75,
+          "hi": 0.8807692307692307,
+          "n": 26
+        }
+      },
+      "hard": {
+        "p5": {
+          "mean": 0.5846153846153846,
+          "lo": 0.4358974358974359,
+          "hi": 0.717948717948718,
+          "n": 39
+        },
+        "p10": {
+          "mean": 0.5743589743589743,
+          "lo": 0.441025641025641,
+          "hi": 0.7102564102564103,
+          "n": 39
+        },
+        "ndcg10": {
+          "mean": 0.5786605757450313,
+          "lo": 0.43950888190252846,
+          "hi": 0.714368077334465,
+          "n": 39
+        },
+        "mrr": {
+          "mean": 0.6478342181884691,
+          "lo": 0.5057419856346981,
+          "hi": 0.7899033440974229,
+          "n": 39
+        },
+        "miss": {
+          "mean": 0.28205128205128205,
+          "lo": 0.15384615384615385,
+          "hi": 0.4358974358974359,
+          "n": 39
+        },
+        "flights10": {
+          "mean": 0.8410256410256409,
+          "lo": 0.787179487179487,
+          "hi": 0.8948717948717947,
+          "n": 39
+        }
+      }
+    },
+    "rrf": {
+      "all": {
+        "p5": {
+          "mean": 0.6492307692307693,
+          "lo": 0.5507692307692307,
+          "hi": 0.7446153846153846,
+          "n": 65
+        },
+        "p10": {
+          "mean": 0.6,
+          "lo": 0.5061538461538462,
+          "hi": 0.6953846153846154,
+          "n": 65
+        },
+        "ndcg10": {
+          "mean": 0.6221129616730833,
+          "lo": 0.5277896802943448,
+          "hi": 0.7078006826016612,
+          "n": 65
+        },
+        "mrr": {
+          "mean": 0.753419620630499,
+          "lo": 0.6598883469988909,
+          "hi": 0.8473952364525106,
+          "n": 65
+        },
+        "miss": {
+          "mean": 0.18461538461538463,
+          "lo": 0.09230769230769231,
+          "hi": 0.27692307692307694,
+          "n": 65
+        },
+        "flights10": {
+          "mean": 0.816923076923077,
+          "lo": 0.7753846153846154,
+          "hi": 0.856923076923077,
+          "n": 65
+        }
+      },
+      "easy": {
+        "p5": {
+          "mean": 0.8999999999999999,
+          "lo": 0.8,
+          "hi": 0.9846153846153847,
+          "n": 26
+        },
+        "p10": {
+          "mean": 0.8384615384615385,
+          "lo": 0.7229807692307691,
+          "hi": 0.9384615384615385,
+          "n": 26
+        },
+        "ndcg10": {
+          "mean": 0.8614971033048296,
+          "lo": 0.7570241984693885,
+          "hi": 0.9447348070041577,
+          "n": 26
+        },
+        "mrr": {
+          "mean": 0.9452662721893491,
+          "lo": 0.8579142011834319,
+          "hi": 1.0,
+          "n": 26
+        },
+        "miss": {
+          "mean": 0.038461538461538464,
+          "lo": 0.0,
+          "hi": 0.11538461538461539,
+          "n": 26
+        },
+        "flights10": {
+          "mean": 0.7923076923076924,
+          "lo": 0.7307692307692307,
+          "hi": 0.8499999999999998,
+          "n": 26
+        }
+      },
+      "hard": {
+        "p5": {
+          "mean": 0.48205128205128217,
+          "lo": 0.36410256410256403,
+          "hi": 0.6051282051282052,
+          "n": 39
+        },
+        "p10": {
+          "mean": 0.4410256410256411,
+          "lo": 0.3230128205128205,
+          "hi": 0.5641025641025641,
+          "n": 39
+        },
+        "ndcg10": {
+          "mean": 0.4625235339185855,
+          "lo": 0.3438051537832128,
+          "hi": 0.5846636910666297,
+          "n": 39
+        },
+        "mrr": {
+          "mean": 0.6255218529245988,
+          "lo": 0.48355299829842163,
+          "hi": 0.755672166792018,
+          "n": 39
+        },
+        "miss": {
+          "mean": 0.28205128205128205,
+          "lo": 0.15384615384615385,
+          "hi": 0.4358974358974359,
+          "n": 39
+        },
+        "flights10": {
+          "mean": 0.8333333333333335,
+          "lo": 0.7768589743589741,
+          "hi": 0.882051282051282,
+          "n": 39
+        }
+      }
+    },
+    "vector": {
+      "all": {
+        "p5": {
+          "mean": 0.716923076923077,
+          "lo": 0.6215384615384615,
+          "hi": 0.8092307692307692,
+          "n": 65
+        },
+        "p10": {
+          "mean": 0.6923076923076923,
+          "lo": 0.5907692307692308,
+          "hi": 0.7907692307692308,
+          "n": 65
+        },
+        "ndcg10": {
+          "mean": 0.6995057826132705,
+          "lo": 0.59958869950209,
+          "hi": 0.7958617980211815,
+          "n": 65
+        },
+        "mrr": {
+          "mean": 0.7478379219458214,
+          "lo": 0.644073517039928,
+          "hi": 0.8395403667878011,
+          "n": 65
+        },
+        "miss": {
+          "mean": 0.2,
+          "lo": 0.1076923076923077,
+          "hi": 0.2923076923076923,
+          "n": 65
+        },
+        "flights10": {
+          "mean": 0.84,
+          "lo": 0.7938461538461538,
+          "hi": 0.8815384615384615,
+          "n": 65
+        }
+      },
+      "easy": {
+        "p5": {
+          "mean": 0.8999999999999999,
+          "lo": 0.7999999999999999,
+          "hi": 0.9769230769230769,
+          "n": 26
+        },
+        "p10": {
+          "mean": 0.8653846153846154,
+          "lo": 0.7461538461538461,
+          "hi": 0.957788461538461,
+          "n": 26
+        },
+        "ndcg10": {
+          "mean": 0.8802683777266169,
+          "lo": 0.770010156663482,
+          "hi": 0.9657201510898565,
+          "n": 26
+        },
+        "mrr": {
+          "mean": 0.939102564102564,
+          "lo": 0.8429487179487178,
+          "hi": 1.0,
+          "n": 26
+        },
+        "miss": {
+          "mean": 0.038461538461538464,
+          "lo": 0.0,
+          "hi": 0.11538461538461539,
+          "n": 26
+        },
+        "flights10": {
+          "mean": 0.8307692307692308,
+          "lo": 0.7615384615384617,
+          "hi": 0.8923076923076922,
+          "n": 26
+        }
+      },
+      "hard": {
+        "p5": {
+          "mean": 0.5948717948717949,
+          "lo": 0.45115384615384624,
+          "hi": 0.7334615384615379,
+          "n": 39
+        },
+        "p10": {
+          "mean": 0.5769230769230769,
+          "lo": 0.4333333333333333,
+          "hi": 0.7179487179487178,
+          "n": 39
+        },
+        "ndcg10": {
+          "mean": 0.5789973858710398,
+          "lo": 0.435725328588265,
+          "hi": 0.7169837784969271,
+          "n": 39
+        },
+        "mrr": {
+          "mean": 0.6203281605079929,
+          "lo": 0.4854984003745891,
+          "hi": 0.7606912331514534,
+          "n": 39
+        },
+        "miss": {
+          "mean": 0.3076923076923077,
+          "lo": 0.1794871794871795,
+          "hi": 0.46153846153846156,
+          "n": 39
+        },
+        "flights10": {
+          "mean": 0.8461538461538461,
+          "lo": 0.7846153846153845,
+          "hi": 0.9,
+          "n": 39
+        }
+      }
+    },
+    "fts": {
+      "all": {
+        "p5": {
+          "mean": 0.4738461538461538,
+          "lo": 0.36923076923076925,
+          "hi": 0.5723076923076924,
+          "n": 65
+        },
+        "p10": {
+          "mean": 0.4846153846153846,
+          "lo": 0.3753846153846154,
+          "hi": 0.5892692307692305,
+          "n": 65
+        },
+        "ndcg10": {
+          "mean": 0.48122412679581517,
+          "lo": 0.3819627727805554,
+          "hi": 0.5848490633380754,
+          "n": 65
+        },
+        "mrr": {
+          "mean": 0.55186180298909,
+          "lo": 0.44322467924327064,
+          "hi": 0.6553792006605798,
+          "n": 65
+        },
+        "miss": {
+          "mean": 0.27692307692307694,
+          "lo": 0.16923076923076924,
+          "hi": 0.38461538461538464,
+          "n": 65
+        },
+        "flights10": {
+          "mean": 0.7446153846153847,
+          "lo": 0.6984230769230768,
+          "hi": 0.7892307692307692,
+          "n": 65
+        }
+      },
+      "easy": {
+        "p5": {
+          "mean": 0.7461538461538461,
+          "lo": 0.6074999999999999,
+          "hi": 0.8769230769230769,
+          "n": 26
+        },
+        "p10": {
+          "mean": 0.7307692307692307,
+          "lo": 0.5999999999999999,
+          "hi": 0.8576923076923075,
+          "n": 26
+        },
+        "ndcg10": {
+          "mean": 0.7293022490965263,
+          "lo": 0.5901014184922739,
+          "hi": 0.8576648522262822,
+          "n": 26
+        },
+        "mrr": {
+          "mean": 0.7754273504273504,
+          "lo": 0.6388835470085472,
+          "hi": 0.9017094017094016,
+          "n": 26
+        },
+        "miss": {
+          "mean": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n": 26
+        },
+        "flights10": {
+          "mean": 0.7115384615384616,
+          "lo": 0.6384615384615384,
+          "hi": 0.7847115384615381,
+          "n": 26
+        }
+      },
+      "hard": {
+        "p5": {
+          "mean": 0.2923076923076923,
+          "lo": 0.17435897435897438,
+          "hi": 0.41538461538461535,
+          "n": 39
+        },
+        "p10": {
+          "mean": 0.32051282051282054,
+          "lo": 0.20512820512820512,
+          "hi": 0.4333974358974357,
+          "n": 39
+        },
+        "ndcg10": {
+          "mean": 0.31583871192867446,
+          "lo": 0.20643701201819237,
+          "hi": 0.43785739487302955,
+          "n": 39
+        },
+        "mrr": {
+          "mean": 0.4028181046969164,
+          "lo": 0.27271888247935855,
+          "hi": 0.5358977180684341,
+          "n": 39
+        },
+        "miss": {
+          "mean": 0.46153846153846156,
+          "lo": 0.3076923076923077,
+          "hi": 0.6153846153846154,
+          "n": 39
+        },
+        "flights10": {
+          "mean": 0.7666666666666667,
+          "lo": 0.712820512820513,
+          "hi": 0.8205128205128205,
+          "n": 39
+        }
+      }
+    }
+  },
+  "per_query": {
+    "hybrid": [
+      {
+        "concept": "motor",
+        "query": "motor failure detected",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.8,
+        "ndcg10": 0.8669479898642709,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "motor",
+        "query": "imbalanced propeller",
+        "hard": false,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "motor",
+        "query": "one of the rotors stopped working",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "motor",
+        "query": "a prop is damaged and wobbling",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "motor",
+        "query": "an engine cut out and the drone dropped",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.02564102564102564,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "attitude",
+        "query": "roll angle exceeded the safe limit",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "attitude",
+        "query": "pitch limit exceeded",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "attitude",
+        "query": "the drone flipped over",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "attitude",
+        "query": "aircraft tilted too far and lost control",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.9363792118010481,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "attitude",
+        "query": "vehicle went upside down",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "GPS lost 3D fix",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "poor GPS accuracy",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "gps",
+        "query": "no satellite lock",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.9363792118010481,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "position signal dropped out",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.02,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "gps",
+        "query": "navigation signal degraded",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "battery",
+        "query": "battery critically low",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "battery",
+        "query": "battery below 20 percent",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "battery",
+        "query": "running out of power",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "battery",
+        "query": "the pack is almost empty",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.05263157894736842,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "battery",
+        "query": "voltage sag under load",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.3,
+        "ndcg10": 0.38363315291837646,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "vibration",
+        "query": "high accelerometer vibration",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "vibration",
+        "query": "accelerometer clipping",
+        "hard": false,
+        "p5": 0.6,
+        "p10": 0.8,
+        "ndcg10": 0.6947651160602988,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "vibration",
+        "query": "airframe shaking violently",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.6,
+        "ndcg10": 0.4611143078171934,
+        "mrr": 0.3333333333333333,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "vibration",
+        "query": "the frame is resonating",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "vibration",
+        "query": "rough rattling during flight",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "estimator",
+        "query": "estimator rejecting measurements",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.3
+      },
+      {
+        "concept": "estimator",
+        "query": "EKF fault",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "estimator",
+        "query": "state estimation unhealthy",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "estimator",
+        "query": "sensor fusion disagreement",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.6,
+        "ndcg10": 0.608296528941268,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "estimator",
+        "query": "navigation filter reset",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.7,
+        "ndcg10": 0.575073986183329,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "failsafe",
+        "query": "failsafe activated",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "failsafe",
+        "query": "return to launch triggered",
+        "hard": false,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "failsafe",
+        "query": "autopilot took over automatically",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "failsafe",
+        "query": "emergency protection kicked in",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "failsafe",
+        "query": "safety fallback engaged",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "takeoff",
+        "query": "vehicle took off",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "takeoff",
+        "query": "left the ground",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "takeoff",
+        "query": "lift off",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "takeoff",
+        "query": "became airborne",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "landing",
+        "query": "vehicle landed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "landing",
+        "query": "touched down",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "landing",
+        "query": "came back to the ground",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.07142857142857142,
+        "miss": 1.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "landing",
+        "query": "touchdown at the end of the flight",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "arming",
+        "query": "motors armed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "arming",
+        "query": "motors disarmed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "arming",
+        "query": "propellers spun up before flight",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "arming",
+        "query": "power to the motors was cut after landing",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "mode",
+        "query": "flight mode changed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "mode",
+        "query": "switched to Position mode",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "mode",
+        "query": "pilot toggled between manual and assisted flying",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.4
+      },
+      {
+        "concept": "mode",
+        "query": "control mode switch",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.4
+      },
+      {
+        "concept": "mode",
+        "query": "autopilot mode transition",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "compass",
+        "query": "compass error",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "compass",
+        "query": "magnetometer inconsistent",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.7,
+        "ndcg10": 0.8006937664098819,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "compass",
+        "query": "heading sensor problem",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.2,
+        "ndcg10": 0.1635413866202963,
+        "mrr": 0.2,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "compass",
+        "query": "magnetic interference",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "sensor",
+        "query": "barometer fault",
+        "hard": false,
+        "p5": 0.6,
+        "p10": 0.8,
+        "ndcg10": 0.7510916729774053,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "sensor",
+        "query": "gyro unhealthy",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "sensor",
+        "query": "altitude sensor problem",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.2,
+        "ndcg10": 0.21222636597291458,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "sensor",
+        "query": "inertial sensor issue",
+        "hard": true,
+        "p5": 0.8,
+        "p10": 0.9,
+        "ndcg10": 0.8611375561264454,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "rc",
+        "query": "manual control lost",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "rc",
+        "query": "RC link lost",
+        "hard": false,
+        "p5": 0.0,
+        "p10": 0.1,
+        "ndcg10": 0.06625422345438903,
+        "mrr": 0.1111111111111111,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "rc",
+        "query": "radio signal dropped",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.3,
+        "ndcg10": 0.3436966913921454,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "rc",
+        "query": "remote controller disconnected",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 0.6,
+        "ndcg10": 0.7273298443105218,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "rc",
+        "query": "lost contact with the pilot's transmitter",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0625,
+        "miss": 1.0,
+        "flights10": 1.0
+      }
+    ],
+    "rrf": [
+      {
+        "concept": "motor",
+        "query": "motor failure detected",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.7,
+        "ndcg10": 0.8006937664098819,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "motor",
+        "query": "imbalanced propeller",
+        "hard": false,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "motor",
+        "query": "one of the rotors stopped working",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.5,
+        "ndcg10": 0.5548989126424902,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "motor",
+        "query": "a prop is damaged and wobbling",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "motor",
+        "query": "an engine cut out and the drone dropped",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "attitude",
+        "query": "roll angle exceeded the safe limit",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "attitude",
+        "query": "pitch limit exceeded",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "attitude",
+        "query": "the drone flipped over",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "attitude",
+        "query": "aircraft tilted too far and lost control",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.5,
+        "ndcg10": 0.5548989126424902,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "attitude",
+        "query": "vehicle went upside down",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "gps",
+        "query": "GPS lost 3D fix",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "poor GPS accuracy",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.9266360779006398,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "no satellite lock",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.9363792118010481,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "position signal dropped out",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "gps",
+        "query": "navigation signal degraded",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.2
+      },
+      {
+        "concept": "battery",
+        "query": "battery critically low",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "battery",
+        "query": "battery below 20 percent",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "battery",
+        "query": "running out of power",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.05263157894736842,
+        "miss": 1.0,
+        "flights10": 0.4
+      },
+      {
+        "concept": "battery",
+        "query": "the pack is almost empty",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.1,
+        "ndcg10": 0.13886244387355454,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "battery",
+        "query": "voltage sag under load",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.5,
+        "ndcg10": 0.5766882048947064,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "vibration",
+        "query": "high accelerometer vibration",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "vibration",
+        "query": "accelerometer clipping",
+        "hard": false,
+        "p5": 0.8,
+        "p10": 0.9,
+        "ndcg10": 0.7799082337019198,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "vibration",
+        "query": "airframe shaking violently",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.6,
+        "ndcg10": 0.4611143078171934,
+        "mrr": 0.3333333333333333,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "vibration",
+        "query": "the frame is resonating",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "vibration",
+        "query": "rough rattling during flight",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "estimator",
+        "query": "estimator rejecting measurements",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "estimator",
+        "query": "EKF fault",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "estimator",
+        "query": "state estimation unhealthy",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.6,
+        "ndcg10": 0.6523706084452717,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "estimator",
+        "query": "sensor fusion disagreement",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.1,
+        "ndcg10": 0.22009176629808017,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "estimator",
+        "query": "navigation filter reset",
+        "hard": true,
+        "p5": 0.8,
+        "p10": 0.9,
+        "ndcg10": 0.7799082337019198,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "failsafe",
+        "query": "failsafe activated",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "failsafe",
+        "query": "return to launch triggered",
+        "hard": false,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.33013764944712026,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "failsafe",
+        "query": "autopilot took over automatically",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "failsafe",
+        "query": "emergency protection kicked in",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.09090909090909091,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "failsafe",
+        "query": "safety fallback engaged",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.5,
+        "ndcg10": 0.5548989126424902,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "takeoff",
+        "query": "vehicle took off",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "takeoff",
+        "query": "left the ground",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.5,
+        "ndcg10": 0.5548989126424902,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "takeoff",
+        "query": "lift off",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "takeoff",
+        "query": "became airborne",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "landing",
+        "query": "vehicle landed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "landing",
+        "query": "touched down",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "landing",
+        "query": "came back to the ground",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.043478260869565216,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "landing",
+        "query": "touchdown at the end of the flight",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.5,
+        "ndcg10": 0.5548989126424902,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "arming",
+        "query": "motors armed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "arming",
+        "query": "motors disarmed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "arming",
+        "query": "propellers spun up before flight",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "arming",
+        "query": "power to the motors was cut after landing",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "mode",
+        "query": "flight mode changed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "mode",
+        "query": "switched to Position mode",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "mode",
+        "query": "pilot toggled between manual and assisted flying",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.9363792118010481,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "mode",
+        "query": "control mode switch",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "mode",
+        "query": "autopilot mode transition",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "compass",
+        "query": "compass error",
+        "hard": false,
+        "p5": 0.8,
+        "p10": 0.8,
+        "ndcg10": 0.8165901947515999,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "compass",
+        "query": "magnetometer inconsistent",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.7,
+        "ndcg10": 0.8006937664098819,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "compass",
+        "query": "heading sensor problem",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.1,
+        "ndcg10": 0.06943122193677727,
+        "mrr": 0.125,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "compass",
+        "query": "magnetic interference",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "sensor",
+        "query": "barometer fault",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.7,
+        "ndcg10": 0.7846170207230129,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "sensor",
+        "query": "gyro unhealthy",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.7,
+        "ndcg10": 0.8006937664098819,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "sensor",
+        "query": "altitude sensor problem",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.3,
+        "ndcg10": 0.4537425745411855,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "sensor",
+        "query": "inertial sensor issue",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.4,
+        "ndcg10": 0.4885468020156227,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "rc",
+        "query": "manual control lost",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "rc",
+        "query": "RC link lost",
+        "hard": false,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.07692307692307693,
+        "miss": 1.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "rc",
+        "query": "radio signal dropped",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.3,
+        "ndcg10": 0.3436966913921454,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "rc",
+        "query": "remote controller disconnected",
+        "hard": true,
+        "p5": 0.8,
+        "p10": 0.6,
+        "ndcg10": 0.6867151830982591,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "rc",
+        "query": "lost contact with the pilot's transmitter",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.2,
+        "ndcg10": 0.1610425878239398,
+        "mrr": 0.25,
+        "miss": 0.0,
+        "flights10": 0.9
+      }
+    ],
+    "vector": [
+      {
+        "concept": "motor",
+        "query": "motor failure detected",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.8,
+        "ndcg10": 0.8701249883466592,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "motor",
+        "query": "imbalanced propeller",
+        "hard": false,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "motor",
+        "query": "one of the rotors stopped working",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "motor",
+        "query": "a prop is damaged and wobbling",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "motor",
+        "query": "an engine cut out and the drone dropped",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.02564102564102564,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "attitude",
+        "query": "roll angle exceeded the safe limit",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "attitude",
+        "query": "pitch limit exceeded",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "attitude",
+        "query": "the drone flipped over",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "attitude",
+        "query": "aircraft tilted too far and lost control",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.9363792118010481,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "attitude",
+        "query": "vehicle went upside down",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "GPS lost 3D fix",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "gps",
+        "query": "poor GPS accuracy",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "no satellite lock",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.9363792118010481,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "position signal dropped out",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.023255813953488372,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "gps",
+        "query": "navigation signal degraded",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "battery",
+        "query": "battery critically low",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "battery",
+        "query": "battery below 20 percent",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "battery",
+        "query": "running out of power",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "battery",
+        "query": "the pack is almost empty",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.05263157894736842,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "battery",
+        "query": "voltage sag under load",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.3,
+        "ndcg10": 0.38363315291837646,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "vibration",
+        "query": "high accelerometer vibration",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "vibration",
+        "query": "accelerometer clipping",
+        "hard": false,
+        "p5": 0.6,
+        "p10": 0.8,
+        "ndcg10": 0.6410457898283652,
+        "mrr": 0.3333333333333333,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "vibration",
+        "query": "airframe shaking violently",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.6,
+        "ndcg10": 0.4611143078171934,
+        "mrr": 0.3333333333333333,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "vibration",
+        "query": "the frame is resonating",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "vibration",
+        "query": "rough rattling during flight",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "estimator",
+        "query": "estimator rejecting measurements",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.3
+      },
+      {
+        "concept": "estimator",
+        "query": "EKF fault",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "estimator",
+        "query": "state estimation unhealthy",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "estimator",
+        "query": "sensor fusion disagreement",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 0.8,
+        "ndcg10": 0.8482378089219645,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "estimator",
+        "query": "navigation filter reset",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.7,
+        "ndcg10": 0.5309999066793252,
+        "mrr": 0.25,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "failsafe",
+        "query": "failsafe activated",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "failsafe",
+        "query": "return to launch triggered",
+        "hard": false,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "failsafe",
+        "query": "autopilot took over automatically",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "failsafe",
+        "query": "emergency protection kicked in",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "failsafe",
+        "query": "safety fallback engaged",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "takeoff",
+        "query": "vehicle took off",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "takeoff",
+        "query": "left the ground",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "takeoff",
+        "query": "lift off",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "takeoff",
+        "query": "became airborne",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "landing",
+        "query": "vehicle landed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "landing",
+        "query": "touched down",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "landing",
+        "query": "came back to the ground",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.07142857142857142,
+        "miss": 1.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "landing",
+        "query": "touchdown at the end of the flight",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "arming",
+        "query": "motors armed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "arming",
+        "query": "motors disarmed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "arming",
+        "query": "propellers spun up before flight",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "arming",
+        "query": "power to the motors was cut after landing",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "mode",
+        "query": "flight mode changed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "mode",
+        "query": "switched to Position mode",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "mode",
+        "query": "pilot toggled between manual and assisted flying",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.2
+      },
+      {
+        "concept": "mode",
+        "query": "control mode switch",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "mode",
+        "query": "autopilot mode transition",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "compass",
+        "query": "compass error",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "compass",
+        "query": "magnetometer inconsistent",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.8,
+        "ndcg10": 0.8572048559638626,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "compass",
+        "query": "heading sensor problem",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.20483424751859086,
+        "mrr": 0.3333333333333333,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "compass",
+        "query": "magnetic interference",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "sensor",
+        "query": "barometer fault",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.7,
+        "ndcg10": 0.8006937664098819,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "sensor",
+        "query": "gyro unhealthy",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "sensor",
+        "query": "altitude sensor problem",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.05555555555555555,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "sensor",
+        "query": "inertial sensor issue",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.4
+      },
+      {
+        "concept": "rc",
+        "query": "manual control lost",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "rc",
+        "query": "RC link lost",
+        "hard": false,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.08333333333333333,
+        "miss": 1.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "rc",
+        "query": "radio signal dropped",
+        "hard": true,
+        "p5": 0.6,
+        "p10": 0.3,
+        "ndcg10": 0.3436966913921454,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "rc",
+        "query": "remote controller disconnected",
+        "hard": true,
+        "p5": 0.8,
+        "p10": 0.6,
+        "ndcg10": 0.576669299949219,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "rc",
+        "query": "lost contact with the pilot's transmitter",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.047619047619047616,
+        "miss": 1.0,
+        "flights10": 1.0
+      }
+    ],
+    "fts": [
+      {
+        "concept": "motor",
+        "query": "motor failure detected",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.7,
+        "ndcg10": 0.8006937664098819,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "motor",
+        "query": "imbalanced propeller",
+        "hard": false,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "motor",
+        "query": "one of the rotors stopped working",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.5,
+        "ndcg10": 0.3510684246681534,
+        "mrr": 0.16666666666666666,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "motor",
+        "query": "a prop is damaged and wobbling",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.2,
+        "ndcg10": 0.3589542101716347,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "motor",
+        "query": "an engine cut out and the drone dropped",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "attitude",
+        "query": "roll angle exceeded the safe limit",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "attitude",
+        "query": "pitch limit exceeded",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "attitude",
+        "query": "the drone flipped over",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "attitude",
+        "query": "aircraft tilted too far and lost control",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "attitude",
+        "query": "vehicle went upside down",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "gps",
+        "query": "GPS lost 3D fix",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "poor GPS accuracy",
+        "hard": false,
+        "p5": 0.6,
+        "p10": 0.4,
+        "ndcg10": 0.35623158861460086,
+        "mrr": 0.3333333333333333,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "no satellite lock",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.9363792118010481,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "gps",
+        "query": "position signal dropped out",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "gps",
+        "query": "navigation signal degraded",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "battery",
+        "query": "battery critically low",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "battery",
+        "query": "battery below 20 percent",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "battery",
+        "query": "running out of power",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.02702702702702703,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "battery",
+        "query": "the pack is almost empty",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.1,
+        "ndcg10": 0.22009176629808017,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "battery",
+        "query": "voltage sag under load",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.3,
+        "ndcg10": 0.36885567213865283,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "vibration",
+        "query": "high accelerometer vibration",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "vibration",
+        "query": "accelerometer clipping",
+        "hard": false,
+        "p5": 0.8,
+        "p10": 0.9,
+        "ndcg10": 0.8899541168509599,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "vibration",
+        "query": "airframe shaking violently",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.6,
+        "ndcg10": 0.4611143078171934,
+        "mrr": 0.3333333333333333,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "vibration",
+        "query": "the frame is resonating",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "vibration",
+        "query": "rough rattling during flight",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "estimator",
+        "query": "estimator rejecting measurements",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.3
+      },
+      {
+        "concept": "estimator",
+        "query": "EKF fault",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.4
+      },
+      {
+        "concept": "estimator",
+        "query": "state estimation unhealthy",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.7,
+        "ndcg10": 0.6563033086078545,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "estimator",
+        "query": "sensor fusion disagreement",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.3,
+        "ndcg10": 0.39375843764607193,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "estimator",
+        "query": "navigation filter reset",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.6,
+        "ndcg10": 0.4800032020044255,
+        "mrr": 0.3333333333333333,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "failsafe",
+        "query": "failsafe activated",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "failsafe",
+        "query": "return to launch triggered",
+        "hard": false,
+        "p5": 0.0,
+        "p10": 0.1,
+        "ndcg10": 0.06625422345438903,
+        "mrr": 0.1111111111111111,
+        "miss": 0.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "failsafe",
+        "query": "autopilot took over automatically",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "failsafe",
+        "query": "emergency protection kicked in",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.07692307692307693,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "failsafe",
+        "query": "safety fallback engaged",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "takeoff",
+        "query": "vehicle took off",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "takeoff",
+        "query": "left the ground",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.029411764705882353,
+        "miss": 1.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "takeoff",
+        "query": "lift off",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "takeoff",
+        "query": "became airborne",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "landing",
+        "query": "vehicle landed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.9363792118010481,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "landing",
+        "query": "touched down",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "landing",
+        "query": "came back to the ground",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.043478260869565216,
+        "miss": 1.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "landing",
+        "query": "touchdown at the end of the flight",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "arming",
+        "query": "motors armed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "arming",
+        "query": "motors disarmed",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 0.9,
+        "ndcg10": 0.933745776545611,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "arming",
+        "query": "propellers spun up before flight",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.0,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "arming",
+        "query": "power to the motors was cut after landing",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.1,
+        "ndcg10": 0.07839826897867533,
+        "mrr": 0.16666666666666666,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "mode",
+        "query": "flight mode changed",
+        "hard": false,
+        "p5": 0.8,
+        "p10": 0.9,
+        "ndcg10": 0.7799082337019198,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "mode",
+        "query": "switched to Position mode",
+        "hard": false,
+        "p5": 0.8,
+        "p10": 0.9,
+        "ndcg10": 0.7799082337019198,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.4
+      },
+      {
+        "concept": "mode",
+        "query": "pilot toggled between manual and assisted flying",
+        "hard": true,
+        "p5": 0.8,
+        "p10": 0.6,
+        "ndcg10": 0.6994739030813919,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "mode",
+        "query": "control mode switch",
+        "hard": true,
+        "p5": 0.8,
+        "p10": 0.9,
+        "ndcg10": 0.7799082337019198,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "mode",
+        "query": "autopilot mode transition",
+        "hard": true,
+        "p5": 0.8,
+        "p10": 0.9,
+        "ndcg10": 0.7799082337019198,
+        "mrr": 0.5,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "compass",
+        "query": "compass error",
+        "hard": false,
+        "p5": 0.2,
+        "p10": 0.1,
+        "ndcg10": 0.08514311764162098,
+        "mrr": 0.2,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "compass",
+        "query": "magnetometer inconsistent",
+        "hard": false,
+        "p5": 0.2,
+        "p10": 0.3,
+        "ndcg10": 0.24655055544758614,
+        "mrr": 0.25,
+        "miss": 0.0,
+        "flights10": 0.9
+      },
+      {
+        "concept": "compass",
+        "query": "heading sensor problem",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.058823529411764705,
+        "miss": 1.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "compass",
+        "query": "magnetic interference",
+        "hard": true,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 1.0
+      },
+      {
+        "concept": "sensor",
+        "query": "barometer fault",
+        "hard": false,
+        "p5": 0.0,
+        "p10": 0.2,
+        "ndcg10": 0.14201905717762703,
+        "mrr": 0.16666666666666666,
+        "miss": 0.0,
+        "flights10": 0.5
+      },
+      {
+        "concept": "sensor",
+        "query": "gyro unhealthy",
+        "hard": false,
+        "p5": 0.6,
+        "p10": 0.4,
+        "ndcg10": 0.522495596791931,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "sensor",
+        "query": "altitude sensor problem",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.08333333333333333,
+        "miss": 1.0,
+        "flights10": 0.3
+      },
+      {
+        "concept": "sensor",
+        "query": "inertial sensor issue",
+        "hard": true,
+        "p5": 0.4,
+        "p10": 0.4,
+        "ndcg10": 0.456899187845258,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.8
+      },
+      {
+        "concept": "rc",
+        "query": "manual control lost",
+        "hard": false,
+        "p5": 1.0,
+        "p10": 1.0,
+        "ndcg10": 1.0,
+        "mrr": 1.0,
+        "miss": 0.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "rc",
+        "query": "RC link lost",
+        "hard": false,
+        "p5": 0.0,
+        "p10": 0.1,
+        "ndcg10": 0.06362078819895171,
+        "mrr": 0.1,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "rc",
+        "query": "radio signal dropped",
+        "hard": true,
+        "p5": 0.2,
+        "p10": 0.3,
+        "ndcg10": 0.2329726085570736,
+        "mrr": 0.2,
+        "miss": 0.0,
+        "flights10": 0.7
+      },
+      {
+        "concept": "rc",
+        "query": "remote controller disconnected",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.0,
+        "ndcg10": 0.0,
+        "mrr": 0.09090909090909091,
+        "miss": 1.0,
+        "flights10": 0.6
+      },
+      {
+        "concept": "rc",
+        "query": "lost contact with the pilot's transmitter",
+        "hard": true,
+        "p5": 0.0,
+        "p10": 0.1,
+        "ndcg10": 0.06362078819895171,
+        "mrr": 0.1,
+        "miss": 0.0,
+        "flights10": 0.7
+      }
+    ]
+  },
+  "paired_ndcg10_rrf_minus_vector": {
+    "mean": -0.07739282094018728,
+    "lo": -0.14198900545006324,
+    "hi": -0.022013384917254464
+  },
+  "paired_ndcg10_hybrid_minus_vector": {
+    "mean": -3.772656456688672e-05,
+    "lo": -0.012612527194231575,
+    "hi": 0.012399469109082236
+  },
+  "paired_ndcg10_hybrid_minus_rrf": {
+    "mean": 0.07735509437562038,
+    "lo": 0.026717076339784943,
+    "hi": 0.13607076082735994
+  },
+  "paired_ndcg10_hybrid_minus_fts": {
+    "mean": 0.21824392925288846,
+    "lo": 0.13728049205158557,
+    "hi": 0.30548296428108845
+  },
+  "fusion_weights": {
+    "0.0": 0.6995057826132705,
+    "0.1": 0.7007003648162641,
+    "0.25": 0.6994680560487037,
+    "0.5": 0.6924941088517231,
+    "1.0": 0.6221129616730833
+  },
+  "loco": {
+    "mean": 0.6947098739658876,
+    "lo": 0.5929889025090834,
+    "hi": 0.7916917334661565,
+    "chosen": {
+      "motor": 0.1,
+      "attitude": 0.1,
+      "gps": 0.1,
+      "battery": 0.1,
+      "vibration": 0.1,
+      "estimator": 0.25,
+      "failsafe": 0.1,
+      "takeoff": 0.1,
+      "landing": 0.1,
+      "arming": 0.1,
+      "mode": 0.1,
+      "compass": 0.25,
+      "sensor": 0.1,
+      "rc": 0.0
+    }
+  },
+  "human": [
+    {
+      "label": "error label Vibration",
+      "query": "excessive vibration",
+      "labelled": 5,
+      "top10": 0,
+      "top20": 1,
+      "median_rank": 52.0,
+      "never": 1,
+      "flights_ranked": 212
+    },
+    {
+      "label": "error label Component-failure",
+      "query": "motor or component failure",
+      "labelled": 1,
+      "top10": 0,
+      "top20": 0,
+      "median_rank": 80.0,
+      "never": 0,
+      "flights_ranked": 277
+    },
+    {
+      "label": "error label Sensor-error",
+      "query": "sensor fault, unhealthy sensor",
+      "labelled": 1,
+      "top10": 0,
+      "top20": 0,
+      "median_rank": 54.0,
+      "never": 0,
+      "flights_ranked": 189
+    },
+    {
+      "label": "feedback mentions crash",
+      "query": "vehicle crashed and lost control",
+      "labelled": 7,
+      "top10": 2,
+      "top20": 2,
+      "median_rank": 141.0,
+      "never": 1,
+      "flights_ranked": 278
+    }
+  ]
+}
