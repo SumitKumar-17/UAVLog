@@ -34,6 +34,7 @@ ROWS = pg.execute("SELECT count(*) FROM telemetry").fetchone()[0]
 print(f"{ROWS:,} telemetry rows", flush=True)
 
 duck = duckdb.connect()
+duck.execute(f"SET home_directory = '{a.workdir}'")  # the container user has no home directory; extensions and caches go here
 duck.execute(f"SET threads = {a.threads}; SET memory_limit = '4GB'; SET temp_directory = '{a.workdir}/tmp'")
 export_s = None
 if not os.path.exists(PQ):
