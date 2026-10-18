@@ -16,6 +16,10 @@ cp .env.example .env        # set OPENAI_API_KEY (and OPENAI_API_BASE if not the
 Every stage is idempotent and resumable, so re-running is always safe. Stages can be run one at a time:
 `up init index select fetch enqueue ingest events compress size status failed`.
 
+## Web app
+
+`docker compose up -d web` serves the app on http://localhost:3000 (Next.js 16; the browser only talks to this origin and `/api/*` is proxied to the API). Pages: Overview, Flights, a flight page with synchronized charts, Search, Database. `./bin/shot / home` takes a screenshot (light or dark, any width) into `docs/screens/`.
+
 ## API
 
 `docker compose up -d api` serves the API on http://localhost:8000 (interactive docs at `/docs`). Try
