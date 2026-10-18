@@ -124,3 +124,5 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font-sans
 .u-legend .u-label { color: var(--ink-2); }
 .u-select { background: color-mix(in srgb, var(--route) 14%, transparent) !important; }
 .u-cursor-x { border-right: 1px solid var(--route) !important; }
+.u-legend .u-series:has(.u-value:empty) .u-value { display: none; }
+.u-legend .u-series:first-child:has(.u-value:empty) { display: none; }
