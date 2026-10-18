@@ -135,3 +135,35 @@ EVENTS = {
     "imbalanced_prop_detected": ("Failure detector reported an imbalanced propeller", "motor_imbalance"),
     "attitude_limit_exceeded": ("Roll or pitch exceeded the failure-detector limit", "attitude_loss"),
 }
+
+# ArduPilot (MAVLink telemetry) -> canonical signals: (message, field, vendor unit, signal, scale, offset, note).
+# The note records every semantic caveat. Quantities whose meaning differs between autopilots are NOT mapped (see ARDUPILOT_UNMAPPED).
+RAD2DEG = 57.29577951308232
+ARDUPILOT_FIELDS = [
+    ("ATTITUDE", "roll", "rad", "attitude.roll", RAD2DEG, 0, "radians to degrees"),
+    ("ATTITUDE", "pitch", "rad", "attitude.pitch", RAD2DEG, 0, "radians to degrees"),
+    ("ATTITUDE", "yaw", "rad", "attitude.yaw", RAD2DEG, 0, "radians to degrees, range -180 to 180"),
+    ("GPS_RAW_INT", "lat", "degE7", "gps.lat", 1e-7, 0, "degrees times 1e7; 0 means no fix and is dropped"),
+    ("GPS_RAW_INT", "lon", "degE7", "gps.lon", 1e-7, 0, "degrees times 1e7; 0 means no fix and is dropped"),
+    ("GPS_RAW_INT", "alt", "mm", "gps.alt_msl", 0.001, 0, "millimetres to metres, above mean sea level"),
+    ("GPS_RAW_INT", "fix_type", "enum", "gps.fix_type", 1, 0, "the same MAVLink enum PX4 uses (3 is a 3D fix)"),
+    ("GPS_RAW_INT", "satellites_visible", "count", "gps.satellites", 1, 0, "satellites VISIBLE; PX4 reports satellites USED, so counts run slightly higher; 255 means unknown and is dropped"),
+    ("VFR_HUD", "groundspeed", "m/s", "gps.speed", 1, 0, "ground speed from the navigation filter; PX4 reports GNSS speed"),
+    ("LOCAL_POSITION_NED", "x", "m", "position.x", 1, 0, "local north, relative to home"),
+    ("LOCAL_POSITION_NED", "y", "m", "position.y", 1, 0, "local east, relative to home"),
+    ("LOCAL_POSITION_NED", "z", "m", "position.z", 1, 0, "local down, relative to home"),
+    ("LOCAL_POSITION_NED", "vx", "m/s", "velocity.x", 1, 0, "north"),
+    ("LOCAL_POSITION_NED", "vy", "m/s", "velocity.y", 1, 0, "east"),
+    ("LOCAL_POSITION_NED", "vz", "m/s", "velocity.z", 1, 0, "down"),
+    ("SYS_STATUS", "voltage_battery", "mV", "battery.voltage", 0.001, 0, "millivolts to volts; 0 and 65535 mean unknown and are dropped"),
+    ("SYS_STATUS", "current_battery", "cA", "battery.current", 0.01, 0, "centiamps to amps; -1 means unknown and is dropped"),
+    ("SYS_STATUS", "battery_remaining", "%", "battery.remaining", 1, 0, "percent; -1 means unknown and is dropped"),
+]
+# Deliberately not mapped, with the reason (shown in docs/ontology-coverage.md):
+ARDUPILOT_UNMAPPED = {
+    "vibration.accel": "PX4 logs a high-pass filtered acceleration metric; ArduPilot's VIBRATION message gives a per-axis standard deviation. Different quantities.",
+    "motor.output_1..4": "ArduPilot outputs are servo PWM whose function depends on SERVO_FUNCTION parameters; on a VTOL servos 1 and 2 are control surfaces, not motors.",
+    "ekf.*_test_ratio": "ArduPilot's EKF_STATUS_REPORT variances are not documented as the innovation test ratios PX4 logs.",
+    "baro.altitude": "VFR_HUD altitude is the fused MSL altitude, not a barometric reading.",
+    "mode.nav_state": "ArduPilot custom_mode is a vehicle-specific enum (Plane, Copter and Rover differ); it needs a value map, not a scale and offset.",
+}

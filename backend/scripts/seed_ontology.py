@@ -3,7 +3,7 @@ import psycopg
 
 from app.config import settings
 from app.ontology.seed_data import (
-    EVENTS, FAILURE_MODES, INDICATES, PX4_HOT_FIELDS, SIGNALS, SUBSYSTEMS,
+    ARDUPILOT_FIELDS, EVENTS, FAILURE_MODES, INDICATES, PX4_HOT_FIELDS, SIGNALS, SUBSYSTEMS,
 )
 
 with psycopg.connect(settings.dsn) as conn, conn.cursor() as cur:
@@ -52,6 +52,18 @@ with psycopg.connect(settings.dsn) as conn, conn.cursor() as cur:
             """INSERT INTO field_mapping (vendor_field_id, concept_id, scale, "offset") VALUES (%s,%s,%s,%s)
                ON CONFLICT (vendor_field_id, concept_id) DO UPDATE SET scale=EXCLUDED.scale, "offset"=EXCLUDED."offset" """,
             (vf, ids[sig], scale, offset),
+        )
+    for topic, field, unit, sig, scale, offset, note in ARDUPILOT_FIELDS:
+        cur.execute(
+            """INSERT INTO vendor_field (autopilot, topic, field, unit) VALUES ('ardupilot',%s,%s,%s)
+               ON CONFLICT (autopilot, topic, field) DO UPDATE SET unit=EXCLUDED.unit RETURNING id""",
+            (topic, field, unit),
+        )
+        vf = cur.fetchone()[0]
+        cur.execute(
+            """INSERT INTO field_mapping (vendor_field_id, concept_id, scale, "offset", note) VALUES (%s,%s,%s,%s,%s)
+               ON CONFLICT (vendor_field_id, concept_id) DO UPDATE SET scale=EXCLUDED.scale, "offset"=EXCLUDED."offset", note=EXCLUDED.note""",
+            (vf, ids[sig], scale, offset, note),
         )
     conn.commit()
     cur.execute("SELECT kind, count(*) FROM concept GROUP BY kind ORDER BY kind")
