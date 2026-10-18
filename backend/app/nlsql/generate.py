@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from app.config import settings
 from app.llm import LLMClient
 from app.nlsql import execute, guard
-from app.nlsql.schema import RAW_SCHEMA, semantic_schema
+from app.nlsql.schema import RAW_DOCS_SCHEMA, RAW_SCHEMA, semantic_schema
 
 RULES_SEMANTIC = """You answer questions about a corpus of UAV (drone) flight logs by writing ONE PostgreSQL SELECT query.
 Use only the views below. Rules:
@@ -16,15 +16,20 @@ Use only the views below. Rules:
 - Times are seconds since the log started (start_s, t_s). Join views on flight_id.
 - To compare or filter flights by a signal's level, use semantic.signal_summary (fast). semantic.telemetry has about 70 million rows: only query it with a flight_id AND signal filter.
 - Event kinds are listed in the events.kind comment. Search free text in events.description with ILIKE.
-- Prefer counting DISTINCT flight_id when asked how many flights.
+- Read the question literally: 'how many events' counts events with count(*); 'how many flights' counts flights with count(DISTINCT flight_id).
 - To count telemetry samples, use SUM(samples) from semantic.signal_summary (optionally WHERE signal = ...); never count rows of semantic.telemetry across flights.
 - Only reply CANNOT_ANSWER if no view holds the information at all (for example weather or pilots). If a view can answer it, even indirectly, write the query. Use signal_summary whenever the question spans many flights.
 - If the views cannot answer the question, reply with exactly: -- CANNOT_ANSWER: <short reason>"""
 
 RULES_RAW = """You answer questions about a corpus of UAV (drone) flight logs by writing ONE PostgreSQL SELECT query.
 Use only the tables below. Reply with only the SQL, in one ```sql block. Telemetry values are stored per vendor field; mapping
-to canonical signals goes through field_mapping and concept (kind = 'signal'). If the tables cannot answer, reply with exactly:
+to canonical signals goes through field_mapping and concept (kind = 'signal'). Read the question literally: 'how many events' counts events with count(*); 'how many flights' counts flights with count(DISTINCT flight_id). If the tables cannot answer, reply with exactly:
 -- CANNOT_ANSWER: <short reason>"""
+
+RAW_EXAMPLES = [
+    ("How many flights have at least one critical event?", "SELECT count(DISTINCT flight_id) FROM public.event WHERE severity = 2"),
+    ("Which boards flew longest on average?", "SELECT metadata->>'sys_hw' AS board, round(avg(duration_s)::numeric, 1) AS avg_seconds FROM public.flight GROUP BY 1 ORDER BY avg_seconds DESC LIMIT 5"),
+]
 
 EXAMPLES = [
     ("How many flights have at least one critical event?", "SELECT count(DISTINCT flight_id) FROM semantic.events WHERE severity = 2"),
@@ -65,12 +70,12 @@ def ask(pool, llm: LLMClient, question: str, mode: str = "semantic", explain: bo
     ans = Answer(question=question)
     policy = guard.Policy.semantic() if mode == "semantic" else guard.Policy.raw()
     with pool.connection() as c:
-        schema = semantic_schema(c) if mode == "semantic" else RAW_SCHEMA
+        schema = semantic_schema(c) if mode == "semantic" else RAW_DOCS_SCHEMA if mode == "raw_docs" else RAW_SCHEMA
     system = (RULES_SEMANTIC if mode == "semantic" else RULES_RAW) + "\n\n" + schema
     messages = [{"role": "system", "content": system}]
-    if mode == "semantic":
-        for q, s in EXAMPLES:
-            messages += [{"role": "user", "content": q}, {"role": "assistant", "content": f"```sql\n{s}\n```"}]
+    shots = EXAMPLES if mode == "semantic" else RAW_EXAMPLES if mode == "raw_docs" else []  # plain raw: a naive text-to-SQL setup
+    for q, s in shots:
+        messages += [{"role": "user", "content": q}, {"role": "assistant", "content": f"```sql\n{s}\n```"}]
     messages.append({"role": "user", "content": question})
 
     for attempt in range(max_repairs + 1):
