@@ -11,6 +11,8 @@ Background research (read before making design decisions): `research/01-datasets
 - **Everything runs in Docker** (db, backend, workers, web, benchmarks, simulators). No host installs beyond Docker.
 - **Develop on a subset** locally (hundreds of logs). Later the user will provide an **SSH machine** for the full-scale download, ingest and benchmark run. So every data volume, scale factor and path must be configurable, and the full run must be one documented command.
 - **Git:** commit continuously in small, single-purpose commits with short imperative messages, so the history stays clean. Never commit `.env`, `data/` or secrets. If a new `.env` key is needed, tell the user (they will provide it) and add it to `.env.example`.
+- **Pipelines must be built to scale and to survive failure** (the data will grow from 300 to 478k logs on another machine). Every batch job is: idempotent; tracked in a Postgres job table (status, attempts, last error); claimed with `FOR UPDATE SKIP LOCKED` so it can run concurrently; failure-isolated (one bad item never stops the run); retried automatically and recoverable after crashes (stale-lease reclaim); resumable without redoing finished work; atomic per item (data and job status commit together); and expandable by enqueueing more items, not by changing code. Follow the pattern in `backend/scripts/enqueue.py` and `ingest.py`.
+- **Never delete or reset data or database rows without first checking what is in them** (counts, who/what created it). Prefer targeted deletes over wiping tables or directories.
 - **Format is ours:** no prescribed report or architecture format. Aim to be the best presentation in the class: original architecture diagrams, a strong live demo, a rigorous report.
 
 ## Architecture
