@@ -1,7 +1,7 @@
 """Adversarial tests for the NL-to-SQL guard. Run: docker compose exec backend python -m unittest discover -s tests -v"""
 import unittest
 
-from app.nlsql.guard import MAX_ROWS, GuardError, Policy, check
+from app.nlsql.guard import FETCH_LIMIT, GuardError, Policy, check
 
 MUST_REFUSE = {
     "drop": "DROP TABLE flight",
@@ -87,13 +87,13 @@ class GuardTests(unittest.TestCase):
     def test_qualifies_tables_and_adds_limit(self):
         r = check("SELECT * FROM flights")
         self.assertIn("semantic.flights", r.sql)
-        self.assertTrue(r.sql.endswith(f"LIMIT {MAX_ROWS}"))
+        self.assertTrue(r.sql.endswith(f"LIMIT {FETCH_LIMIT}"))
 
     def test_caps_large_and_computed_limits(self):
         for q in ("SELECT * FROM flights LIMIT 99999999", "SELECT * FROM flights LIMIT 100 + 100000"):
             with self.subTest(q):
                 r = check(q)
-                self.assertIn(f"LIMIT {MAX_ROWS}", r.sql)
+                self.assertIn(f"LIMIT {FETCH_LIMIT}", r.sql)
 
     def test_keeps_small_limit(self):
         self.assertTrue(check("SELECT * FROM flights LIMIT 5").sql.endswith("LIMIT 5"))
