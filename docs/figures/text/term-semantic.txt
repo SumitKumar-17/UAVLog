@@ -1,0 +1,11 @@
+uavlog=# -- the documented semantic layer (view comments are the model's schema description)
+      view      |                                comment                                 
+----------------+------------------------------------------------------------------------
+ events         | Things that happened during a flight: mode changes, arming, takeoff an
+ flights        | One row per flight (a PX4 flight log from Flight Review).
+ ontology       | How concepts relate: signal part_of subsystem; signal or event indicat
+ signal_summary | Lowest, highest and mean value of every signal in every flight. Use th
+ signals        | The canonical telemetry signals (autopilot-independent names).
+ telemetry      | Raw time series, about 70 million rows. ALWAYS filter by flight_id and
+(6 rows)
+

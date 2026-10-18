@@ -1,0 +1,6 @@
+docker compose ps
+SERVICE   IMAGE                           STATUS                 PORTS
+api       uavlog-app                      Up About an hour       0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+backend   uavlog-app                      Up About an hour       
+db        timescale/timescaledb-ha:pg17   Up 3 hours (healthy)   8008/tcp, 8081/tcp, 0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+web       node:24                         Up 4 hours             0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp

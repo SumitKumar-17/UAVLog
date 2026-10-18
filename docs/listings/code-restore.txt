@@ -1,0 +1,18 @@
+  say "creating database $new and restoring (TimescaleDB pre/post restore procedure)"
+  psqlx -d postgres -c "CREATE DATABASE \"$new\""
+  psqlx -d "$new" -c "DO \$\$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='uav_reader') THEN CREATE ROLE uav_reader NOLOGIN; END IF;
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='uav_reader_raw') THEN CREATE ROLE uav_reader_raw NOLOGIN; END IF; END \$\$;
+    CREATE EXTENSION IF NOT EXISTS timescaledb; SELECT timescaledb_pre_restore();" >/dev/null
+  local log="$work/restore.log"
+  dbx pg_restore -U "$POSTGRES_USER" -d "$new" --no-owner < "$work/db.dump" 2> "$log" || true
+  psqlx -d "$new" -c "SELECT timescaledb_post_restore();" >/dev/null
+  local bad; bad=$(grep -i '^pg_restore: error' "$log" | grep -vi 'already exists' || true)
+  if [ -n "$bad" ]; then echo "$bad" | head -10 >&2; die "restore reported errors (full log: $log); the live database was not touched. Drop the partial copy with: docker compose exec db psql -U $POSTGRES_USER -d postgres -c 'DROP DATABASE \"$new\"'"; fi
+  psqlx -d "$new" -c "GRANT uav_reader TO CURRENT_USER; GRANT uav_reader_raw TO CURRENT_USER; ANALYZE;" >/dev/null 2>&1 || true
+
+  say "verifying the restored copy against the manifest"
+  local mism=0 key
+  for key in flights events events_embedded telemetry_rows; do
+    local want got sqlq
+    want=$(grep -o "\"$key\" : [0-9]*" "$work/manifest.json" | grep -o '[0-9]*$' | head -1)

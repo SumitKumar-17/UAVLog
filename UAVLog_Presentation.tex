@@ -5,6 +5,10 @@
 \usepackage{lmodern}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{listings}
+\usepackage{pgfplots}
+\usepackage{etoolbox}
+\pgfplotsset{compat=1.16}
 \graphicspath{{docs/figures/}{docs/screens/}}
 
 \setbeamercolor{normal text}{fg=black,bg=white}
@@ -17,10 +21,19 @@
 \setbeamerfont{itemize/enumerate subbody}{size=\scriptsize}
 \setbeamerfont{frametitle}{size=\large,series=\bfseries}
 \AtBeginEnvironment{tabular}{\footnotesize}
-\usepackage{etoolbox}
 \newcommand{\code}[1]{\texttt{\footnotesize #1}}
 \newcommand{\fig}[2]{\includegraphics[#1]{#2}}
 \renewcommand{\arraystretch}{1.12}
+
+\lstdefinestyle{code}{basicstyle=\fontsize{7.2}{8.6}\selectfont\ttfamily,breaklines=true,breakatwhitespace=false,
+  frame=single,rulecolor=\color{black!40},numbers=left,numberstyle=\tiny\color{black!55},numbersep=5pt,
+  showstringspaces=false,columns=fullflexible,keepspaces=true,xleftmargin=1.6em,framexleftmargin=1.4em,aboveskip=0pt,belowskip=0pt}
+\lstdefinestyle{term}{style=code,numbers=none,xleftmargin=0pt,framexleftmargin=0pt,basicstyle=\fontsize{7}{8.3}\selectfont\ttfamily}
+% a source excerpt, a terminal capture, and a slide made of one of each
+\newcommand{\listing}[1]{\lstinputlisting[style=code,firstnumber=1]{docs/listings/#1.txt}}
+\newcommand{\terminal}[1]{\lstinputlisting[style=term]{docs/listings/#1.txt}}
+\newcommand{\listingr}[3]{\lstinputlisting[style=code,firstline=#2,lastline=#3,firstnumber=#2]{docs/listings/#1.txt}}
+\newcommand{\terminalr}[3]{\lstinputlisting[style=term,firstline=#2,lastline=#3]{docs/listings/#1.txt}}
 
 \title{Semantic Log Analytics for UAV Flight Logs}
 \subtitle{Treating flight logs as a database problem}
@@ -28,240 +41,981 @@
 \institute{Advanced Database Management Systems, term project}
 \date{\footnotesize github.com/SumitKumar-17/UAVLog}
 
+\newcommand{\pgfaxis}[1]{\begin{axis}[width=\linewidth,height=0.5\textheight,#1,grid=major,grid style={black!12},tick label style={font=\scriptsize},label style={font=\footnotesize},legend style={font=\tiny,at={(0.5,-0.28)},anchor=north,legend columns=3},cycle list={{blue!70!black,mark=*},{red!75!black,mark=square*},{green!45!black,mark=triangle*},{orange!85!black,mark=diamond*},{violet,mark=pentagon*}},every axis plot/.append style={thick,mark size=1.6pt}]}
+
 \begin{document}
 
-% 1 -------------------------------------------------------------
-\begin{frame}[plain]
-  \titlepage
-\end{frame}
+\begin{frame}[plain]\titlepage\end{frame}
 
-% 2 -------------------------------------------------------------
-\begin{frame}[shrink=5]{Motivation and problem statement}
+% =============================================================== 1. problem
+\begin{frame}[shrink=5]{Motivation: flight logs are a database problem}
 \begin{columns}[T]
 \begin{column}{0.49\textwidth}
-\begin{block}{Why flight logs are hard}
+\begin{block}{Three kinds of data at once}
 \begin{itemize}
-  \item High-rate time series: 300 PX4 flights hold \textbf{70.7 M} samples
-  \item Free text: warnings, failure flags, pilot notes (3,401 events)
-  \item Vendor dialects: PX4 and ArduPilot name the same quantity differently
-  \item Tools plot \textbf{one log at a time}; people ask \emph{``which flights lost a motor?''}
+  \item \textbf{Time series}: 300 PX4 flights hold \textbf{70.7 M} telemetry samples
+  \item \textbf{Text}: 3,401 events (warnings, failure flags, mode changes)
+  \item \textbf{Vendor dialects}: PX4 and ArduPilot name the same quantity differently
 \end{itemize}
 \end{block}
 \end{column}
 \begin{column}{0.49\textwidth}
-\begin{block}{Problem statement and research questions}
+\begin{block}{What people need}
+\begin{itemize}
+  \item Questions across many flights, asked in words: \emph{``which flights lost a motor?''}
+  \item Existing tools plot \textbf{one log at a time}
+  \item Answers that are exact, explainable, and safe to run on the data
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Research questions and contributions}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Four questions, each answered by an experiment}
 \begin{itemize}
   \item \textbf{RQ1} How should high-rate telemetry be stored, and at what cost?
-  \item \textbf{RQ2} Which vector index and which filtering strategy retrieve events best?
-  \item \textbf{RQ3} Can a model write safe, correct SQL, and what does a semantic layer add?
-  \item \textbf{RQ4} Does the pipeline survive failure and scale to hundreds of thousands of logs?
+  \item \textbf{RQ2} Which vector index and filtering strategy retrieve events best?
+  \item \textbf{RQ3} Can a model write safe, correct SQL; what does a semantic layer add?
+  \item \textbf{RQ4} Do the event detectors find faults of known size?
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Contributions}
+\begin{itemize}
+  \item One PostgreSQL schema for telemetry, ontology, events and embeddings
+  \item A measured columnstore design and engine comparison
+  \item A self-routing hybrid search and a filtered-search study
+  \item A four-layer guarded NL-to-SQL with a measured evaluation
 \end{itemize}
 \end{block}
 \end{column}
 \end{columns}
 \end{frame}
 
-% 3 -------------------------------------------------------------
-\begin{frame}[shrink=5]{Background: the database building blocks}
+\begin{frame}[shrink=5]{Background: TimescaleDB}
 \begin{columns}[T]
 \begin{column}{0.49\textwidth}
-\begin{block}{TimescaleDB (time series)}
+\begin{block}{Concepts}
 \begin{itemize}
-  \item \textbf{Hypertable}: one logical table split into time \emph{chunks}
-  \item \textbf{Columnstore}: old chunks stored column-wise and compressed, grouped by \code{segmentby}
-  \item \textbf{Continuous aggregate}: incrementally maintained rollup (1-second min/max/mean)
+  \item \textbf{Hypertable}: one logical table cut into time \emph{chunks}
+  \item \textbf{Columnstore}: old chunks stored column-wise and compressed, grouped by \code{segmentby} and sorted by \code{orderby}
+  \item \textbf{Continuous aggregate}: incrementally maintained rollup (here min, max, mean per second)
 \end{itemize}
 \end{block}
 \end{column}
 \begin{column}{0.49\textwidth}
-\begin{block}{pgvector and pgvectorscale (similarity)}
+\begin{block}{Why it fits telemetry}
 \begin{itemize}
-  \item \textbf{HNSW}: layered proximity graph, fast approximate search
-  \item \textbf{IVFFlat}: cluster lists, probe the nearest few
-  \item \textbf{DiskANN}: compressed graph on disk (pgvectorscale)
-  \item Known pitfall: \textbf{filters apply after the index scan}, so filtered queries can under-return
+  \item Slowly changing sensor values compress to a few bytes
+  \item Queries for one signal of one flight read one compressed segment, not the table
+  \item Postgres features stay: SQL, joins, transactions, roles
 \end{itemize}
 \end{block}
 \end{column}
 \end{columns}
 \end{frame}
 
-% 4 -------------------------------------------------------------
-\begin{frame}[shrink=5]{The gap in existing work and the proposed architecture}
+\begin{frame}[shrink=5]{Background: vector search in Postgres}
 \begin{columns}[T]
-\begin{column}{0.4\textwidth}
-\begin{block}{Gap}
+\begin{column}{0.49\textwidth}
+\begin{block}{Index families}
 \begin{itemize}
-  \item Log viewers: one flight, no semantics, no text query
-  \item Time-series DBs: no ontology or vendor mapping
+  \item \textbf{HNSW}: layered proximity graph; hop toward the query
+  \item \textbf{IVFFlat}: sort vectors into clusters; probe the nearest few
+  \item \textbf{DiskANN} (pgvectorscale): compressed graph built for disk
+  \item Quality measure: \textbf{recall@k} against exact search
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{The filtering pitfall}
+\begin{itemize}
+  \item The index finds neighbours \textbf{first}; the SQL filter is applied \textbf{after}
+  \item A selective filter can leave fewer rows than requested
+  \item Remedies: iterative scan, exact sort, partial indexes, partitions (all measured here)
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{The gap and the architecture}
+\begin{columns}[T]
+\begin{column}{0.36\textwidth}
+\begin{block}{Gap in existing work}
+\begin{itemize}
+  \item Log viewers: one flight, no semantics
+  \item Time-series stores: no ontology or vendor mapping
   \item NL-to-SQL demos: rarely guarded or measured
   \item To our knowledge no published system combines all three over PX4 logs
 \end{itemize}
 \end{block}
 \end{column}
-\begin{column}{0.58\textwidth}
+\begin{column}{0.62\textwidth}
 \centering
-\fig{width=\textwidth,height=0.62\textheight,keepaspectratio}{diagram-architecture.png}\par
-{\scriptsize One PostgreSQL instance holds the time series, ontology, events and embeddings.}
+\fig{width=\textwidth,height=0.65\textheight,keepaspectratio}{diagram-architecture.png}
 \end{column}
 \end{columns}
 \end{frame}
 
-% 5 -------------------------------------------------------------
-\begin{frame}[shrink=5]{Core contribution 1: schema design}
+\begin{frame}[shrink=5]{The data}
 \begin{columns}[T]
-\begin{column}{0.5\textwidth}
-\centering
-\fig{width=\textwidth,height=0.42\textheight,keepaspectratio}{diagram-er.png}\par\vspace{0.3em}
-\fig{width=0.8\textwidth,height=0.3\textheight,keepaspectratio}{code-telemetry-ddl.png}
-\end{column}
-\begin{column}{0.48\textwidth}
-\begin{block}{Design decisions}
+\begin{column}{0.49\textwidth}
+\begin{block}{Corpus}
 \begin{itemize}
-  \item Narrow long format: a new signal adds rows, never columns
-  \item \code{telemetry} hypertable, 7-day chunks, 70.7 M rows
-  \item \code{vendor\_field} and \code{field\_mapping} carry scale, offset and a note
-  \item \code{event} holds text, a \code{vector(1536)} embedding and a generated \code{tsvector}
+  \item 300 flights chosen (seeded, stratified) from 478,918 public Flight Review logs; CC-BY
+  \item 8.75 GB of PX4 ULog files, parsed to a Parquet raw layer and the canonical telemetry table
+  \item 70,731,891 telemetry rows, 3,401 events
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Second autopilot}
+\begin{itemize}
+  \item An ArduPilot MAVLink log is ingested through the same ontology
+  \item It shows the vendor mapping at work: one canonical signal name for both autopilots
+  \item Gaps are documented, not guessed (see the semantic layer)
 \end{itemize}
 \end{block}
 \end{column}
 \end{columns}
 \end{frame}
 
-% 6 -------------------------------------------------------------
-\begin{frame}[shrink=5]{Core contribution 2: the semantic layer}
+% =============================================================== 2. schema
+\begin{frame}[shrink=5]{Relational schema}
+\centering
+\fig{width=0.86\textwidth,height=0.46\textheight,keepaspectratio}{diagram-er.png}\par\vspace{0.3em}
 \begin{columns}[T]
 \begin{column}{0.49\textwidth}
-\begin{block}{Ontology}
+\begin{itemize}
+  \item \code{flight}: one row per log, parsed metadata
+  \item \code{telemetry}: hypertable, one row per (time, flight, field)
+  \item \code{vendor\_field}, \code{field\_mapping}: source field $\to$ concept with scale and offset
+  \item \code{concept}, \code{concept\_relation}: ontology
+\end{itemize}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{itemize}
+  \item \code{event}: text, kind, time span, \code{vector(1536)}, generated \code{tsvector}
+  \item \code{flight\_signature}: \code{vector(32)} signal-shape embedding
+  \item \code{note}: investigation notes pinned to a time
+  \item \code{llm\_call}: every model call with tokens, cost, latency
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{DDL: the telemetry hypertable}
+\begin{block}{Narrow long format}
+A new signal adds rows, never columns, and a new autopilot needs no schema change; the ontology maps vendor names to \code{vendor\_field\_id}. Seven-day chunks. As a plain rowstore the \textbf{index (7.6 GB) was larger than the table (4.9 GB)}.
+\end{block}
+\vspace{0.4em}
+\listing{code-telemetry-ddl}
+\end{frame}
+
+\begin{frame}{Inspecting the hypertable: dimensions and columnstore settings}
+\begin{block}{Reading}
+One time dimension on \code{ts} with 7-day chunks, 134 chunks, columnstore enabled and segmented by flight and field, ordered by time.
+\end{block}
+\vspace{0.3em}
+\terminal{term-hypertable}
+\end{frame}
+
+\begin{frame}{Inspecting the hypertable: chunks}
+\begin{block}{Reading}
+All chunks are compressed. The earliest ranges (1970, 2005) come from logs with wrong device clocks; they are kept, in their own chunks, and the duration estimate ignores them.
+\end{block}
+\vspace{0.3em}
+\terminal{term-chunks}
+\end{frame}
+
+\begin{frame}{The event table, as the database reports it}
+\terminalr{term-event}{1}{22}
+\end{frame}
+
+\begin{frame}{Indexes on the search tables}
+\begin{block}{Reading}
+One HNSW index on event embeddings (13 MB), one GIN index on the generated \code{tsvector}, B-trees for flight, kind and time filters, and a small HNSW index on flight signatures.
+\end{block}
+\vspace{0.4em}
+\terminal{term-indexes}
+\end{frame}
+
+% =============================================================== 3. columnstore
+\begin{frame}{Columnstore DDL}
+\begin{block}{What it does}
+\code{segmentby = (flight\_id, vendor\_field\_id)} makes one compressed row group per signal of one flight; \code{orderby = ts} gives delta and run-length encodings long runs of similar values.
+\end{block}
+\vspace{0.4em}
+\listing{code-columnstore-ddl}
+\vspace{0.4em}
+\listing{code-compress}
+\vspace{0.3em}
+{\footnotesize Found by testing: rows inserted into a compressed chunk leave it \emph{partial}; the stage recompresses those too.}
+\end{frame}
+
+\begin{frame}[shrink=5]{Columnstore design experiment}
+\centering
+{\scriptsize 100 flights, 26.9 M rows, median of 7 warm runs. Q1 one signal of one flight, Q2 one signal across all flights, Q3 every signal of one flight, Q4 one signal in a 90-day window.}\par\vspace{0.3em}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+variant & size & Q1 & Q2 & Q3 & Q4\\
+\midrule
+rowstore + B-tree & 3,631 MB & 10.8 ms & 1,519 ms & 65 ms & 246 ms\\
+\textbf{segment (flight, signal), order ts} & \textbf{147 MB} & 12.3 & \textbf{16} & 10.8 & \textbf{2.7}\\
+segment flight only & 149 MB & 12.9 & 18.0 & 11.6 & 3.2\\
+segment signal only & 154 MB & 13.0 & 20.3 & 14.1 & 2.2\\
+no segmentby & 157 MB & 15.0 & 29.7 & 13.7 & 3.6\\
+1-day chunks & 150 MB & 16.3 & 15.3 & 12.3 & 3.4\\
+30-day chunks & 143 MB & 9.2 & 8.3 & 5.7 & 2.4\\
+\bottomrule
+\end{tabular}\par\vspace{0.5em}
+\begin{block}{Findings}
+\textbf{25$\times$ smaller, up to 95$\times$ faster} cross-flight queries. Design choices change size by under 10\%; chunk count and \code{segmentby} change cross-flight speed about 2$\times$.
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=5]{Storage at full size: 32 times smaller}
+\begin{columns}[T]
+\begin{column}{0.52\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[xbar,width=\linewidth,height=0.46\textheight,bar width=11pt,xmin=0,xmax=16500,symbolic y coords={DuckDB native,Parquet zstd,Columnstore,Rowstore + index},ytick=data,y dir=reverse,
+  nodes near coords,nodes near coords align={horizontal},every node near coord/.append style={font=\scriptsize},tick label style={font=\scriptsize},xlabel={MB for 70.7 M rows},label style={font=\footnotesize},xmajorgrids,grid style={black!12}]
+\addplot[fill=black!70] coordinates {(12459,Rowstore + index) (385,Columnstore) (392,Parquet zstd) (700,DuckDB native)};
+\end{axis}
+\end{tikzpicture}
+\end{column}
+\begin{column}{0.46\textwidth}
+\begin{block}{Reading}
+\begin{itemize}
+  \item 12,459 MB $\to$ \textbf{385 MB}: 176 $\to$ 5.4 bytes per row
+  \item Same query results as the Parquet source
+  \item Matches sorted, zstd Parquet; 1.8$\times$ smaller than DuckDB's file
+  \item Row-level ACID and live inserts remain
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{TimescaleDB against DuckDB: query latency}
+\centering
+{\scriptsize 70,731,891 rows, median of 5 warm runs, DuckDB with 4 threads (embedded; concurrency not measured)}\par\vspace{0.3em}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+query (p50, ms) & Timescale columnstore & DuckDB over Parquet & DuckDB native\\
+\midrule
+Q1 one signal, one flight, 1 s buckets & 25.4 & 25.3 & \textbf{4.9}\\
+Q2 one signal, all flights & 69.2 & 30.6 & \textbf{12.9}\\
+Q3 every signal of one flight & \textbf{18.7} & 45.7 & 22.5\\
+Q4 one signal, 90-day window & \textbf{3.8} & 28.4 & 4.5\\
+Q5 count and mean per signal, all data & 811.8 & 1,057.8 & \textbf{478.3}\\
+Q6 min/max/mean per flight and signal & \textbf{1,007.5} & 2,605.3 & 2,004.0\\
+\bottomrule
+\end{tabular}
+\end{frame}
+
+\begin{frame}[shrink=5]{TimescaleDB against DuckDB: loading and verdict}
+\begin{columns}[T]
+\begin{column}{0.47\textwidth}
+\begin{block}{Load throughput}
+\begin{tabular}{@{}lr@{}}
+\toprule
+path & rows/s\\
+\midrule
+Timescale \code{COPY} (uncompressed) & 286,792\\
+DuckDB row-by-row \code{INSERT} & 603\\
+DuckDB bulk insert from Parquet & 6,153,564\\
+DuckDB write to Parquet & 4,034,708\\
+\bottomrule
+\end{tabular}
+\end{block}
+\end{column}
+\begin{column}{0.51\textwidth}
+\begin{block}{Verdict}
+\begin{itemize}
+  \item DuckDB wins full scans (Q5) and point slices on its native file
+  \item The columnstore wins pruned access (Q3, Q4) and the whole-corpus summary (Q6)
+  \item Postgres adds concurrent writers, transactions, roles and vectors in the \textbf{same} engine
+  \item So DuckDB stays a comparator
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Loading: Arrow to CSV to \code{COPY}}
+\begin{block}{Why}
+Columns are canonicalised in Arrow (scale and offset from \code{field\_mapping}) and streamed as CSV into \code{COPY}: 287 k rows/s into a hypertable, one transaction per flight.
+\end{block}
+\vspace{0.4em}
+\listingr{code-copy}{1}{13}
+\end{frame}
+
+\begin{frame}{One query, from the Database page: how a signal is read}
+\begin{block}{Plan of a real query}
+Buffer hits only, a \texttt{ColumnarScan} over compressed chunks, aggregation into 1-second buckets: 8.4 ms for a 901-bucket envelope.
+\end{block}
+\vspace{0.3em}
+\terminalr{term-plan-envelope}{1}{24}
+\end{frame}
+
+% =============================================================== 4. semantic layer
+\begin{frame}[shrink=5]{The semantic layer}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Ontology in relational tables}
 \begin{itemize}
   \item \textbf{63 concepts, 55 relations}: 34 signals, 7 subsystems, 7 failure modes, 15 event kinds
   \item Signal $\to$ subsystem $\to$ failure mode $\to$ event, walked with recursive CTEs
-  \item Queries say \code{battery.voltage}, not the vendor field name
-\end{itemize}
-\end{block}
-\begin{block}{ArduPilot: a wrong mapping is worse than a gap}
-\begin{itemize}
-  \item Mapped: attitude, GPS, position, velocity, battery
-  \item Not mapped: vibration, motors, EKF, barometric altitude, mode
+  \item Each vendor field maps to a signal with \textbf{scale, offset, note}
+  \item Queries say \code{battery.voltage}, not the vendor field
 \end{itemize}
 \end{block}
 \end{column}
 \begin{column}{0.49\textwidth}
 \centering
-\fig{width=\textwidth,height=0.28\textheight,keepaspectratio}{code-semantic-view.png}\par\vspace{0.3em}
-\fig{width=\textwidth,height=0.4\textheight,keepaspectratio}{code-ardupilot-map.png}
+\fig{width=\textwidth,height=0.7\textheight,keepaspectratio}{ui-ontology.png}
 \end{column}
 \end{columns}
 \end{frame}
 
-% 7 -------------------------------------------------------------
-\begin{frame}[shrink=5]{Method 1: pipelines that survive failure}
+\begin{frame}{Documented semantic views}
+\begin{block}{The only objects the NL-to-SQL role can read}
+Six views (\code{flights}, \code{events}, \code{signals}, \code{signal\_summary}, \code{ontology}, \code{telemetry}); the comments are the documentation the model's prompt is built from.
+\end{block}
+\vspace{0.3em}
+\terminal{term-semantic}
+\end{frame}
+
+\begin{frame}{A semantic view definition}
+\begin{block}{Events joined to their concepts}
+The view resolves kind, severity and source names so the model never sees raw ids.
+\end{block}
+\vspace{0.3em}
+\listing{code-semantic-view}
+\end{frame}
+
+\begin{frame}[shrink=5]{ArduPilot mapping: a wrong mapping is worse than a gap}
+\begin{columns}[T]
+\begin{column}{0.4\textwidth}
+\begin{block}{Mapped}
+Attitude, GPS, position, velocity and battery (52 field mappings in total).
+\end{block}
+\begin{block}{Deliberately not mapped}
+Vibration, motor outputs, EKF ratios, barometric altitude and flight mode: they mean different things in the two systems.
+\end{block}
+\end{column}
+\begin{column}{0.58\textwidth}
+\listingr{code-ardupilot-map}{1}{9}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Events: three sources}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Sources}
+\begin{itemize}
+  \item Log transitions and warnings
+  \item The failure detector status flags
+  \item \textbf{Gaps-and-islands} rules over telemetry (window functions)
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Quality controls}
+\begin{itemize}
+  \item Rules fire only against a baseline in the same flight
+  \item Near-duplicate messages collapse: 3,846 $\to$ 3,401
+  \item Flight duration uses a robust estimate (one garbage timestamp once made a flight $10^{13}$ s long)
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\vspace{0.3em}
+\listing{code-islands}
+\end{frame}
+
+\begin{frame}[shrink=5]{Fault injection: do the detectors find faults of known size?}
+\begin{columns}[T]
+\begin{column}{0.56\textwidth}
+\begin{tikzpicture}
+\pgfaxis{xlabel={Seconds the fault is held},ylabel={Faults detected (\%)},xmode=log,xtick={1,2,3,5,10,20},xticklabels={1,2,3,5,10,20},ymin=-3,ymax=105}
+\addplot table[x=dur,y=rate] {docs/plots/inj_battery_crit.dat};\addlegendentry{battery low}
+\addplot table[x=dur,y=rate] {docs/plots/inj_gps_lost_3d_.dat};\addlegendentry{GPS lost}
+\addplot table[x=dur,y=rate] {docs/plots/inj_gps_accuracy.dat};\addlegendentry{GPS accuracy}
+\addplot table[x=dur,y=rate] {docs/plots/inj_high_vibrati.dat};\addlegendentry{vibration}
+\addplot table[x=dur,y=rate] {docs/plots/inj_estimator_re.dat};\addlegendentry{estimator}
+\end{axis}
+\end{tikzpicture}
+\end{column}
+\begin{column}{0.42\textwidth}
+\begin{block}{Reading (30 real flights, 1,043 variants)}
+\begin{itemize}
+  \item A constant fault is held at a random time; the unchanged rules look for the right event
+  \item Below each rule's minimum duration (2--3 s) detection is 0--7\%, by design
+  \item From 5 s, 90--100\% detected within about 1 s of onset
+  \item Controls: 23\% false alarms for battery low, 3--7\% for the others
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Fault injection: the table behind the chart}
+\centering
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+fault & min & 1 s & 2 s & 3 s & 5 s & 10 s & controls\\
+\midrule
+battery critically low & 3 s & 0.07 & 0.07 & 0.07 & 0.90 & 0.97 & 0.23\\
+GPS lost 3D fix & 2 s & 0.00 & 0.00 & 0.83 & 0.90 & 0.97 & 0.03\\
+GPS accuracy degraded & 3 s & 0.00 & 0.00 & 0.00 & 0.90 & 0.90 & 0.03\\
+high vibration & 3 s & 0.03 & 0.03 & 0.03 & 0.93 & 1.00 & 0.03\\
+estimator rejecting position & 2 s & 0.00 & 0.00 & 0.93 & 0.97 & 1.00 & 0.07\\
+\bottomrule
+\end{tabular}\par\vspace{0.5em}
+{\footnotesize Detection rate by fault duration; ``controls'' is the false-alarm rate on unmodified flights. The small detections below the minimum duration are matches elsewhere in the flight (onset error of $-36$ to $-200$ s), not real detections.}
+\end{frame}
+
+% =============================================================== 5. retrieval
+\begin{frame}[shrink=5]{Hybrid search: vector, full text, filters, fused by RRF}
+\begin{block}{Design}
+\begin{itemize}
+  \item Event text embedded (\code{text-embedding-3-small}, 1,536 dims) into \code{vector} with an HNSW index; full text is a generated \code{tsvector} with GIN
+  \item SQL filters: kind, flight, time, severity
+  \item \textbf{Reciprocal rank fusion} $\sum_i w_i/(k+\mathrm{rank}_i)$; default hybrid weights $(1.0, 0.1)$
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}{Hybrid search SQL}
+\begin{block}{One statement}
+Vector candidates, full-text candidates and SQL filters are ranked separately and fused by RRF inside the database.
+\end{block}
+\vspace{0.3em}
+\listingr{code-rrf-sql}{10}{26}
+\end{frame}
+
+\begin{frame}[shrink=5]{Search quality: the hybrid did not win}
+\begin{columns}[T]
+\begin{column}{0.54\textwidth}
+\begin{block}{nDCG@10, 65 concept queries (39 hard)}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+method & all & hard paraphrases\\
+\midrule
+vector only & \textbf{0.710} & 0.59\\
+vector + light full text (0.1) & \textbf{0.709} & 0.59\\
+plain RRF & 0.600 & 0.43\\
+full text only & 0.48 & 0.31\\
+\bottomrule
+\end{tabular}
+\end{block}
+\end{column}
+\begin{column}{0.44\textwidth}
+\begin{block}{Reading}
+\begin{itemize}
+  \item Plain fusion is significantly worse: paired $-0.109$, 95\% CI $[-0.172,-0.051]$
+  \item Ten exact-term lookups scored 1.000 for every method
+  \item Cosine distances sit in a narrow 0.40--0.60 band: no honest relevance cutoff
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Vector indexes at 100,000 vectors: recall against latency}
+\begin{columns}[T]
+\begin{column}{0.56\textwidth}
+\begin{tikzpicture}
+\pgfaxis{xlabel={Recall at 10},ylabel={Median latency (ms, log)},ymode=log,xmin=0.4,xmax=1.0}
+\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_hnsw_m_16_ef_constructio.dat};\addlegendentry{HNSW m=16}
+\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_hnsw_m_32_ef_constructio.dat};\addlegendentry{HNSW m=32}
+\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_ivfflat_lists_316_sqrt_n.dat};\addlegendentry{IVFFlat 316}
+\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_ivfflat_lists_100_n_1000.dat};\addlegendentry{IVFFlat 100}
+\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_diskann_pgvectorscale_de.dat};\addlegendentry{DiskANN}
+\end{axis}
+\end{tikzpicture}
+\end{column}
+\begin{column}{0.42\textwidth}
+\begin{block}{Reading (exact search: 362 ms)}
+\begin{itemize}
+  \item HNSW m=32 reaches 0.95 recall in 2.4 ms: over 100$\times$ faster than exact
+  \item Up and to the left is better; DiskANN never passes 0.74
+  \item 1,536 dimensions, 200 queries, top 10
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Vector indexes: build time, size and speed at a recall target}
+\centering
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+index (100,000 vectors) & build & size & fastest at recall $\ge$ 0.95 & $\ge$ 0.99\\
+\midrule
+HNSW m=16 & 56 s & 819 MB & 2.7 ms & not reached\\
+\textbf{HNSW m=32} & 149 s & 819 MB & \textbf{2.4 ms} & \textbf{3.2 ms}\\
+IVFFlat, 316 lists & \textbf{17 s} & 822 MB & 5.5 ms & 9.3 ms\\
+IVFFlat, 100 lists & 8.5 s & 820 MB & 8.4 ms & 14.8 ms\\
+DiskANN & 268 s & \textbf{68 MB} & not reached & not reached (max 0.74)\\
+\bottomrule
+\end{tabular}\par\vspace{0.5em}
+\begin{block}{Findings}
+IVFFlat builds 3--17$\times$ faster than HNSW; DiskANN is 12$\times$ smaller but loses recall on this data.
+\end{block}
+\end{frame}
+
+\begin{frame}[shrink=5]{Does data difficulty change the winner? (50,000 vectors)}
+\begin{columns}[T]
+\begin{column}{0.54\textwidth}
+\begin{block}{Fastest p50 at a recall target; same $N$, only the noise changes}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+index & RC10 & $\ge$ 0.95 & $\ge$ 0.99\\
+\midrule
+HNSW m=32, $\sigma$ 0.35 & 6.0 & 1.47 ms & 1.85 ms\\
+HNSW m=32, $\sigma$ 0.80 & 2.0 & 1.50 ms & 2.57 ms\\
+IVFFlat 224, $\sigma$ 0.35 & 6.0 & 3.93 ms & 3.93 ms\\
+IVFFlat 224, $\sigma$ 0.80 & 2.0 & 2.47 ms & 3.76 ms\\
+DiskANN, either $\sigma$ & 6.0 / 2.0 & not reached & not reached\\
+\bottomrule
+\end{tabular}
+\end{block}
+\end{column}
+\begin{column}{0.44\textwidth}
+\begin{block}{Reading}
+\begin{itemize}
+  \item RC10 is the relative contrast of the 10th neighbour; the real corpus is \textbf{20.5}, so both synthetic sets are harder
+  \item HNSW m=32 is fastest at 0.99 in both: the ranking is stable
+  \item DiskANN peaks at 0.85 and 0.89 recall
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Filtered search: post-filtering under-returns}
+\begin{columns}[T]
+\begin{column}{0.54\textwidth}
+\begin{tikzpicture}
+\pgfaxis{xlabel={Share of rows the filter keeps},ylabel={Rows returned (of 10)},xtick={0,1,2,3,4},xticklabels={0.01\%,0.1\%,1\%,10\%,50\%},ymin=-0.3,ymax=10.8}
+\addplot table[x=x,y=rows] {docs/plots/filter_post40.dat};\addlegendentry{post-filter ef 40}
+\addplot table[x=x,y=rows] {docs/plots/filter_post400.dat};\addlegendentry{post-filter ef 400}
+\addplot table[x=x,y=rows] {docs/plots/filter_iter.dat};\addlegendentry{iterative scan}
+\addplot table[x=x,y=rows] {docs/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
+\end{axis}
+\end{tikzpicture}
+\end{column}
+\begin{column}{0.44\textwidth}
+\begin{block}{Reading (100,000 vectors)}
+\begin{itemize}
+  \item Post-filter ef 40 returns \textbf{0.0} rows at 0.1\% and 4.1 at 10\%
+  \item Iterative scan fixes the row count, not base recall
+  \item Exact sort over a B-tree filter: 1.0 ms at 0.1\%, 55 ms at 10\%
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Filtered search: latency and the crossover}
+\begin{columns}[T]
+\begin{column}{0.54\textwidth}
+\begin{tikzpicture}
+\pgfaxis{xlabel={Share of rows the filter keeps},ylabel={Median latency (ms, log)},ymode=log,xtick={0,1,2,3,4},xticklabels={0.01\%,0.1\%,1\%,10\%,50\%}}
+\addplot table[x=x,y=p50] {docs/plots/filter_iter.dat};\addlegendentry{iterative scan}
+\addplot table[x=x,y=p50] {docs/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
+\end{axis}
+\end{tikzpicture}
+\end{column}
+\begin{column}{0.44\textwidth}
+\begin{block}{Crossover near 1,000 rows}
+\begin{itemize}
+  \item Selective filter: exact sort wins (few rows to sort)
+  \item Unselective filter: HNSW wins (exact sort touches 329 ms at 50\%)
+  \item This sets the router's threshold of about 1,500 rows
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{The planner picks wrong, so the search routes itself}
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
+\begin{block}{Observed}
+With both indexes present and a filter keeping 10\%, Postgres chose HNSW post-filtering: \textbf{4.0 rows of 10}, recall \textbf{0.37}, in 1.6 ms. Fast and wrong; the cost model cannot know it under-returns.
+\end{block}
+\begin{block}{The fix}
+Estimate the filtered row count with \code{EXPLAIN (FORMAT JSON)} on the filter alone. At about 1,500 rows or fewer, filter first and sort exactly; otherwise HNSW with iterative scan.
+\end{block}
+\end{column}
+\begin{column}{0.46\textwidth}
+\centering
+\fig{width=0.8\textwidth,height=0.8\textheight,keepaspectratio}{diagram-router.png}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Router code}
+\begin{block}{The decision}
+Estimated rows pick the exact path or the HNSW path; the chosen path and the estimate are returned with the result and displayed.
+\end{block}
+\vspace{0.3em}
+\listing{code-router-choice}
+\end{frame}
+
+\begin{frame}{Router code: estimating the filtered rows}
+\begin{block}{No count(*)}
+The estimate comes from the planner (\code{EXPLAIN (FORMAT JSON)}) rather than from counting, so the filtered rows are not scanned.
+\end{block}
+\vspace{0.3em}
+\listingr{code-router}{1}{8}
+\end{frame}
+
+\begin{frame}[shrink=5]{Filter correlated with the query: harmless}
+\begin{columns}[T]
+\begin{column}{0.55\textwidth}
+\begin{block}{Recall by strategy and kind frequency}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+strategy & common & medium & rare\\
+\midrule
+post-filter ef 40 & 0.92 & 0.66 & 1.00\\
+post-filter ef 400 & 0.99 & 0.95 & 1.00\\
+exact sort & 1.00 & 1.00 & 1.00\\
+partial HNSW per kind & 0.91 & 0.66 & 1.00\\
+list partitions + HNSW & 0.93 & 0.66 & 1.00\\
+DiskANN with labels & 0.77 & 0.46 & 1.00\\
+\bottomrule
+\end{tabular}
+\end{block}
+\end{column}
+\begin{column}{0.43\textwidth}
+\begin{block}{Reading}
+\begin{itemize}
+  \item Every variant returned 10 rows
+  \item Partial indexes and partitions added nothing at this size
+  \item Builds: HNSW 62 s, partial indexes 62 s in total, partitions 101 s, DiskANN with labels 621 s
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Vector search plan from the Database page}
+\begin{block}{Ten nearest events by meaning}
+An index scan on \code{event\_embedding\_hnsw}: 10 rows in 41 ms on a cold cache with buffer reads, from 3,401 events.
+\end{block}
+\vspace{0.3em}
+\terminal{term-plan-vector}
+\end{frame}
+
+% =============================================================== 6. NL2SQL
+\begin{frame}[shrink=5]{Natural-language SQL: four defences}
+\centering
+\fig{width=0.95\textwidth,height=0.3\textheight,keepaspectratio}{diagram-guard.png}\par\vspace{0.3em}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Layers 1 and 2}
+\begin{itemize}
+  \item \textbf{Guard} (\code{sqlglot}): one SELECT, table and function allow-lists; the SQL that runs is \textbf{rebuilt from the parse tree}
+  \item \textbf{Role} that reads only documented views
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Layers 3 and 4}
+\begin{itemize}
+  \item \textbf{Read-only transaction}, 8 s statement timeout
+  \item \textbf{Cost admission}: planner estimate must be under 100,000
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Guard code: statement checks}
+\begin{block}{What is rejected}
+Anything that is not a single SELECT; nested or recursive \code{WITH}; table-valued functions in \code{FROM}; catalog-qualified names.
+\end{block}
+\vspace{0.3em}
+\listingr{code-guard-1}{1}{14}
+\end{frame}
+
+\begin{frame}{Guard code: allow-lists and the rebuilt statement}
+\begin{block}{What is checked is what runs}
+Tables and functions must be on the allow-lists; a sentinel row limit is injected and the statement is regenerated from the parse tree.
+\end{block}
+\vspace{0.3em}
+\listingr{code-guard-2}{1}{18}
+\end{frame}
+
+\begin{frame}{Execution: role, read-only transaction, cost admission}
+\begin{block}{Order of events}
+Switch to the restricted role, open a read-only transaction with timeouts, \code{EXPLAIN} first and refuse when the planner estimate exceeds the limit.
+\end{block}
+\vspace{0.3em}
+\listingr{code-execute}{1}{20}
+\end{frame}
+
+\begin{frame}{The role boundary, tested in the running database}
+\begin{block}{Reading}
+The restricted role sees the 300 flights through the semantic view, is denied the base table, and is denied \code{pg\_read\_file}.
+\end{block}
+\vspace{0.3em}
+\terminal{term-role}
+\end{frame}
+
+\begin{frame}[shrink=5]{Hostile queries}
+\begin{columns}[T]
+\begin{column}{0.45\textwidth}
+\begin{block}{Results}
+\begin{itemize}
+  \item \textbf{46 hostile queries} refused, each for the intended reason
+  \item 18 legitimate queries still pass
+  \item Realistic questions plan under 5,000; a telemetry self-join plans at \textbf{515 million} and is refused
+  \item A fake model that obeys prompt injection is still stopped
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.53\textwidth}
+\listingr{code-hostile}{1}{14}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Does the semantic layer help NL-to-SQL?}
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\begin{tikzpicture}
+\begin{axis}[xbar,width=0.95\linewidth,height=0.4\textheight,bar width=12pt,xmin=0,xmax=1.15,enlarge y limits=0.3,symbolic y coords={Raw tables alone,Raw tables + same docs,Semantic views},ytick=data,yticklabel style={font=\tiny,text width=2cm,align=right},
+  nodes near coords,every node near coord/.append style={font=\scriptsize},tick label style={font=\scriptsize},xlabel={Strict accuracy, 27 questions},label style={font=\footnotesize},xmajorgrids,grid style={black!12}]
+\addplot[fill=black!70] coordinates {(0.26,Raw tables alone) (0.70,Raw tables + same docs) (0.89,Semantic views)};
+\end{axis}
+\end{tikzpicture}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{block}{Reading}
+\begin{itemize}
+  \item \textbf{Documentation is the big effect}: 0.26 $\to$ 0.70 (12 gained, 0 lost, $p=0.0005$)
+  \item The views add 0.19, \textbf{not significant} (6 to 1, $p=0.125$)
+  \item Without docs, 17 of 27 answers were confident and \textbf{wrong}
+  \item Never fabricated an answer to an unanswerable question
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{NL-to-SQL evaluation: protocol and honesty}
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\begin{block}{Protocol}
+\begin{itemize}
+  \item Dev set for prompt work; separate held-out set scored once per condition
+  \item Strict and lenient execution accuracy; paired sign tests
+  \item Model \code{gpt-4o-mini} behind an OpenAI-compatible client; prompt hashes saved
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{block}{Honesty note}
+The first run overstated the gap (0.65 vs 0.24): my comparison treated numbers as strings and my guard rejected a safe operator. Fixed, frozen, re-run with identical prompts; \textbf{both runs are kept}.
+\end{block}
+\end{column}
+\end{columns}
+\vspace{0.3em}
+\listing{code-gold}
+\end{frame}
+
+% =============================================================== 7. signatures + queue
+\begin{frame}[shrink=5]{Similar flights by behaviour: signal-shape signatures}
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\begin{block}{Method}
+\begin{itemize}
+  \item 145 statistical and spectral features over 30 signals, scaled
+  \item PCA to \textbf{32 dimensions} (86\% of the variance), stored as \code{vector(32)} with HNSW
+  \item Check: share of a flight's 5 nearest neighbours on the same board
+\end{itemize}
+\end{block}
+\begin{block}{Result}
+Chance 6.9\%; scaled features 25.3\%; 32-dimension signature 25.0\%. Compression to 32 dimensions loses nothing measurable.
+\end{block}
+\end{column}
+\begin{column}{0.48\textwidth}
+\listing{code-pca}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[shrink=5]{Concurrent work in the database: SKIP LOCKED job tables}
+\begin{columns}[T]
+\begin{column}{0.4\textwidth}
 \centering
 \fig{width=\textwidth,height=0.7\textheight,keepaspectratio}{diagram-queue.png}
 \end{column}
-\begin{column}{0.48\textwidth}
-\begin{block}{Job tables in Postgres}
-\begin{itemize}
-  \item Status, attempts, last error, lease time per item
-  \item Claimed with \code{FOR UPDATE SKIP LOCKED}: workers run concurrently
-  \item Idempotent, atomic per item, failure-isolated, stale leases reclaimed
-  \item Grow by enqueueing items, never by changing code
-\end{itemize}
+\begin{column}{0.58\textwidth}
+\begin{block}{Design}
+Each stage claims items with \code{FOR UPDATE SKIP LOCKED}; status, attempts and last error live in the row; data and status commit together, so a crash returns only that item to the queue. A \code{MATERIALIZED} CTE was needed: without it the planner claimed 52 rows for a limit of 25.
 \end{block}
+\listing{code-claim}
 \end{column}
 \end{columns}
 \end{frame}
 
-% 8 -------------------------------------------------------------
-\begin{frame}[shrink=5]{Method 2: hybrid search that routes itself}
-\begin{columns}[T]
-\begin{column}{0.5\textwidth}
-\begin{block}{Hybrid retrieval}
-\begin{itemize}
-  \item Vector (HNSW) + full text (GIN) + SQL filters
-  \item Fused by \textbf{reciprocal rank fusion}, weights (1.0, 0.1)
-  \item With a 10\% filter the planner chose HNSW post-filtering: \textbf{4 of 10 rows}, recall 0.37
-\end{itemize}
-\end{block}
-\begin{block}{The router}
-\begin{itemize}
-  \item Estimate filtered rows with \code{EXPLAIN} on the filter alone
-  \item $\le$ 1,500 rows: filter first, sort exactly; else HNSW with iterative scan
-\end{itemize}
-\end{block}
-\end{column}
-\begin{column}{0.47\textwidth}
+% =============================================================== 8. interface
+\begin{frame}{Interface: the flight explorer}
 \centering
-\fig{width=0.55\textwidth,height=0.75\textheight,keepaspectratio}{diagram-router.png}
-\end{column}
-\end{columns}
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-home.png}\par
+\vspace{0.2em}{\footnotesize Flights ranked by critical events, with the mode ribbon per flight; filters, free-text search and corpus summary.}
 \end{frame}
 
-% 9 -------------------------------------------------------------
-\begin{frame}[shrink=5]{Method 3: guarded natural-language SQL}
-\begin{columns}[T]
-\begin{column}{0.46\textwidth}
+\begin{frame}{Interface: one flight, overview}
 \centering
-\fig{width=\textwidth,height=0.25\textheight,keepaspectratio}{diagram-guard.png}\par\vspace{0.3em}
-\begin{block}{Four independent defences}
-\begin{itemize}
-  \item \textbf{Guard} (\code{sqlglot}): one SELECT, allow-lists, SQL rebuilt from the parse tree
-  \item \textbf{Role} that reads only documented views
-  \item \textbf{Read-only} transaction, 8 s timeout
-  \item \textbf{Cost admission}: planner estimate under 100,000
-\end{itemize}
-\end{block}
-\end{column}
-\begin{column}{0.52\textwidth}
-\centering
-\fig{width=\textwidth,height=0.72\textheight,keepaspectratio}{code-guard-1.png}
-\end{column}
-\end{columns}
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-flight-1.png}\par
+\vspace{0.2em}{\footnotesize Mode ribbon with event marks, altitude chart, ground track and the event list for the flight.}
 \end{frame}
 
-% 10 ------------------------------------------------------------
-\begin{frame}[shrink=5]{Optimization: columnstore physical design}
-\begin{columns}[T]
-\begin{column}{0.6\textwidth}
+\begin{frame}{Interface: one flight, signals}
 \centering
-{\scriptsize 100 flights, 26.9 M rows, median of 7 warm runs; Q2 all flights, Q3 one flight, Q4 90 days}\par
-\begin{tabular}{@{}lrrrr@{}}
-\toprule
-variant & size & Q2 & Q3 & Q4\\
-\midrule
-rowstore + B-tree & 3,631 MB & 1,519 ms & 65 ms & 246 ms\\
-\textbf{segment (flight, signal)} & \textbf{147 MB} & \textbf{16 ms} & 10.8 ms & \textbf{2.7 ms}\\
-no segmentby & 157 MB & 29.7 ms & 13.7 ms & 3.6 ms\\
-1-day chunks & 150 MB & 15.3 ms & 12.3 ms & 3.4 ms\\
-30-day chunks & 143 MB & 8.3 ms & 5.7 ms & 2.4 ms\\
-\bottomrule
-\end{tabular}\par\vspace{0.4em}
-\fig{width=0.8\textwidth,height=0.25\textheight,keepaspectratio}{code-columnstore-ddl.png}
-\end{column}
-\begin{column}{0.37\textwidth}
-\begin{block}{Findings}
-\begin{itemize}
-  \item \textbf{25$\times$ smaller, up to 95$\times$ faster} cross-flight queries
-  \item Design choices change size by under 10\%
-  \item Chunk count and \code{segmentby} change cross-flight speed about 2$\times$
-  \item Partial chunks must be recompressed: found by testing
-\end{itemize}
-\end{block}
-\end{column}
-\end{columns}
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-flight-2.png}\par
+\vspace{0.2em}{\footnotesize Attitude, battery voltage and battery remaining. Every chart is shaded by the same flight-mode ribbon and zooms by dragging.}
 \end{frame}
 
-% 11 ------------------------------------------------------------
-\begin{frame}[shrink=5]{Experimental setup}
+\begin{frame}{Interface: one flight, diagnostics}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-flight-3.png}\par
+\vspace{0.2em}{\footnotesize Vibration, estimator innovation test ratios and GPS accuracy; min/max envelopes keep spikes visible when zoomed out.}
+\end{frame}
+
+\begin{frame}{Interface: notes and similar flights}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-flight-4.png}\par
+\vspace{0.2em}{\footnotesize Investigation notes pinned to a moment, and flights found by signal-shape signature (not by text).}
+\end{frame}
+
+\begin{frame}{Interface: semantic search}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-search.png}\par
+\vspace{0.2em}{\footnotesize Hybrid search over event meaning, with the ranking details shown.}
+\end{frame}
+
+\begin{frame}{Interface: Ask, question and answer}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-ask.png}\par
+\vspace{0.2em}{\footnotesize A plain-English question becomes a checked, read-only query; the answer is a sentence and a table.}
+\end{frame}
+
+\begin{frame}{Interface: Ask, how this was answered}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-ask-evidence.png}\par
+\vspace{0.2em}{\footnotesize The generated SQL, its planner cost and each guard action are shown beside the answer.}
+\end{frame}
+
+\begin{frame}{Interface: compare two flights}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-compare-1.png}\par
+\vspace{0.2em}{\footnotesize The same canonical signal from two flights on different boards, aligned at takeoff.}
+\end{frame}
+
+\begin{frame}{Interface: compare, event counts}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-compare-2.png}\par
+\vspace{0.2em}{\footnotesize Board, firmware, flight time and event counts side by side.}
+\end{frame}
+
+\begin{frame}{Interface: the ontology}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-ontology.png}\par
+\vspace{0.2em}{\footnotesize Concepts, relations and vendor field mappings for both autopilots.}
+\end{frame}
+
+\begin{frame}{Interface: the Database page, space and plans}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-db-1.png}\par
+\vspace{0.2em}{\footnotesize Live from the database: 12.46 GB rowstore against 385 MB columnstore, and a selectable query with its EXPLAIN ANALYZE plan.}
+\end{frame}
+
+\begin{frame}{Interface: the Database page, the plan}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-db-2.png}\par
+\vspace{0.2em}{\footnotesize The plan, node by node, with buffer counts and actual times.}
+\end{frame}
+
+\begin{frame}{Interface: the Database page, indexes and tables}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-db-3.png}\par
+\vspace{0.2em}{\footnotesize Index method and size, row counts and table sizes.}
+\end{frame}
+
+\begin{frame}{Interface: the Database page, pipeline}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-db-4.png}\par
+\vspace{0.2em}{\footnotesize Stage status counts, ingest rate, derived-data counts and LLM call statistics.}
+\end{frame}
+
+\begin{frame}{Interface: the Benchmarks page}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-overview.png}\par
+\vspace{0.2em}{\footnotesize Every experiment in this talk is a section of this page, drawn from the saved result files.}
+\end{frame}
+
+\begin{frame}{Benchmarks page: vector indexes}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-ann.png}\par
+\vspace{0.2em}{\footnotesize Recall against median latency for each index and setting, with build time and size.}
+\end{frame}
+
+\begin{frame}{Benchmarks page: filtered search}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-filter-1.png}\par
+\vspace{0.2em}{\footnotesize Rows returned, recall or latency by strategy and filter selectivity.}
+\end{frame}
+
+\begin{frame}{Benchmarks page: filtered search, tables}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-filter-2.png}\par
+\end{frame}
+
+\begin{frame}{Benchmarks page: search quality, NL-to-SQL and signatures}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-three.png}\par
+\end{frame}
+
+\begin{frame}{Benchmarks page: fault injection}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-injection.png}\par
+\end{frame}
+
+\begin{frame}{Benchmarks page: columnstore design}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-columnstore.png}\par
+\end{frame}
+
+\begin{frame}{Benchmarks page: TimescaleDB against DuckDB}
+\centering
+\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-engines.png}\par
+\end{frame}
+
+% =============================================================== 9. wrap up
+\begin{frame}{Environment and method}
 \begin{columns}[T]
 \begin{column}{0.49\textwidth}
 \begin{block}{Environment}
 \begin{itemize}
-  \item 4 cores, 15 GB RAM, no GPU; everything in Docker
-  \item PostgreSQL 17.11, TimescaleDB 2.30.2, pgvector 0.8.7, pgvectorscale 0.9.1, DuckDB 1.5.6
-  \item \code{shared\_buffers} 3,968 MB, \code{maintenance\_work\_mem} 1,500 MB
+  \item 4 cores, 15 GB RAM, no GPU; PostgreSQL 17.11, TimescaleDB 2.30.2, pgvector 0.8.7, pgvectorscale 0.9.1, DuckDB 1.5.6
+  \item \code{shared\_buffers} 3,968 MB while benchmarking, \code{maintenance\_work\_mem} 1,500 MB
 \end{itemize}
 \end{block}
 \end{column}
@@ -269,149 +1023,48 @@ no segmentby & 157 MB & 29.7 ms & 13.7 ms & 3.6 ms\\
 \begin{block}{Method}
 \begin{itemize}
   \item One connection, warm cache, 3 measured passes or median of 5--7 runs
-  \item Recall vs exact search; 200 held-out queries; top 10
+  \item Recall against exact search; 200 held-out queries; top 10
   \item Dev set and held-out set; bootstrap intervals and paired tests
-  \item Every mistake and its fix is in \code{docs/decisions.md}
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\vspace{0.3em}
+\terminal{term-config}
+\end{frame}
+
+\begin{frame}[shrink=5]{Key results}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Storage and retrieval}
+\begin{itemize}
+  \item \textbf{32$\times$} smaller telemetry (12.46 GB $\to$ 385 MB)
+  \item \textbf{up to 95$\times$} faster cross-flight queries
+  \item \textbf{over 100$\times$} faster than exact search at 0.95 recall
+  \item \textbf{4 of 10 rows}: the planner's wrong choice at a 10\% filter
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Language and detection}
+\begin{itemize}
+  \item \textbf{0.89} NL-to-SQL accuracy on held-out questions
+  \item \textbf{0.600 vs 0.710}: plain rank fusion hurts
+  \item \textbf{46} hostile queries refused for the intended reason
+  \item \textbf{90--100\%} of injected faults found once they last 5 s
 \end{itemize}
 \end{block}
 \end{column}
 \end{columns}
 \end{frame}
 
-% 12 ------------------------------------------------------------
-\begin{frame}[shrink=5]{Results I: storage and engine comparison}
-\begin{columns}[T]
-\begin{column}{0.36\textwidth}
-\begin{block}{70.7 M rows, size}
-\begin{tabular}{@{}lrr@{}}
-\toprule
-representation & size & B/row\\
-\midrule
-rowstore + index & 12,459 MB & 176.2\\
-\textbf{columnstore} & \textbf{385 MB} & \textbf{5.4}\\
-Parquet (zstd) & 392 MB & 5.5\\
-DuckDB native & 700 MB & 9.9\\
-\bottomrule
-\end{tabular}
-\end{block}
-\end{column}
-\begin{column}{0.62\textwidth}
-\begin{block}{Query p50 in ms: Timescale vs DuckDB}
-\begin{tabular}{@{}lrrr@{}}
-\toprule
-query & Timescale & DuckDB pq & DuckDB nat.\\
-\midrule
-Q1 one signal, one flight & 25.4 & 25.3 & \textbf{4.9}\\
-Q3 one flight, all signals & \textbf{18.7} & 45.7 & 22.5\\
-Q4 90-day window & \textbf{3.8} & 28.4 & 4.5\\
-Q5 all-data aggregate & 811.8 & 1,057.8 & \textbf{478.3}\\
-Q6 per-flight summary & \textbf{1,007.5} & 2,605.3 & 2,004.0\\
-\bottomrule
-\end{tabular}\par
-{\scriptsize Q2 (one signal, all flights): 69.2 / 30.6 / 12.9. Timescale \code{COPY}: 287 k rows/s}
-\end{block}
-\end{column}
-\end{columns}
-\end{frame}
-
-% 13 ------------------------------------------------------------
-\begin{frame}[shrink=5]{Results II: vector indexes and filtered search}
-\begin{columns}[T]
-\begin{column}{0.52\textwidth}
-\begin{block}{100,000 vectors, 1,536 dims (exact: 362 ms)}
-\begin{tabular}{@{}lrrr@{}}
-\toprule
-index & build & size & p50 at recall 0.95\\
-\midrule
-HNSW m=16 & 56 s & 819 MB & 2.7 ms\\
-\textbf{HNSW m=32} & 149 s & 819 MB & \textbf{2.4 ms}\\
-IVFFlat 316 & \textbf{17 s} & 822 MB & 5.5 ms\\
-DiskANN & 268 s & \textbf{68 MB} & not reached\\
-\bottomrule
-\end{tabular}
-\end{block}
-\end{column}
-\begin{column}{0.46\textwidth}
-\begin{block}{Rows returned of 10, filter keeps\ldots}
-\begin{tabular}{@{}lrrr@{}}
-\toprule
-strategy & 0.1\% & 1\% & 10\%\\
-\midrule
-HNSW post-filter, ef 40 & \textbf{0.0} & 0.4 & 4.1\\
-HNSW iterative scan & 10 & 10 & 10\\
-exact sort (B-tree) & 10 & 10 & 10\\
-\bottomrule
-\end{tabular}\par
-{\scriptsize Exact sort 1.0 ms at 0.1\%, 55 ms at 10\%; crossover near 1,000 rows}
-\end{block}
-\end{column}
-\end{columns}
-\end{frame}
-
-% 14 ------------------------------------------------------------
-\begin{frame}[shrink=5]{Results III: search quality and NL-to-SQL}
-\begin{columns}[T]
-\begin{column}{0.49\textwidth}
-\begin{block}{Search, nDCG@10 (65 queries)}
-\begin{tabular}{@{}lr@{}}
-\toprule
-method & nDCG@10\\
-\midrule
-vector only & \textbf{0.710}\\
-vector + light full text & \textbf{0.709}\\
-plain RRF & 0.600\\
-full text only & 0.48\\
-\bottomrule
-\end{tabular}\par
-{\scriptsize Plain fusion is significantly worse: paired $-0.109$, 95\% CI $[-0.172,-0.051]$}
-\end{block}
-\end{column}
-\begin{column}{0.49\textwidth}
-\begin{block}{NL-to-SQL, held-out (27 questions)}
-\begin{tabular}{@{}lr@{}}
-\toprule
-condition & strict EX\\
-\midrule
-semantic views & \textbf{0.89}\\
-raw tables + same docs & 0.70\\
-raw tables alone & 0.26\\
-\bottomrule
-\end{tabular}\par
-{\scriptsize Documentation is the big effect ($p=0.0005$); views add 0.19, not significant ($p=0.125$). 46 hostile queries refused.}
-\end{block}
-\end{column}
-\end{columns}
-\end{frame}
-
-% 15 ------------------------------------------------------------
-\begin{frame}[shrink=5]{The interface}
-\begin{columns}[T]
-\begin{column}{0.32\textwidth}
-\centering
-\fig{width=\textwidth,height=0.7\textheight,keepaspectratio}{crop-home-light-1280.png}\par
-{\scriptsize Explorer}
-\end{column}
-\begin{column}{0.32\textwidth}
-\centering
-\fig{width=\textwidth,height=0.7\textheight,keepaspectratio}{crop-flight-light-1280.png}\par
-{\scriptsize One flight: mode ribbon, envelopes}
-\end{column}
-\begin{column}{0.32\textwidth}
-\centering
-\fig{width=\textwidth,height=0.7\textheight,keepaspectratio}{crop-ask-light-1280.png}\par
-{\scriptsize Ask: SQL, cost, guard actions}
-\end{column}
-\end{columns}
-\end{frame}
-
-% 16 ------------------------------------------------------------
-\begin{frame}[shrink=5]{Conclusions, limits and next steps}
+\begin{frame}[shrink=5]{Conclusions and limits}
 \begin{columns}[T]
 \begin{column}{0.49\textwidth}
 \begin{block}{Conclusions}
 \begin{itemize}
   \item One PostgreSQL holds time series, ontology, vectors and guarded NL-to-SQL
-  \item Physical design cut storage \textbf{32$\times$}; filtering strategy mattered more than index choice
+  \item Physical design cut storage 32$\times$; filtering strategy mattered more than index choice
   \item Documentation drives NL-to-SQL accuracy; four layers keep it safe
   \item Hybrid fusion did \emph{not} help: reported as found
 \end{itemize}
@@ -422,8 +1075,8 @@ raw tables alone & 0.26\\
 \begin{itemize}
   \item 300 flights, one machine, one model, author-written questions
   \item Index-benchmark vectors are perturbed copies of real ones
-  \item Next: the large run (10 k+ logs), ArduPilot at scale, concurrency benchmark
-  \item Snapshot tool is untested end to end
+  \item Event thresholds are heuristics; battery-low raises 23\% false alarms on controls
+  \item Next: 10,000+ logs, ArduPilot at scale, a concurrency benchmark
 \end{itemize}
 \end{block}
 \end{column}

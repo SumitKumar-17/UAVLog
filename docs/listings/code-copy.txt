@@ -1,0 +1,24 @@
+def telemetry_table(r: dict, vf_ids: dict, fid: str) -> pa.Table | None:
+    t0_us = np.datetime64(r["t0"].replace(tzinfo=None), "us")
+    parts = []
+    for topic, field, ts_us, vals in r["hot"]:
+        ok = np.isfinite(vals)
+        parts.append(pa.table({
+            "ts": pa.array(t0_us + ts_us[ok].astype("timedelta64[us]"), pa.timestamp("us")),
+            "vf": pa.array(np.full(int(ok.sum()), vf_ids[(topic, field)], np.int16)),
+            "value": vals[ok],
+        }))
+    if not parts:
+        return None
+    t = pa.concat_tables(parts)
+    return t.add_column(0, "flight_id", pa.repeat(pa.scalar(fid), t.num_rows))
+
+
+def load(conn, vf_ids, r) -> int:
+    """Insert flight + telemetry and mark the job done in ONE transaction. `r` comes from a format-specific parser (ULog or MAVLink);
+    its optional keys `source` and `autopilot` default to the Flight Review PX4 case."""
+    with conn.transaction(), conn.cursor() as cur:
+        cur.execute(
+            """INSERT INTO flight (source, source_ref, autopilot, firmware, vehicle_type, started_at,
+               duration_s, log_sha256, parquet_path, metadata)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)

@@ -1,0 +1,9 @@
+uavlog=# SELECT * FROM hypertable_columnstore_stats('telemetry');
+-[ RECORD 1 ]------------+--------
+total_chunks             | 134
+number_compressed_chunks | 134
+before_table             | 4638 MB
+before_index             | 7244 MB
+before_total             | 12 GB
+after_total              | 367 MB
+

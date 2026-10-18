@@ -1,0 +1,29 @@
+uavlog=# \d+ event
+                                                                                         Table "public.event"
+     Column      |           Type           | Collation | Nullable |                                   Default                                   | Storage  | Compression | Stats target | Description 
+-----------------+--------------------------+-----------+----------+-----------------------------------------------------------------------------+----------+-------------+--------------+-------------
+ id              | bigint                   |           | not null | nextval('event_id_seq'::regclass)                                           | plain    |             |              | 
+ flight_id       | uuid                     |           | not null |                                                                             | plain    |             |              | 
+ kind_id         | integer                  |           | not null |                                                                             | plain    |             |              | 
+ ts_start        | timestamp with time zone |           | not null |                                                                             | plain    |             |              | 
+ ts_end          | timestamp with time zone |           | not null |                                                                             | plain    |             |              | 
+ severity        | smallint                 |           | not null | 0                                                                           | plain    |             |              | 
+ source          | text                     |           | not null |                                                                             | extended |             |              | 
+ attrs           | jsonb                    |           | not null | '{}'::jsonb                                                                 | extended |             |              | 
+ description     | text                     |           | not null |                                                                             | extended |             |              | 
+ tsv             | tsvector                 |           |          | generated always as (to_tsvector('english'::regconfig, description)) stored | extended |             |              | 
+ embedding       | vector(1536)             |           |          |                                                                             | external |             |              | 
+ embedding_model | text                     |           |          |                                                                             | extended |             |              | 
+Indexes:
+    "event_pkey" PRIMARY KEY, btree (id)
+    "event_embedding_hnsw" hnsw (embedding vector_cosine_ops) WITH (m='16', ef_construction='64') WHERE embedding IS NOT NULL
+    "event_flight_ts" btree (flight_id, ts_start)
+    "event_kind_ts" btree (kind_id, ts_start)
+    "event_tsv" gin (tsv)
+Check constraints:
+    "event_severity_check" CHECK (severity >= 0 AND severity <= 2)
+Foreign-key constraints:
+    "event_flight_id_fkey" FOREIGN KEY (flight_id) REFERENCES flight(id) ON DELETE CASCADE
+    "event_kind_id_fkey" FOREIGN KEY (kind_id) REFERENCES concept(id)
+Access method: heap
+

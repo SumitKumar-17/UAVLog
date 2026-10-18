@@ -1,0 +1,10 @@
+def estimated_rows(conn, filt: list[str], params: dict) -> int | None:
+    """The planner's own estimate of how many events survive the filter (None when there is no filter)."""
+    if not filt:
+        return None
+    sql = "EXPLAIN (FORMAT JSON) SELECT 1 FROM event e WHERE e.embedding IS NOT NULL" + "".join(f" AND {x}" for x in filt)
+    plan = conn.execute(sql, {k: v for k, v in params.items() if k in ("kinds", "sev", "hw")}).fetchone()[0][0]["Plan"]
+    return int(plan["Plan Rows"])
+
+
+def search(conn, llm, text: str, k: int = 10, kinds: list[str] | None = None, min_severity: int = 0,

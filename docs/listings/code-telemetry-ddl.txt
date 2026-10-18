@@ -1,0 +1,16 @@
+    # ---- Telemetry: only ontology-mapped ("hot") fields; full-rate raw stays in Parquet ----
+    op.execute("""
+    CREATE TABLE telemetry (
+        flight_id       uuid     NOT NULL REFERENCES flight(id) ON DELETE CASCADE,
+        ts              timestamptz NOT NULL,
+        vendor_field_id smallint NOT NULL REFERENCES vendor_field(id),
+        value           double precision NOT NULL
+    )""")
+    op.execute("""
+    SELECT create_hypertable('telemetry', by_range('ts', INTERVAL '7 days'))
+    """)
+    op.execute("CREATE INDEX telemetry_flight_field_ts ON telemetry (flight_id, vendor_field_id, ts DESC)")
+
+    # ---- Semantic view: telemetry expressed in canonical concepts ----
+    op.execute("""
+    CREATE VIEW canonical_telemetry AS

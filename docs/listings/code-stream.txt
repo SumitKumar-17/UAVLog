@@ -1,0 +1,17 @@
+cmd_stream() {
+  cmd_up; cmd_init; cmd_index; cmd_select
+  stage "stream: download (background) + ingest loop"
+  mkdir -p data/logs
+  run python scripts/fetch_logs.py --delay "$FETCH_DELAY" > "data/logs/fetch-$(date +%s).log" 2>&1 & fetch_pid=$!
+  while true; do
+    cmd_enqueue
+    run python scripts/ingest.py --workers "$WORKERS" || true
+    run python scripts/events.py --workers "$WORKERS" || true
+    run python scripts/embed_events.py || true
+    run python scripts/compress.py || true   # compress as we go: rowstore is ~30x larger than columnstore
+    if ! kill -0 "$fetch_pid" 2>/dev/null; then break; fi
+    sleep 30
+  done
+  wait "$fetch_pid" || echo "downloader reported failures; re-run './bin/uavlog stream' to retry them"
+  cmd_enqueue; cmd_ingest; cmd_events; cmd_embed; cmd_compress; cmd_summary; cmd_signatures; cmd_size "tier_$TIER"; cmd_status
+}

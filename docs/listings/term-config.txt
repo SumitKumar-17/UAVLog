@@ -1,0 +1,22 @@
+uavlog=# SHOW ... -- configuration the benchmarks ran under
+               name               |   value
+----------------------------------+------------
+ effective_cache_size             | 15237128kB
+ maintenance_work_mem             | 2031616kB
+ max_parallel_maintenance_workers | 2
+ max_parallel_workers             | 4
+ random_page_cost                 | 1.1
+ shared_buffers                   | 5079048kB
+ work_mem                         | 31746kB
+(7 rows)
+
+                                                                version                                      ...
+-------------------------------------------------------------------------------------------------------------...
+ PostgreSQL 17.11 (Ubuntu 17.11-1.pgdg22.04+2) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu...
+       extname       | extversion
+---------------------+------------
+ timescaledb         | 2.30.2
+ timescaledb_toolkit | 1.26.0
+ vector              | 0.8.7
+ vectorscale         | 0.9.1
+(4 rows)

@@ -1,0 +1,8 @@
+    CREATE VIEW semantic.events AS
+    SELECT e.id AS event_id, e.flight_id, c.key AS kind,
+           e.severity, CASE e.severity WHEN 2 THEN 'critical' WHEN 1 THEN 'warning' ELSE 'info' END AS severity_label,
+           extract(epoch FROM e.ts_start - f.started_at) AS start_s, extract(epoch FROM e.ts_end - f.started_at) AS end_s,
+           e.description, e.source, fm.key AS failure_mode
+    FROM event e JOIN concept c ON c.id = e.kind_id JOIN flight f ON f.id = e.flight_id
+    LEFT JOIN concept_relation r ON r.src_id = c.id AND r.rel = 'indicates'
+    LEFT JOIN concept fm ON fm.id = r.dst_id AND fm.kind = 'failure_mode'""")

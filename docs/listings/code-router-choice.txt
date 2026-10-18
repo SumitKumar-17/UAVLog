@@ -1,0 +1,8 @@
+    est = estimated_rows(conn, filt, params)
+    exact = est is not None and est <= EXACT_ROWS
+    if info is not None:
+        info["strategy"] = "exact (filter first, then sort by distance)" if exact else "approximate (HNSW index)"
+        info["filter_estimated_rows"] = est
+    conn.execute("SET hnsw.iterative_scan = relaxed_order")
+    conn.execute("SET hnsw.ef_search = 100")
+    filt_sql = "".join(f" AND {x}" for x in filt)

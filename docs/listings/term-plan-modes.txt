@@ -1,0 +1,35 @@
+-- Flight-mode ribbon for a flight (gaps and islands)
+WITH s AS (SELECT t.ts, t.value::int AS v FROM telemetry t
+           JOIN vendor_field vf ON vf.id = t.vendor_field_id AND vf.topic = 'vehicle_status' AND vf.field = '...
+           WHERE t.flight_id = '41868bf1-4fcb-4259-a4c5-129603d0f708'),
+g AS (SELECT *, row_number() OVER (ORDER BY ts) - row_number() OVER (PARTITION BY v ORDER BY ts) AS grp FROM s)
+SELECT v, min(ts) AS started, max(ts) AS ended FROM g GROUP BY v, grp ORDER BY started
+
+Sort  (cost=5148.03..5148.53 rows=200 width=28) (actual time=54.263..59.280 rows=25 loops=1)
+  Sort Key: (min(t.ts))
+  Sort Method: quicksort  Memory: 26kB
+  Buffers: shared hit=1358
+  ->  HashAggregate  (cost=5138.39..5140.39 rows=200 width=28) (actual time=54.251..59.271 rows=25 loops=1)
+        Group Key: ((t.value)::integer), (row_number() OVER (?) - (row_number() OVER (?)))
+        Batches: 1  Memory Usage: 40kB
+        Buffers: shared hit=1358
+        ->  WindowAgg  (cost=5074.57..5108.35 rows=1502 width=20) (actual time=53.379..58.931 rows=1799 loops=1)
+              Buffers: shared hit=1358
+              ->  Sort  (cost=5074.56..5078.31 rows=1502 width=20) (actual time=53.376..58.481 rows=1799 loop...
+                    Sort Key: t.ts
+                    Sort Method: quicksort  Memory: 119kB
+                    Buffers: shared hit=1358
+                    ->  WindowAgg  (cost=4790.47..4995.30 rows=1502 width=20) (actual time=52.380..58.099 row...
+                          Buffers: shared hit=1358
+                          ->  Gather Merge  (cost=4790.33..4965.26 rows=1502 width=12) (actual time=52.372..5...
+                                Workers Planned: 2
+                                Workers Launched: 2
+                                Buffers: shared hit=1358
+                                ->  Sort  (cost=3790.31..3791.87 rows=626 width=12) (actual time=12.758..12.8...
+                                      Sort Key: ((t.value)::integer), t.ts
+                                      Sort Method: quicksort  Memory: 105kB
+                                      Buffers: shared hit=1358
+                                      Worker 0:  Sort Method: quicksort  Memory: 25kB
+                                      Worker 1:  Sort Method: quicksort  Memory: 25kB
+   ...
+Execution Time: 60.268 ms

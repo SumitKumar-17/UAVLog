@@ -1,0 +1,26 @@
+VEC_ANN = """vec AS (
+    SELECT e.id, row_number() OVER (ORDER BY e.embedding <=> q.v) AS r
+    FROM event e, q WHERE e.embedding IS NOT NULL {filt}
+    ORDER BY e.embedding <=> q.v LIMIT %(pool)s),"""
+VEC_EXACT = """vec AS (
+    WITH cand AS MATERIALIZED (SELECT e.id, e.embedding FROM event e WHERE e.embedding IS NOT NULL {filt})
+    SELECT cand.id, row_number() OVER (ORDER BY cand.embedding <=> q.v) AS r
+    FROM cand, q ORDER BY cand.embedding <=> q.v LIMIT %(pool)s),"""
+
+SQL = """
+WITH q AS (SELECT %(vec)s::vector AS v, to_tsquery('english', %(tsq)s) AS tq),
+{vec_cte}
+fts AS (
+    SELECT e.id, row_number() OVER (ORDER BY ts_rank_cd(e.tsv, q.tq) DESC) AS r
+    FROM event e, q WHERE e.tsv @@ q.tq {filt}
+    ORDER BY ts_rank_cd(e.tsv, q.tq) DESC LIMIT %(pool)s)
+SELECT e.id, c.key AS kind, e.severity, e.description, f.source_ref AS flight, f.id::text AS flight_uuid, e.ts_start - f.started_at AS t,
+       e.embedding <=> (SELECT v FROM q) AS distance,
+       %(wv)s * coalesce(1.0 / (%(rrf)s + vec.r), 0) + %(wf)s * coalesce(1.0 / (%(rrf)s + fts.r), 0) AS score, vec.r AS vec_rank, fts.r AS fts_rank
+FROM vec FULL OUTER JOIN fts ON vec.id = fts.id
+JOIN event e ON e.id = coalesce(vec.id, fts.id)
+JOIN concept c ON c.id = e.kind_id JOIN flight f ON f.id = e.flight_id
+ORDER BY score DESC, vec.r NULLS LAST, fts.r NULLS LAST LIMIT %(k)s"""
+
+
+def estimated_rows(conn, filt: list[str], params: dict) -> int | None:

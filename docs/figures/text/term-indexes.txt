@@ -1,0 +1,17 @@
+uavlog=# -- indexes of the semantic search tables
+         index         | method |    size    
+-----------------------+--------+------------
+ event_embedding_hnsw  | hnsw   | 13 MB
+ event_tsv             | gin    | 296 kB
+ event_flight_ts       | btree  | 296 kB
+ event_pkey            | btree  | 224 kB
+ event_kind_ts         | btree  | 224 kB
+ flight_signature_hnsw | hnsw   | 136 kB
+ flight_metadata_gin   | gin    | 88 kB
+ flight_log_sha256_key | btree  | 56 kB
+ flight_pkey           | btree  | 40 kB
+ flight_signature_pkey | btree  | 32 kB
+ flight_started_at     | btree  | 16 kB
+ note_pkey             | btree  | 8192 bytes
+(12 rows)
+

@@ -1,0 +1,20 @@
+    root = statements[0]
+    if not isinstance(root, (exp.Select, exp.SetOperation)):
+        raise GuardError(f"Only SELECT queries are allowed, got {type(root).__name__.upper()}.")
+
+    bad = next((n for n in root.walk() if isinstance(n, FORBIDDEN_NODES)), None)
+    if bad is not None:
+        raise GuardError(f"{type(bad).__name__.upper()} is not allowed in a query.")
+
+    withs = [n for n in root.walk() if isinstance(n, exp.With)]
+    if any(w is not root.args.get("with_") and w is not root.args.get("with") for w in withs):
+        raise GuardError("WITH is only allowed at the top level of the query.")
+    if any(w.args.get("recursive") for w in withs):
+        raise GuardError("Recursive WITH is not allowed.")
+    cte_names = {c.alias_or_name.lower() for c in root.find_all(exp.CTE)}
+
+    used_tables: list[str] = []
+    for t in root.find_all(exp.Table):
+        if not isinstance(t.this, exp.Identifier):
+            raise GuardError("Table-valued functions are not allowed in FROM.")
+        name, schema = t.name.lower(), (t.db or "").lower()

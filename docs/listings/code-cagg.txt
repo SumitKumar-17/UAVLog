@@ -1,0 +1,6 @@
+        CREATE MATERIALIZED VIEW telemetry_1s WITH (timescaledb.continuous) AS
+        SELECT time_bucket('1 second', ts) AS bucket, flight_id, vendor_field_id,
+               min(value) AS lo, max(value) AS hi, avg(value) AS mean, count(*) AS n
+        FROM telemetry GROUP BY 1, 2, 3 WITH NO DATA""")
+
+    password = os.environ.get("NLSQL_DB_PASSWORD")
