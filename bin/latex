@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# ./bin/latex UAVLog_Presentation.tex  -> compiles with pdflatex in Docker (image uavlog-latex, built from tools/latex/Dockerfile)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+f="${1:?file.tex}"
+docker image inspect uavlog-latex >/dev/null 2>&1 || docker build -t uavlog-latex tools/latex
+for _ in 1 2; do
+  docker run --rm -u "$(id -u):$(id -g)" -v "$PWD":/work -w /work uavlog-latex pdflatex -interaction=nonstopmode -halt-on-error "$f" >"${f%.tex}.log" 2>&1 || { grep -A6 '^!' "${f%.tex}.log" | head -30; exit 1; }
+done
+echo "${f%.tex}.pdf"

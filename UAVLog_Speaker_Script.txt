@@ -1,0 +1,269 @@
+SEMANTIC LOG ANALYTICS FOR UAV FLIGHT LOGS
+Speaker script for UAVLog_Presentation.tex (16 slides)
+Presenter: Sumit Kumar (22CS30056)   Course: Advanced Database Management Systems
+Total time: about 22 minutes (timings per slide below add up to 21:45), plus questions.
+
+How to use this script: the SAY paragraphs are meant to be spoken as written. The ANALOGY lines are plain-English
+explanations you can drop in when you see a blank face. Numbers are from the saved result files in bench/results/.
+
+======================================================================================================
+SLIDE 1. TITLE                                                                          (0:45)
+======================================================================================================
+SAY: Good morning, everyone. My project is called Semantic Log Analytics for UAV flight logs. The one-line version
+is this: I took drone flight logs and treated them as a database problem instead of a plotting problem. Everything
+you will see runs on a single PostgreSQL instance, and every design choice is backed by a measurement.
+
+======================================================================================================
+SLIDE 2. MOTIVATION AND PROBLEM STATEMENT                                               (1:45)
+======================================================================================================
+SAY: A drone writes a flight log every time it flies. In my data set, 300 real PX4 flights contain 70.7 million
+telemetry samples and 3,401 events such as warnings and failure flags. That is three kinds of data at once. There is
+a time series, there is free text, and there is a vendor dialect problem: PX4 and ArduPilot call the same quantity
+by different names.
+
+Today's tools show you one log at a time. But the questions people actually ask are about many flights, and they ask
+them in words: "which flights lost a motor?" That mismatch is the problem I set out to solve.
+
+I turned it into four research questions. One: how should high-rate telemetry be stored, and what does it cost? Two:
+which vector index and which filtering strategy retrieve events best? Three: can a language model write safe and
+correct SQL, and what does a semantic layer add? Four: does the pipeline survive failure and scale up to hundreds
+of thousands of logs? Each question has an experiment later in the talk.
+
+ANALOGY: Think of a flight log as a black box recorder for a drone. Opening one recorder is easy. Asking "which of
+three hundred recorders ever heard a motor fail?" needs a library catalogue, not a recorder player.
+
+======================================================================================================
+SLIDE 3. BACKGROUND: THE DATABASE BUILDING BLOCKS                                       (1:45)
+======================================================================================================
+SAY: Let me introduce the building blocks quickly. On the left is TimescaleDB, an extension that makes Postgres good
+at time series. A hypertable looks like one table but is silently cut into time chunks. Old chunks can be moved into
+the columnstore, which stores each column together and compresses it. A continuous aggregate is a rollup that the
+database keeps up to date for you; I use one for one-second minimum, maximum and mean.
+
+On the right is pgvector and pgvectorscale, which give Postgres similarity search. HNSW is a layered graph where you
+hop towards the nearest neighbours. IVFFlat sorts vectors into clusters and only searches the closest few clusters.
+DiskANN is a compressed graph designed to live on disk. And there is one known trap that becomes a headline result
+later: when you add a filter, pgvector applies it after the index search, so a selective filter can return too few rows.
+
+ANALOGY: A hypertable is a filing cabinet with one drawer per week. The columnstore is vacuum-packing the old drawers
+so they take a thirtieth of the space. HNSW is asking a friend of a friend of a friend for directions: each hop gets
+you closer, and you never walk the whole city. The filter trap is asking for directions to "a vegetarian restaurant"
+only after the friends have already pointed you to five steakhouses.
+
+======================================================================================================
+SLIDE 4. THE GAP AND THE ARCHITECTURE                                                   (1:15)
+======================================================================================================
+SAY: Here is the gap. Log viewers show one flight and know nothing about meaning. Time-series databases store the
+numbers but have no ontology or vendor mapping. Natural-language-to-SQL demos exist, but they are rarely guarded or
+measured. To our knowledge there is no published system that combines all three over PX4 logs. I say "to our
+knowledge" on purpose; I cannot prove a negative.
+
+The diagram shows my answer. Raw logs flow into a Parquet lake, into the canonical telemetry table, and into events.
+The ontology sits beside them. Embeddings feed hybrid search. And the language model only ever sees curated read-only
+views. It is one database, not five systems glued together.
+
+======================================================================================================
+SLIDE 5. CORE CONTRIBUTION 1: SCHEMA DESIGN                                             (1:30)
+======================================================================================================
+SAY: The central table is telemetry, and it is deliberately narrow: one row per timestamp, flight and canonical
+field. The consequence is that a new signal adds rows, never columns, so the schema never changes when a new log
+type arrives. It is a hypertable with seven-day chunks, and it currently holds 70.7 million rows.
+
+Two tables make the mapping explicit: vendor_field and field_mapping. They record, for every vendor field, which
+canonical concept it means, plus a scale, an offset and a note. The event table holds the text, a 1,536-dimension
+embedding, and a generated tsvector column for full-text search. The screenshot at the bottom is the real DDL.
+
+ANALOGY: The narrow format is like a ledger. You do not add a new column to the ledger for each new kind of expense;
+you add a row with a category.
+
+WHY IT MATTERS: as a plain rowstore, the index was 7.6 GB, larger than the 4.9 GB table. That observation motivated
+the columnstore work on slide 10.
+
+======================================================================================================
+SLIDE 6. CORE CONTRIBUTION 2: THE SEMANTIC LAYER                                        (1:30)
+======================================================================================================
+SAY: The semantic layer is an ontology stored in ordinary relational tables: 63 concepts and 55 relations. The
+chain is signal, subsystem, failure mode, event, and I walk it with recursive common table expressions. So a user
+can say battery voltage instead of knowing which PX4 topic and field name holds it.
+
+I also mapped a second autopilot, ArduPilot, by hand. I mapped attitude, GPS, position, velocity and battery. I
+deliberately did not map vibration, motor outputs, EKF ratios, barometric altitude or flight mode, because they
+mean different things across the two systems. A wrong mapping is worse than a gap, because it produces confident
+wrong answers. The screenshots show a documented view and the mapping table with its reasons.
+
+ANALOGY: The ontology is a translation dictionary between two dialects. A good dictionary says "no exact word" when
+there is none, instead of guessing.
+
+======================================================================================================
+SLIDE 7. METHOD 1: PIPELINES THAT SURVIVE FAILURE                                       (1:30)
+======================================================================================================
+SAY: The data will grow from 300 logs to hundreds of thousands, so every batch stage is a job queue in Postgres. Each
+item has a status, an attempt count, the last error and a lease time. Workers claim items with FOR UPDATE SKIP
+LOCKED, which lets many workers run at once without fighting over the same row. Each item is idempotent and atomic:
+its data and its status commit in the same transaction. One bad log never stops the run, and a crashed worker's
+lease expires so another worker picks the item up. To scale, you enqueue more items; you do not change code.
+
+An honest note: testing found that SKIP LOCKED once claimed 52 rows when I asked for 25, because the planner
+re-ran the subquery. The fix is a materialized CTE. I found it by running concurrent workers, not by reading code.
+
+ANALOGY: It is a deli counter with a ticket machine. Each customer takes one ticket, nobody serves the same ticket
+twice, and if a server walks away mid-order the ticket goes back to the pile.
+
+======================================================================================================
+SLIDE 8. METHOD 2: HYBRID SEARCH THAT ROUTES ITSELF                                     (1:30)
+======================================================================================================
+SAY: Search combines three signals: vector similarity, full-text, and SQL filters, fused with reciprocal rank
+fusion. The surprise is what happened with filters. With both indexes present and a filter keeping ten percent of
+rows, Postgres chose HNSW with post-filtering. It returned only 4 rows out of the 10 requested, with recall of 0.37.
+It was fast and wrong, because the cost model cannot know that the plan under-returns.
+
+So the search routes itself. It asks the planner for the estimated number of filtered rows, using EXPLAIN on the
+filter alone. If that is about 1,500 rows or fewer, it filters first and sorts exactly. Otherwise it uses HNSW with
+an iterative scan. The flowchart on the right is exactly that decision.
+
+ANALOGY: If only ten people in a stadium match your description, do not ask the crowd to point them out. Walk the
+list of ten. If half the stadium matches, just ask the crowd.
+
+======================================================================================================
+SLIDE 9. METHOD 3: GUARDED NATURAL-LANGUAGE SQL                                         (1:30)
+======================================================================================================
+SAY: Letting a language model write SQL is risky, and "it only runs SELECT" is not a security boundary. So there are
+four independent layers. One, a guard built on sqlglot: exactly one SELECT, allow-lists for tables and functions, and
+the SQL that actually runs is regenerated from the parse tree, so what was checked is exactly what runs. Two, a
+database role that can read only documented views. Three, a read-only transaction with an eight-second timeout.
+Four, cost admission: I run EXPLAIN first and refuse anything with a planner estimate above 100,000.
+
+I tested this with 46 hostile queries, and each was refused for the intended reason. A telemetry self-join, for
+example, plans at 515 million and is rejected before it runs.
+
+ANALOGY: Four locks on one door, each with a different key, so a thief who picks one still faces three.
+
+======================================================================================================
+SLIDE 10. OPTIMIZATION: COLUMNSTORE PHYSICAL DESIGN                                     (1:30)
+======================================================================================================
+SAY: This is experiment one. On 100 flights and 26.9 million rows I compared the rowstore with several columnstore
+designs, taking the median of seven warm runs. Segmenting by flight and signal, ordered by time, shrinks the data
+from 3.6 GB to 147 MB, 25 times, and the cross-flight query drops from about 1.5 seconds to 16 milliseconds.
+
+The interesting part is what did not matter. Different compression settings change the size by under ten percent.
+What does matter is chunk count and the segmentby choice, which change cross-flight speed by about two times. And
+testing found a real bug: rows inserted into an already compressed chunk leave it partial, and my first compress
+stage skipped those chunks. It now recompresses them.
+
+ANALOGY: Segmenting by flight and signal is shelving books by author and title rather than by arrival date. To find
+one author you open one shelf instead of scanning the building.
+
+======================================================================================================
+SLIDE 11. EXPERIMENTAL SETUP                                                            (0:45)
+======================================================================================================
+SAY: All of this ran on four cores and 15 gigabytes of RAM with no GPU, in Docker. Versions are on the slide:
+PostgreSQL 17.11, TimescaleDB 2.30.2, pgvector 0.8.7, pgvectorscale 0.9.1 and DuckDB 1.5.6. Timings use one
+connection, a warm cache, and three measured passes or the median of five to seven runs. Vector recall is measured
+against exact search with 200 held-out queries. For the language model I used a development set and a separate
+held-out set, with bootstrap intervals and paired tests. Every mistake and its fix is in the decision log.
+
+======================================================================================================
+SLIDE 12. RESULTS I: STORAGE AND ENGINE COMPARISON                                      (1:30)
+======================================================================================================
+SAY: For all 70.7 million rows, the rowstore plus index takes 12.5 GB. The columnstore takes 385 MB, 32 times
+smaller, at about 5.4 bytes per row. That matches sorted Parquet at 392 MB and beats DuckDB's own file at 700 MB.
+
+Against DuckDB, the picture is mixed and I want to say that plainly. DuckDB's native table wins single-signal slices
+and the full-scan aggregate. The columnstore wins pruned access, such as one flight's signals or a 90-day window,
+and the whole-corpus per-flight summary, 1.0 seconds against 2.0 to 2.6. Postgres also gives concurrent writers,
+transactions, roles and vectors in the same engine, which DuckDB does not. So DuckDB stayed a comparator. Loading
+into the hypertable runs at 287 thousand rows per second.
+
+======================================================================================================
+SLIDE 13. RESULTS II: VECTOR INDEXES AND FILTERED SEARCH                                (1:45)
+======================================================================================================
+SAY: On 100,000 vectors with 1,536 dimensions, exact search takes 362 milliseconds. HNSW with m equal to 32 reaches
+0.95 recall in 2.4 milliseconds, over a hundred times faster. IVFFlat is slower to query but builds three to
+seventeen times faster. DiskANN is twelve times smaller, 68 MB against 819, but did not reach 0.95 recall here.
+
+The right table is the filter story. A post-filter with the default setting returns zero rows out of ten when the
+filter keeps one tenth of one percent. Iterative scan fixes the row count. But an exact sort over a B-tree filter
+takes 1 millisecond there and wins; at ten percent it takes 55 milliseconds and HNSW wins. The crossover is near a
+thousand rows, which is why the router uses 1,500. I also re-ran the comparison on easier and harder synthetic
+data, holding size fixed; the ranking did not change.
+
+======================================================================================================
+SLIDE 14. RESULTS III: SEARCH QUALITY AND NL-TO-SQL                                     (1:30)
+======================================================================================================
+SAY: Two honest negative or nuanced results. First, I expected hybrid search to win. It did not. Vector only scores
+0.710 nDCG at ten; plain rank fusion scores 0.600, significantly worse, with a paired difference of minus 0.109 and
+an interval that excludes zero. A light full-text weight just ties vector only.
+
+Second, for natural-language SQL on 27 held-out questions: semantic views score 0.89, raw tables with the same
+documentation score 0.70, and raw tables alone score 0.26. The big effect is documentation, a gain of 0.44 that is
+statistically clear. The views add another 0.19, but with so few questions that is not significant. I also report
+that my first run overstated the gap because of bugs in my own comparison and guard; I fixed them, froze the
+prompts, re-ran, and kept both runs.
+
+======================================================================================================
+SLIDE 15. THE INTERFACE                                                                 (0:45)
+======================================================================================================
+SAY: This is the application on top: a Next.js front end over a FastAPI back end. Left, the explorer. Middle, a
+single flight, with a ribbon of flight modes and min-max envelopes so a spike can never be averaged away. Right,
+the Ask page, which shows the generated SQL, its estimated cost and every guard action next to the answer. I
+would show this live in the demo.
+
+======================================================================================================
+SLIDE 16. CONCLUSIONS, LIMITS AND NEXT STEPS                                            (1:15)
+======================================================================================================
+SAY: To conclude. One PostgreSQL instance can hold the time series, the ontology, the vectors and a guarded
+natural-language interface. Physical design cut storage 32 times, and filtering strategy mattered more than the
+choice of vector index. Documentation drives language-model accuracy, and four independent layers keep it safe.
+Hybrid fusion did not help, and I reported that as found.
+
+The limits: 300 flights, one machine, one model, and questions written by me. The benchmark vectors are perturbed
+copies of real ones. The snapshot tool is documented but untested end to end. Next is the large run on ten thousand
+or more logs, ArduPilot at scale, and a concurrency benchmark. Thank you. I am happy to take questions.
+
+======================================================================================================
+Q&A PREPARATION
+======================================================================================================
+
+Q1. Why Postgres and not a dedicated time-series database or ClickHouse?
+A. One engine gives transactions, roles, joins to the ontology and vectors together. I measured DuckDB as a
+comparator; it wins some scans, loses on pruned access and the summary build. ClickHouse is future work; it would be
+a new datastore and I would add it only deliberately.
+
+Q2. Is 300 flights not too small for these conclusions?
+A. Yes, that is a stated limit. Storage numbers scale predictably and are measured on 70.7 million rows. The vector
+benchmarks use 50,000 and 100,000 vectors made by perturbing real ones. The full run is planned on a large machine,
+and all volumes are configurable.
+
+Q3. Why did hybrid search lose?
+A. On 65 queries, vector similarity already handles paraphrases. Plain rank fusion lets weak keyword matches
+displace good vector hits. With a small keyword weight it ties. I do not claim it never helps, only that I found no
+evidence that it does on this data.
+
+Q4. How can you call NL-to-SQL "safe"?
+A. I call it defended, not proven. Four independent layers; 46 hostile queries each refused for the intended reason;
+a fake model that follows prompt injection is still stopped. The residual risk is correctness, not safety:
+confident wrong answers, which is why the answer shows its SQL and cost.
+
+Q5. The views added 0.19 but you say it is not significant. Is it useful or not?
+A. The direction is positive (six questions gained, one lost) but 27 questions cannot separate it from chance
+(p = 0.125). I report it as suggestive. The clear effect is documentation.
+
+Q6. What is the relative contrast number in the difficulty experiment?
+A. It measures how much farther the tenth neighbour is than the nearest. Low means neighbours are hard to tell
+apart. My synthetic sets were harder than the real corpus, so the index ranking is not an artefact of easy data.
+
+Q7. What happens if a worker crashes mid-ingest?
+A. The item's lease expires, another worker reclaims it, and because data and status commit together there is no
+half-loaded flight. Completed items are never redone.
+
+Q8. Why a narrow telemetry table instead of one column per signal?
+A. New signals and new autopilots then need no schema change, and the ontology can map any vendor field. The cost
+is more rows; the columnstore turns that into 5.4 bytes per row.
+
+Q9. Why did the planner choose the wrong plan?
+A. Its cost model estimates time, not result completeness. HNSW post-filtering looks cheap but returns 4 of 10
+rows. The router avoids relying on that estimate for correctness.
+
+Q10. What is untested?
+A. The snapshot and restore script was deliberately left untested and is documented that way. The large-scale run
+has not happened yet.
