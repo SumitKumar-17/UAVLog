@@ -47,5 +47,20 @@ services:
       - ./backend:/app
     command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
+  web:
+    image: node:24
+    working_dir: /app
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      HOME: /tmp
+      API_URL: http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    volumes:
+      - ./web:/app
+    command: ["sh", "-c", "mkdir -p /tmp/bin && corepack enable --install-directory /tmp/bin && export PATH=/tmp/bin:$$PATH && pnpm install --frozen-lockfile && pnpm dev -H 0.0.0.0"]
+
 volumes:
   pgdata:
