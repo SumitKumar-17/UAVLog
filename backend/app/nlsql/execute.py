@@ -4,6 +4,10 @@ import time
 from dataclasses import dataclass
 from decimal import Decimal
 
+from psycopg_pool import ConnectionPool
+
+from app.config import settings
+
 from app.nlsql.guard import MAX_ROWS
 
 ROLES = {"semantic": "uav_reader", "raw": "uav_reader_raw", "raw_docs": "uav_reader_raw"}  # fixed names; never taken from input
@@ -24,6 +28,20 @@ class Result:
     run_ms: float
 
 
+_nl_pool: ConnectionPool | None = None
+
+
+def _connection_source(pool, mode: str):
+    """The restricted login role (uav_nlsql, no way back to a more privileged role) when NLSQL_DATABASE_URL is set; otherwise SET ROLE
+    from the shared pool. Returns the pool and whether SET LOCAL ROLE is needed."""
+    global _nl_pool
+    if mode == "semantic" and settings.nlsql_database_url:
+        if _nl_pool is None:
+            _nl_pool = ConnectionPool(settings.nlsql_database_url, min_size=1, max_size=4, open=True, kwargs={"autocommit": True})
+        return _nl_pool, False
+    return pool, True
+
+
 def _plain(v):
     if v is None or isinstance(v, (bool, int, float, str)):
         return v
@@ -36,11 +54,13 @@ def _plain(v):
 
 def run(pool, sql: str, mode: str = "semantic", max_cost: float = MAX_COST) -> Result:
     role = ROLES[mode]
-    with pool.connection() as c:
+    source, set_role = _connection_source(pool, mode)
+    with source.connection() as c:
         try:
             with c.transaction():
                 c.execute("SET TRANSACTION READ ONLY")
-                c.execute(f"SET LOCAL ROLE {role}")
+                if set_role:
+                    c.execute(f"SET LOCAL ROLE {role}")
                 c.execute(f"SET LOCAL statement_timeout = {TIMEOUT_MS}")
                 c.execute("SET LOCAL idle_in_transaction_session_timeout = 10000")
                 cost = float(c.execute("EXPLAIN (FORMAT JSON) " + sql).fetchone()[0][0]["Plan"]["Total Cost"])
