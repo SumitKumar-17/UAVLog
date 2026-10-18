@@ -1,6 +1,6 @@
 """Parse a PX4 ULog: write every topic to Parquet and extract the ontology-mapped ("hot") series."""
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -32,8 +32,11 @@ def euler_deg(q: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     return {"roll_deg": np.degrees(roll), "pitch_deg": np.degrees(pitch), "yaw_deg": np.degrees(yaw)}
 
 
+MIN_VALID_UTC = datetime(2015, 1, 1, tzinfo=timezone.utc)  # older firmware reports tiny bogus GPS times
+
+
 def start_time_utc(u: ULog, fallback: str) -> datetime:
-    """Log start in UTC from the first valid GPS fix; falls back to the index date (midnight)."""
+    """Log start in UTC from the first plausible GPS time; falls back to the index date (midnight)."""
     for d in u.data_list:
         if d.name == "vehicle_gps_position" and d.multi_id == 0:
             utc = d.data["time_utc_usec"]
@@ -41,7 +44,9 @@ def start_time_utc(u: ULog, fallback: str) -> datetime:
             if len(ok):
                 i = ok[0]
                 boot_us = int(d.data["timestamp"][i]) - u.start_timestamp
-                return datetime.fromtimestamp((int(utc[i]) - boot_us) / 1e6, tz=timezone.utc)
+                t0 = datetime.fromtimestamp((int(utc[i]) - boot_us) / 1e6, tz=timezone.utc)
+                if MIN_VALID_UTC <= t0 <= datetime.now(timezone.utc) + timedelta(days=1):
+                    return t0
     return datetime.fromisoformat(fallback).replace(tzinfo=timezone.utc)
 
 
