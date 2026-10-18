@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from psycopg.rows import dict_row
 
 from app.api.deps import lifespan, llm, pool
+from app.events.ulog_events import NAV_STATE
 from app.search import MODES, search
 
 app = FastAPI(title="Semantic Log Analytics [UAV Log]", version="0.1.0", lifespan=lifespan)
@@ -30,6 +31,39 @@ def health(p=Depends(pool)):
     return {"ok": True, "flights": rows(p, "SELECT count(*) AS n FROM flight")[0]["n"]}
 
 
+def mode_segments(p, flight_ids: list[str]) -> dict[str, list[dict]]:
+    """Flight-mode ribbon per flight (seconds from log start), as runs of the nav_state signal."""
+    segs: dict[str, list[dict]] = {}
+    for r in rows(p, """
+        WITH s AS (SELECT t.flight_id, t.ts, t.value::int AS v FROM telemetry t
+                   JOIN vendor_field vf ON vf.id = t.vendor_field_id AND vf.topic = 'vehicle_status' AND vf.field = 'nav_state'
+                   WHERE t.flight_id = ANY(%(ids)s::uuid[])),
+        g AS (SELECT *, row_number() OVER (PARTITION BY flight_id ORDER BY ts)
+                      - row_number() OVER (PARTITION BY flight_id, v ORDER BY ts) AS grp FROM s)
+        SELECT g.flight_id::text AS fid, g.v, extract(epoch FROM min(g.ts) - f.started_at) AS t0
+        FROM g JOIN flight f ON f.id = g.flight_id GROUP BY g.flight_id, g.v, g.grp, f.started_at ORDER BY 1, 3""", {"ids": flight_ids}):
+        segs.setdefault(r["fid"], []).append({"t0": max(r["t0"], 0.0), "mode": NAV_STATE.get(r["v"], f"mode {r['v']}")})
+    return segs
+
+
+def with_strips(p, items: list[dict]) -> list[dict]:
+    """Attach `modes` (t0, t1, mode) and `marks` (warning/critical events) so a flight can be drawn as a strip."""
+    ids = [str(i["id"]) for i in items]
+    segs = mode_segments(p, ids) if ids else {}
+    marks: dict[str, list[dict]] = {}
+    for r in rows(p, """SELECT e.flight_id::text AS fid, c.key AS kind, e.severity, e.description,
+                               extract(epoch FROM e.ts_start - f.started_at) AS t
+                        FROM event e JOIN concept c ON c.id = e.kind_id JOIN flight f ON f.id = e.flight_id
+                        WHERE e.flight_id = ANY(%s::uuid[]) AND e.severity >= 1 ORDER BY e.ts_start""", (ids,)) if ids else []:
+        marks.setdefault(r["fid"], []).append({k: r[k] for k in ("t", "severity", "kind", "description")})
+    for i in items:
+        fid, dur = str(i["id"]), i["duration_s"] or 0.0
+        runs = segs.get(fid, [])
+        i["modes"] = [{"t0": r["t0"], "t1": runs[n + 1]["t0"] if n + 1 < len(runs) else dur, "mode": r["mode"]} for n, r in enumerate(runs)]
+        i["marks"] = marks.get(fid, [])
+    return items
+
+
 @app.get("/api/stats")
 def stats(p=Depends(pool)):
     return rows(p, """SELECT (SELECT count(*) FROM flight) AS flights, (SELECT count(*) FROM event) AS events,
@@ -38,8 +72,10 @@ def stats(p=Depends(pool)):
 
 
 @app.get("/api/flights")
-def flights(p=Depends(pool), hw: str | None = None, label: str | None = None, limit: int = Query(50, le=500), offset: int = 0):
-    return rows(p, """
+def flights(p=Depends(pool), hw: str | None = None, label: str | None = None, limit: int = Query(50, le=500), offset: int = 0,
+            sort: str = Query("recent", pattern="^(recent|critical|longest)$")):
+    order = {"recent": "f.started_at DESC", "critical": "critical_events DESC, f.started_at DESC", "longest": "f.duration_s DESC"}[sort]
+    return with_strips(p, rows(p, f"""
         SELECT f.id, f.source_ref, f.started_at, f.duration_s, f.firmware, f.metadata->>'sys_hw' AS hw,
                f.metadata->>'rating' AS rating, f.metadata->'error_labels' AS error_labels,
                left(f.metadata->>'feedback', 200) AS feedback,
@@ -48,8 +84,8 @@ def flights(p=Depends(pool), hw: str | None = None, label: str | None = None, li
         FROM flight f
         WHERE (%(hw)s::text IS NULL OR f.metadata->>'sys_hw' = %(hw)s)
           AND (%(label)s::text IS NULL OR f.metadata->>'stratum' = %(label)s)
-        ORDER BY f.started_at DESC LIMIT %(limit)s OFFSET %(offset)s""",
-        {"hw": hw, "label": label, "limit": limit, "offset": offset})
+        ORDER BY {order} LIMIT %(limit)s OFFSET %(offset)s""",
+        {"hw": hw, "label": label, "limit": limit, "offset": offset}))
 
 
 @app.get("/api/flights/{flight_id}")
@@ -66,7 +102,8 @@ def flight(flight_id: str, p=Depends(pool)):
                          FROM telemetry t JOIN field_mapping m ON m.vendor_field_id = t.vendor_field_id
                          JOIN concept c ON c.id = m.concept_id AND c.kind = 'signal'
                          WHERE t.flight_id = %s GROUP BY 1, 2, 3 ORDER BY 1""", (fid,))
-    return {**f[0], "events": events, "signals": signals}
+    strip = with_strips(p, [{"id": fid, "duration_s": f[0]["duration_s"]}])[0]
+    return {**f[0], "events": events, "signals": signals, "modes": strip["modes"]}
 
 
 @app.get("/api/flights/{flight_id}/signals/{signal}")
