@@ -1,26 +1,97 @@
 @import "tailwindcss";
 
+/* Chart paper. Roles, not hex, are used everywhere below; dark mode is its own selected set, declared under both
+   the OS scope and the manual-toggle scope so the toggle wins in both directions. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --paper: #e9eef2;
+  --panel: #f7f9fa;
+  --ink: #12202c;
+  --ink-2: #45586a;
+  --muted: #596b7c;
+  --rule: #cbd5dd;
+  --rule-soft: #dbe3e9;
+  --route: #b0136f;          /* selection and the time cursor only, like a route on an aeronautical chart */
+  --data: #2a78d6;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  /* flight modes: fixed entity -> colour (categorical slots, validated on this surface) */
+  --m-position: #2a78d6;
+  --m-manual: #eb6834;
+  --m-altitude: #1baf7a;
+  --m-hold: #eda100;
+  --m-stabilized: #e87ba4;
+  --m-land: #008300;
+  --m-mission: #6250d6;
+  --m-return: #e34948;
+  --m-other: #98a6b3;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --paper: #0f1a24;
+    --panel: #162331;
+    --ink: #e6edf3;
+    --ink-2: #aebdcb;
+    --muted: #8a9cae;
+    --rule: #2a3d50;
+    --rule-soft: #1f3040;
+    --route: #ec6fb7;
+    --data: #3987e5;
+    --m-position: #3987e5;
+    --m-manual: #d95926;
+    --m-altitude: #199e70;
+    --m-hold: #c98500;
+    --m-stabilized: #d55181;
+    --m-land: #008300;
+    --m-mission: #9085e9;
+    --m-return: #e66767;
+    --m-other: #5b6e80;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0f1a24;
+  --panel: #162331;
+  --ink: #e6edf3;
+  --ink-2: #aebdcb;
+  --muted: #8a9cae;
+  --rule: #2a3d50;
+  --rule-soft: #1f3040;
+  --route: #ec6fb7;
+  --data: #3987e5;
+  --m-position: #3987e5;
+  --m-manual: #d95926;
+  --m-altitude: #199e70;
+  --m-hold: #c98500;
+  --m-stabilized: #d55181;
+  --m-land: #008300;
+  --m-mission: #9085e9;
+  --m-return: #e66767;
+  --m-other: #5b6e80;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-rule-soft: var(--rule-soft);
+  --color-route: var(--route);
+  --color-data: var(--data);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
+  --font-sans: var(--font-barlow), system-ui, sans-serif;
+  --font-dense: var(--font-barlow-sc), var(--font-barlow), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+html { background: var(--paper); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); }
+::selection { background: color-mix(in srgb, var(--route) 28%, transparent); }
+:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; border-radius: 2px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
