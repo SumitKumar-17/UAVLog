@@ -36,7 +36,8 @@ function Bars({ rows, unit, fmt }: { rows: { label: string; value: number }[]; u
 }
 
 function Ann({ files }: { files: string[] }) {
-  const [name, setName] = useState(files[0]);
+  const [picked, setName] = useState<string | undefined>();
+  const name = picked && files.includes(picked) ? picked : files[0];  // the list arrives after the first render
   const { data: d } = useQuery({ queryKey: ["bench", name], queryFn: () => file(name), enabled: !!name });
   const series: ChartSeries[] = useMemo(() => {
     if (!d) return [];

@@ -12,9 +12,10 @@ const waitFor = process.env.WAIT_SEL || "";
   await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
   if (process.env.FILL) { const [sel, text] = process.env.FILL.split("|"); await page.fill(sel, text); }
   if (process.env.CLICK) await page.click(process.env.CLICK);
+  if (process.env.CLICK2) { await page.waitForTimeout(6000); await page.click(process.env.CLICK2); }
   if (waitFor) await page.waitForSelector(waitFor, { timeout: 30000 }).catch(() => problems.push(`selector not found: ${waitFor}`));
   await page.waitForFunction(() => !document.body.innerText.includes("updating") && !document.querySelector("[aria-busy]"), null, { timeout: 30000 }).catch(() => problems.push("page still busy"));
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(+(process.env.WAIT_MS || 800));
   if (process.env.ELEMENT) await page.locator(process.env.ELEMENT).first().screenshot({ path: out });
   else await page.screenshot({ path: out, fullPage: true });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

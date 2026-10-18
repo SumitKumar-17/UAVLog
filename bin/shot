@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 path="${1:?path, e.g. /flights}"; name="${2:?name}"; scheme="${3:-light}"; width="${4:-1280}"; height="${5:-900}"; wait="${6:-}"
 mkdir -p docs/screens docs/figures
-docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=/tmp -e NODE_PATH=/tmp/pw/node_modules -e WAIT_SEL="$wait" -e FILL="${FILL:-}" -e CLICK="${CLICK:-}" -e ELEMENT="${ELEMENT:-}" -v "$PWD":/work -w /work \
+docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=/tmp -e NODE_PATH=/tmp/pw/node_modules -e WAIT_SEL="$wait" -e FILL="${FILL:-}" -e CLICK="${CLICK:-}" -e CLICK2="${CLICK2:-}" -e WAIT_MS="${WAIT_MS:-}" -e ELEMENT="${ELEMENT:-}" -v "$PWD":/work -w /work \
   mcr.microsoft.com/playwright:v1.55.0-noble sh -c "[ -d /tmp/pw/node_modules/playwright ] || npm i playwright@1.55.0 --no-save --silent --prefix /tmp/pw >/dev/null 2>&1; \
   node tools/shoot.cjs 'http://localhost:${WEB_PORT:-3000}${path}' 'docs/screens/${name}-${scheme}-${width}.png' ${scheme} ${width} ${height}"
 echo "docs/screens/${name}-${scheme}-${width}.png"
