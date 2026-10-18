@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# One entry point for the whole data pipeline. Every stage is idempotent and resumable: re-run freely.
+#   ./bin/uavlog all                 # dev tier end to end (default)
+#   TIER=k10 ./bin/uavlog stream     # 10k logs: download in background while ingesting, then compress
+#   ./bin/uavlog status              # queue, row counts, sizes
+# Config via env or .env: TIER (dev|k10|eligible), WORKERS, FETCH_DELAY, N_LABELED/N_ERRORS/N_CLEAN.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+[ -f .env ] || { echo "missing .env (copy .env.example)"; exit 1; }
+set -a; . ./.env; set +a
+
+TIER="${TIER:-dev}"
+FETCH_DELAY="${FETCH_DELAY:-6}"   # seconds between downloads; keep polite to the Flight Review server
+cores=$(nproc); mem_gb=$(awk '/MemTotal/ {print int($2/1048576)}' /proc/meminfo)
+auto=$(( cores / 2 < mem_gb / 6 ? cores / 2 : mem_gb / 6 )); [ "$auto" -lt 1 ] && auto=1
+WORKERS="${WORKERS:-$auto}"       # ~6 GB RAM per parse worker (large logs)
+
+run() { docker compose exec -T backend "$@"; }
+sql() { docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q "$@"; }
+sel_args=(--tier "$TIER")
+[ -n "${N_LABELED:-}" ] && sel_args+=(--n-labeled "$N_LABELED")
+[ -n "${N_ERRORS:-}" ] && sel_args+=(--n-errors "$N_ERRORS")
+[ -n "${N_CLEAN:-}" ] && sel_args+=(--n-clean "$N_CLEAN")
+
+stage() { echo; echo "==> $*"; }
+
+cmd_up()      { stage "start containers"; docker compose up -d --build db backend; run true
+                until docker compose exec -T db pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; do sleep 2; done; }
+cmd_init()    { stage "migrate + seed ontology"; run alembic upgrade head; run python scripts/seed_ontology.py; }
+cmd_index()   { stage "fetch log index"; run python scripts/fetch_index.py; }
+cmd_select()  { stage "select logs (tier=$TIER)"; run python scripts/select_logs.py "${sel_args[@]}"; }
+cmd_fetch()   { stage "download logs (delay ${FETCH_DELAY}s)"; run python scripts/fetch_logs.py --delay "$FETCH_DELAY"; }
+cmd_enqueue() { stage "enqueue jobs"; run python scripts/enqueue.py; }
+cmd_ingest()  { stage "ingest (workers=$WORKERS)"; run python scripts/ingest.py --workers "$WORKERS" "$@"; }
+cmd_compress(){ stage "columnstore compression"; run python scripts/compress.py; }
+cmd_size()    { stage "size report"; run python scripts/size_report.py --label "${1:-latest}"; }
+cmd_status()  { stage "status"
+                sql -c "SELECT status, count(*) FROM ingest_job GROUP BY 1 ORDER BY 1" \
+                    -c "SELECT (SELECT count(*) FROM flight) flights, (SELECT count(*) FROM telemetry) telemetry_rows, pg_size_pretty(pg_database_size(current_database())) db_size"
+                echo "disk free:"; df -h . | tail -1; }
+cmd_failed()  { sql -c "SELECT log_id, status, attempts, left(last_error, 100) AS error FROM ingest_job WHERE status IN ('failed','missing') ORDER BY status, log_id"; }
+
+# Download in the background while ingesting what has arrived; loop until downloads end and the queue drains.
+cmd_stream() {
+  cmd_up; cmd_init; cmd_index; cmd_select
+  stage "stream: download (background) + ingest loop"
+  mkdir -p data/logs
+  run python scripts/fetch_logs.py --delay "$FETCH_DELAY" > "data/logs/fetch-$(date +%s).log" 2>&1 & fetch_pid=$!
+  while true; do
+    cmd_enqueue
+    run python scripts/ingest.py --workers "$WORKERS" || true
+    if ! kill -0 "$fetch_pid" 2>/dev/null; then break; fi
+    sleep 30
+  done
+  wait "$fetch_pid" || echo "downloader reported failures; re-run './bin/uavlog stream' to retry them"
+  cmd_enqueue; cmd_ingest; cmd_compress; cmd_size "tier_$TIER"; cmd_status
+}
+
+cmd_all() { cmd_up; cmd_init; cmd_index; cmd_select; cmd_fetch; cmd_enqueue; cmd_ingest; cmd_compress; cmd_size "tier_$TIER"; cmd_status; }
+
+case "${1:-}" in
+  up|init|index|select|fetch|enqueue|ingest|compress|size|status|failed|stream|all) c="$1"; shift; "cmd_$c" "$@" ;;
+  *) sed -n '2,6p' "$0"; echo "stages: up init index select fetch enqueue ingest compress size status failed stream all"; exit 1 ;;
+esac
