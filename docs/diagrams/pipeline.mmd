@@ -1,0 +1,11 @@
+flowchart LR
+    A["index<br/>478,918 logs"] --> B["select<br/>tiers: dev, k10, eligible"]
+    B --> C["fetch<br/>6 s apart, atomic files"]
+    C --> D["enqueue<br/>ingest_job"]
+    D --> E["ingest<br/>Parquet + COPY"]
+    E --> F["events<br/>flight_task"]
+    F --> G["embed<br/>text-embedding-3-small"]
+    G --> H["compress<br/>columnstore, partial chunks"]
+    H --> I["summary<br/>materialised view and 1 s aggregate"]
+    I --> J["signatures<br/>PCA, 32 dimensions"]
+    J --> K["snapshot<br/>share the result"]

@@ -1,0 +1,19 @@
+flowchart LR
+    FR[("Flight Review<br/>public logs")] -->|select, fetch| ULG["raw .ulg files"]
+    ULG -->|ingest workers| PQ[("Parquet lake<br/>every topic")]
+    ULG -->|ingest workers| TS[("telemetry hypertable<br/>34 mapped signals<br/>columnstore")]
+    ULG -->|events workers| EV[("events")]
+    TS -->|gaps-and-islands rules| EV
+    EV -->|embed workers| VEC["embeddings<br/>pgvector HNSW"]
+    ONT[("ontology and<br/>semantic catalog")] --> TS
+    ONT --> EV
+    VEC --> HS["hybrid search<br/>exact or HNSW router"]
+    EV --> HS
+    TS --> SEM["semantic views<br/>read-only role"]
+    SEM --> NL["guarded NL-to-SQL"]
+    TS --> SIG["behavioural signatures<br/>32 dimensions"]
+    HS --> API["FastAPI"]
+    NL --> API
+    TS --> API
+    SIG --> API
+    API --> WEB["Next.js app"]
