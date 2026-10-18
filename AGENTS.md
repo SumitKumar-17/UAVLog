@@ -24,9 +24,9 @@ Background research (read before making design decisions): `research/01-datasets
 
 - **Core DB:** one PostgreSQL 17 with TimescaleDB (hypertables, **columnstore**, continuous aggregates) and pgvector (HNSW). Image: `timescale/timescaledb-ha:pg17`. Verify pgvector is present via `pg_available_extensions`; if not, build a custom Dockerfile. Never use `-oss` images (no columnstore/caggs). Use current names (`enable_columnstore`, `add_columnstore_policy`), not deprecated "compression" names.
 - **Semantic layer:** relational ontology tables (concept, vendor_field, field_mapping with unit transform, relation) queried with recursive CTEs. Signal → Subsystem → Failure mode → Event. Apache AGE is out of scope (future work).
-- **Embeddings (via LiteLLM):** text embeddings of event descriptions (`text-embedding-3-small`, use the `dimensions` param; pgvector indexes max 2000 dims, use `halfvec` if larger), plus numeric signature embeddings of signal windows (statistical + spectral features, PCA 64–128). TS2Vec is an optional learned comparator. No GPU is available or needed.
+- **Embeddings (via the shared OpenAI-compatible client `backend/app/llm.py`, no LiteLLM):** text embeddings of event descriptions (`text-embedding-3-small`, use the `dimensions` param; pgvector indexes max 2000 dims, use `halfvec` if larger), plus numeric signature embeddings of signal windows (statistical + spectral features, PCA 64–128). TS2Vec is an optional learned comparator. No GPU is available or needed.
 - **Hybrid retrieval:** vector + full-text + SQL filters fused with reciprocal rank fusion. Known pgvector pitfall: filters apply after the ANN scan, so filtered queries can under-return; use iterative scan, partial indexes or partitioning. This is a headline experiment.
-- **LLM layer (LiteLLM, OpenAI):** NL-to-SQL over curated semantic views only. The LLM explains; SQL and rules produce the numbers. Log tokens, cost and latency to a table.
+- **LLM layer (shared client `app/llm.py`, OpenAI-compatible):** NL-to-SQL over curated semantic views only. The LLM explains; SQL and rules produce the numbers. Log tokens, cost and latency to a table.
 - **NL-to-SQL guardrails (non-negotiable):** dedicated read-only role seeing only curated views; statement and idle timeouts; `sqlglot` allows a single SELECT over allow-listed views/functions and caps LIMIT; block `pg_read_file`, `COPY ... PROGRAM`, `dblink` (SELECT-only is not a security boundary).
 - **Comparators for benchmarks only:** DuckDB over Parquet; optionally ClickHouse and pgvectorscale DiskANN.
 
@@ -38,7 +38,7 @@ Background research (read before making design decisions): `research/01-datasets
 | Charts / map | uPlot (server-side downsampling per viewport; **min/max envelopes** for safety signals, not LTTB), MapLibre + deck.gl |
 | Backend | FastAPI, SQLAlchemy 2, Alembic (pgvector/Timescale DDL as raw SQL in migrations) |
 | Queue | PgQueuer (Postgres-native, SKIP LOCKED); no Celery/Redis |
-| LLM | LiteLLM → OpenAI; model names in config, never hardcoded |
+| LLM | Shared `httpx` client for any OpenAI-compatible API (`OPENAI_API_KEY`, `OPENAI_API_BASE` from env); model names in config, never hardcoded; every call logged to `llm_call` |
 | Infra | Docker Compose, Grafana + `pg_stat_statements` for DB metrics |
 
 Python: pin **3.12 via uv** (system is 3.14, parser libs may not support it). Node 24, pnpm.
@@ -65,7 +65,7 @@ Methodology: report hardware and versions, repeat runs, p50/p95, index size and 
 
 - Layout (create as built): `backend/` (FastAPI, ingest, semantic layer), `web/` (Next.js), `db/` (migrations, SQL, ontology seed), `bench/` (harness + results), `docs/` (report, diagrams), `research/`.
 - All schema changes go through Alembic migrations; never hand-edit the DB.
-- Secrets in `.env` (git-ignored); commit `.env.example`. Keys: `OPENAI_API_KEY` (via LiteLLM).
+- Secrets in `.env` (git-ignored); commit `.env.example`. Keys: `OPENAI_API_KEY`, `OPENAI_API_BASE`.
 - Everything runs from `docker compose up` plus documented seed/ingest commands; benchmarks must be reproducible by script, and results saved as files under `bench/results/`.
 - Keep a decision log in `docs/decisions.md` (what, why, alternatives); the report draws from it.
 - Prefer small verified steps: after each phase, run it for real and record the evidence (plans, numbers) instead of asserting it.
