@@ -227,7 +227,7 @@ One time dimension on \code{ts} with 7-day chunks, 134 chunks, columnstore enabl
 
 \begin{frame}{Inspecting the hypertable: chunks}
 \begin{block}{Reading}
-All chunks are compressed. The earliest ranges (1970, 2005) come from logs with wrong device clocks; they are kept, in their own chunks, and the duration estimate ignores them.
+All chunks are compressed. The earliest ranges (1970, 2005) belong to logs whose device clock was implausible; the decision log (D6) describes how start times are guarded.
 \end{block}
 \vspace{0.3em}
 \terminal{term-chunks}
