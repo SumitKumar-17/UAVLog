@@ -1,0 +1,116 @@
+"""Ontology (Signal -> Subsystem -> Failure mode) and PX4 vendor-field mappings.
+
+PX4 field names were verified against real logs with pyulog.
+"""
+
+SUBSYSTEMS = {
+    "power": "Battery and power distribution",
+    "navigation": "GNSS and position estimation inputs",
+    "attitude": "Attitude and orientation",
+    "propulsion": "Motors, ESCs and propellers",
+    "imu": "Inertial sensors and vibration environment",
+    "estimation": "State estimator (EKF) health",
+    "flight_state": "Flight modes and arming state",
+}
+
+FAILURE_MODES = {
+    "low_battery": "Battery depleted or voltage sag under load",
+    "gps_degraded": "GNSS fix lost or poor accuracy",
+    "high_vibration": "Excessive airframe vibration",
+    "ekf_rejection": "Estimator rejecting sensor measurements",
+    "motor_imbalance": "Uneven motor outputs indicating a propulsion fault",
+}
+
+# signal key -> (label, unit, subsystem)
+SIGNALS = {
+    "attitude.roll": ("Roll angle", "deg", "attitude"),
+    "attitude.pitch": ("Pitch angle", "deg", "attitude"),
+    "attitude.yaw": ("Yaw angle", "deg", "attitude"),
+    "battery.voltage": ("Battery voltage", "V", "power"),
+    "battery.current": ("Battery current", "A", "power"),
+    "battery.remaining": ("Battery remaining", "%", "power"),
+    "battery.discharged": ("Battery discharged", "mAh", "power"),
+    "gps.lat": ("Latitude", "deg", "navigation"),
+    "gps.lon": ("Longitude", "deg", "navigation"),
+    "gps.alt_msl": ("GPS altitude (MSL)", "m", "navigation"),
+    "gps.eph": ("GPS horizontal accuracy", "m", "navigation"),
+    "gps.epv": ("GPS vertical accuracy", "m", "navigation"),
+    "gps.satellites": ("Satellites used", "count", "navigation"),
+    "gps.fix_type": ("GPS fix type", "enum", "navigation"),
+    "gps.speed": ("GPS ground speed", "m/s", "navigation"),
+    "position.x": ("Local position north", "m", "estimation"),
+    "position.y": ("Local position east", "m", "estimation"),
+    "position.z": ("Local position down", "m", "estimation"),
+    "velocity.x": ("Velocity north", "m/s", "estimation"),
+    "velocity.y": ("Velocity east", "m/s", "estimation"),
+    "velocity.z": ("Velocity down", "m/s", "estimation"),
+    "baro.altitude": ("Barometric altitude", "m", "navigation"),
+    "motor.output_1": ("Motor 1 output", "norm", "propulsion"),
+    "motor.output_2": ("Motor 2 output", "norm", "propulsion"),
+    "motor.output_3": ("Motor 3 output", "norm", "propulsion"),
+    "motor.output_4": ("Motor 4 output", "norm", "propulsion"),
+    "vibration.accel": ("Accelerometer vibration metric", "m/s^2", "imu"),
+    "vibration.gyro": ("Gyro vibration metric", "rad/s", "imu"),
+    "ekf.pos_test_ratio": ("EKF position innovation test ratio", "ratio", "estimation"),
+    "ekf.vel_test_ratio": ("EKF velocity innovation test ratio", "ratio", "estimation"),
+    "ekf.hgt_test_ratio": ("EKF height innovation test ratio", "ratio", "estimation"),
+    "mode.nav_state": ("Navigation state (flight mode)", "enum", "flight_state"),
+    "mode.arming_state": ("Arming state", "enum", "flight_state"),
+    "state.landed": ("Landed flag", "bool", "flight_state"),
+}
+
+# signal -> failure modes it is evidence for
+INDICATES = {
+    "battery.voltage": ["low_battery"],
+    "battery.remaining": ["low_battery"],
+    "gps.eph": ["gps_degraded"],
+    "gps.satellites": ["gps_degraded"],
+    "gps.fix_type": ["gps_degraded"],
+    "vibration.accel": ["high_vibration"],
+    "vibration.gyro": ["high_vibration"],
+    "ekf.pos_test_ratio": ["ekf_rejection"],
+    "ekf.vel_test_ratio": ["ekf_rejection"],
+    "ekf.hgt_test_ratio": ["ekf_rejection"],
+    "motor.output_1": ["motor_imbalance"],
+    "motor.output_2": ["motor_imbalance"],
+    "motor.output_3": ["motor_imbalance"],
+    "motor.output_4": ["motor_imbalance"],
+}
+
+# (topic, field, vendor unit, signal key, scale, offset). roll/pitch/yaw are derived from q[] at ingest.
+PX4_HOT_FIELDS = [
+    ("vehicle_attitude", "roll_deg", "deg", "attitude.roll", 1, 0),
+    ("vehicle_attitude", "pitch_deg", "deg", "attitude.pitch", 1, 0),
+    ("vehicle_attitude", "yaw_deg", "deg", "attitude.yaw", 1, 0),
+    ("battery_status", "voltage_v", "V", "battery.voltage", 1, 0),
+    ("battery_status", "current_a", "A", "battery.current", 1, 0),
+    ("battery_status", "remaining", "fraction", "battery.remaining", 100, 0),
+    ("battery_status", "discharged_mah", "mAh", "battery.discharged", 1, 0),
+    ("vehicle_gps_position", "latitude_deg", "deg", "gps.lat", 1, 0),
+    ("vehicle_gps_position", "longitude_deg", "deg", "gps.lon", 1, 0),
+    ("vehicle_gps_position", "altitude_msl_m", "m", "gps.alt_msl", 1, 0),
+    ("vehicle_gps_position", "eph", "m", "gps.eph", 1, 0),
+    ("vehicle_gps_position", "epv", "m", "gps.epv", 1, 0),
+    ("vehicle_gps_position", "satellites_used", "count", "gps.satellites", 1, 0),
+    ("vehicle_gps_position", "fix_type", "enum", "gps.fix_type", 1, 0),
+    ("vehicle_gps_position", "vel_m_s", "m/s", "gps.speed", 1, 0),
+    ("vehicle_local_position", "x", "m", "position.x", 1, 0),
+    ("vehicle_local_position", "y", "m", "position.y", 1, 0),
+    ("vehicle_local_position", "z", "m", "position.z", 1, 0),
+    ("vehicle_local_position", "vx", "m/s", "velocity.x", 1, 0),
+    ("vehicle_local_position", "vy", "m/s", "velocity.y", 1, 0),
+    ("vehicle_local_position", "vz", "m/s", "velocity.z", 1, 0),
+    ("vehicle_air_data", "baro_alt_meter", "m", "baro.altitude", 1, 0),
+    ("actuator_motors", "control[0]", "norm", "motor.output_1", 1, 0),
+    ("actuator_motors", "control[1]", "norm", "motor.output_2", 1, 0),
+    ("actuator_motors", "control[2]", "norm", "motor.output_3", 1, 0),
+    ("actuator_motors", "control[3]", "norm", "motor.output_4", 1, 0),
+    ("vehicle_imu_status", "accel_vibration_metric", "m/s^2", "vibration.accel", 1, 0),
+    ("vehicle_imu_status", "gyro_vibration_metric", "rad/s", "vibration.gyro", 1, 0),
+    ("estimator_status", "pos_test_ratio", "ratio", "ekf.pos_test_ratio", 1, 0),
+    ("estimator_status", "vel_test_ratio", "ratio", "ekf.vel_test_ratio", 1, 0),
+    ("estimator_status", "hgt_test_ratio", "ratio", "ekf.hgt_test_ratio", 1, 0),
+    ("vehicle_status", "nav_state", "enum", "mode.nav_state", 1, 0),
+    ("vehicle_status", "arming_state", "enum", "mode.arming_state", 1, 0),
+    ("vehicle_land_detected", "landed", "bool", "state.landed", 1, 0),
+]
