@@ -91,3 +91,28 @@ export type Internals = {
   demos: { id: string; title: string; about: string }[];
 };
 export type Explain = { name: string; title: string; about: string; sql: string; plan: string[]; execution: string };
+
+export type AskAnswer = {
+  question: string;
+  sql: string | null;
+  columns: string[];
+  rows: (string | number | boolean | null | unknown[])[][];
+  truncated: boolean;
+  notes: string[];
+  attempts: { sql: string; error: string | null }[];
+  cannot_answer: string | null;
+  error: string | null;
+  cost: number | null;
+  generate_ms: number;
+  run_ms: number;
+  explanation: string | null;
+};
+
+export async function ask(question: string): Promise<AskAnswer> {
+  const res = await fetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question, explain: true }) });
+  if (!res.ok) {
+    const detail = await res.json().then((j) => j.detail).catch(() => res.statusText);
+    throw new Error(typeof detail === "string" ? detail : res.status === 422 ? "Ask a question of at least three characters." : res.statusText);
+  }
+  return res.json();
+}
