@@ -63,6 +63,7 @@ cmd_stream() {
 cmd_all() { cmd_up; cmd_init; cmd_index; cmd_select; cmd_fetch; cmd_enqueue; cmd_ingest; cmd_events; cmd_compress; cmd_size "tier_$TIER"; cmd_status; }
 
 case "${1:-}" in
+  snapshot) shift; exec ./bin/snapshot "$@" ;;
   up|init|index|select|fetch|enqueue|ingest|events|compress|size|status|failed|eval|stream|all) c="$1"; shift; "cmd_$c" "$@" ;;
-  *) sed -n '2,6p' "$0"; echo "stages: up init index select fetch enqueue ingest events compress size status failed eval stream all"; exit 1 ;;
+  *) sed -n '2,6p' "$0"; echo "stages: up init index select fetch enqueue ingest events compress size status failed eval stream all | snapshot (create restore verify list push-db pull-db)"; exit 1 ;;
 esac
