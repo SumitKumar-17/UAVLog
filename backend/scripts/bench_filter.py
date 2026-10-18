@@ -23,6 +23,7 @@ p.add_argument("--k", type=int, default=10)
 p.add_argument("--passes", type=int, default=2)
 p.add_argument("--out-dir", default="/bench/results")
 p.add_argument("--label", default="")
+p.add_argument("--only-diskann", action="store_true", help="run just the DiskANN label-filter strategy and merge it into the existing result file")
 a = p.parse_args()
 K = a.k
 
@@ -41,8 +42,13 @@ def drop_indexes(table="event_vec"):
 
 
 def timed(sql):
+    """Wall time of a statement; index builds can run for minutes, so the 120 s query timeout is lifted around them."""
+    conn.execute("SET statement_timeout = 0")
     t0 = time.time()
-    conn.execute(sql)
+    try:
+        conn.execute(sql)
+    finally:
+        conn.execute("SET statement_timeout = '120s'")
     return time.time() - t0
 
 
@@ -86,7 +92,7 @@ points, builds = [], {}
 print(f"N={N}, queries={len(Q)}, k={K}", flush=True)
 
 # ---- ground truth, computed with no ANN index (a B-tree on the filter columns would only make exact search faster, not different)
-truth_u = {spec: truth_for("event_vec", where, arg) for spec, where, arg, _ in FILTERS["uncorrelated"]}
+truth_u = {} if a.only_diskann else {spec: truth_for("event_vec", where, arg) for spec, where, arg, _ in FILTERS["uncorrelated"]}
 kind_where, kind_arg = "kind_id = %(kind)s", (lambda kind: {"kind": kind})
 truth_k = truth_for("event_vec", kind_where, kind_arg)
 print("ground truth done", flush=True)
@@ -123,6 +129,61 @@ def eval_kind(label, table="event_vec", where=kind_where, arg=kind_arg, setup_sq
 
 
 HNSW = "CREATE INDEX bench_hnsw ON bench.event_vec USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)"
+
+def diskann_section():
+    try:  # DiskANN label filtering (pgvectorscale)
+        conn.execute("ALTER TABLE bench.event_vec ADD COLUMN IF NOT EXISTS labels smallint[]")
+        conn.execute("UPDATE bench.event_vec SET labels = ARRAY[kind_id::smallint] WHERE labels IS NULL")
+        builds["diskann with labels"] = {"build_s": timed("CREATE INDEX bench_diskann ON bench.event_vec USING diskann (embedding vector_cosine_ops, labels)")}
+        conn.execute("ANALYZE bench.event_vec")
+        conn.execute("SET enable_seqscan = off; SET diskann.query_search_list_size = 100; SET diskann.query_rescore = 200")
+        print("[diskann label filter]", flush=True)
+        eval_kind("diskann labels, list=100, rescore=200", where="labels && ARRAY[%(kind)s]::smallint[]")
+        conn.execute("RESET enable_seqscan")
+    except Exception as e:  # noqa: BLE001 - optional comparator; record why it did not run
+        builds["diskann with labels"] = {"error": f"{type(e).__name__}: {str(e).splitlines()[0]}"}
+        print("diskann labels skipped:", builds["diskann with labels"]["error"], flush=True)
+    drop_indexes()
+
+
+
+def write_outputs(points, builds):
+    meta = {"taken_at": datetime.now(timezone.utc).isoformat(), "n_vectors": N, "queries": len(Q), "k": K, "passes": a.passes,
+            "versions": dict(conn.execute("SELECT extname, extversion FROM pg_extension WHERE extname IN ('vector','vectorscale')").fetchall()),
+            "sigma": dict(conn.execute("SELECT key, value FROM bench.meta").fetchall()).get("sigma"),
+            "kind_selectivity": {str(k): round(v, 5) for k, v in sorted(KIND_FREQ.items(), key=lambda x: -x[1])}}
+    os.makedirs(a.out_dir, exist_ok=True)
+    tag = f"filter_{N}{('_' + a.label) if a.label else ''}"
+    json.dump({"meta": meta, "builds": builds, "points": points}, open(f"{a.out_dir}/{tag}.json", "w"), indent=1)
+
+    md = [f"# Filtered vector search, {N:,} vectors", "", f"{len(Q)} queries, top-{K}, ground truth by exact filtered search. 'rows' is the mean number of rows returned (target {K}); "
+          "'short' counts queries that returned fewer rows than exist.", ""]
+    for fam, title in (("uncorrelated", "Independent filter (`bucket < t`, exact selectivities)"), ("kind", "Filter correlated with the query (`kind_id` = the query's own kind)")):
+        specs = list(dict.fromkeys(pt["filter"] for pt in points if pt["family"] == fam))
+        md += [f"## {title}", "", "| strategy | " + " | ".join(specs) + " |", "|---|" + "---|" * len(specs)]
+        for strat in dict.fromkeys(pt["strategy"] for pt in points if pt["family"] == fam):
+            cells = []
+            for sp in specs:
+                pt = next((x for x in points if x["family"] == fam and x["strategy"] == strat and x["filter"] == sp), None)
+                cells.append(f"R {pt['recall']:.2f} · {pt['rows_returned']:.1f} rows · {pt['p50_ms']:.1f} ms" if pt and pt["recall"] is not None else "–")
+            md.append(f"| {strat} | " + " | ".join(cells) + " |")
+        md.append("")
+    md += ["## Build cost", "", "| strategy | build time | size |", "|---|---|---|"]
+    for lab, b in builds.items():
+        md.append(f"| {lab} | {b['build_s']:.1f} s | {('%.0f MB' % b['size_mb']) if b.get('size_mb') else 'n/a'} |" if "error" not in b else f"| {lab} | not run: {b['error']} | |")
+    open(f"{a.out_dir}/{tag}.md", "w").write("\n".join(md) + "\n")
+    print(f"wrote {a.out_dir}/{tag}.md")
+
+
+
+if a.only_diskann:  # rerun just this strategy and merge it into the existing result file
+    old = json.load(open(f"{a.out_dir}/filter_{N}{('_' + a.label) if a.label else ''}.json"))
+    points[:] = [x for x in old["points"] if not x["strategy"].startswith("diskann")]
+    builds.clear()
+    builds.update(old["builds"])
+    diskann_section()
+    write_outputs(points, builds)
+    raise SystemExit
 
 # ---- strategies on one global HNSW index (only the vector index exists, so the planner must use it)
 drop_indexes()
@@ -186,42 +247,8 @@ eval_kind("list partitions + hnsw, ef=40", table="event_vec_part")
 conn.execute("RESET enable_seqscan")
 conn.execute("DROP TABLE bench.event_vec_part")
 
-try:  # DiskANN label filtering (pgvectorscale)
-    conn.execute("ALTER TABLE bench.event_vec ADD COLUMN IF NOT EXISTS labels smallint[]")
-    conn.execute("UPDATE bench.event_vec SET labels = ARRAY[kind_id::smallint] WHERE labels IS NULL")
-    builds["diskann with labels"] = {"build_s": timed("CREATE INDEX bench_diskann ON bench.event_vec USING diskann (embedding vector_cosine_ops, labels)")}
-    conn.execute("ANALYZE bench.event_vec")
-    conn.execute("SET enable_seqscan = off; SET diskann.query_search_list_size = 100; SET diskann.query_rescore = 200")
-    print("[diskann label filter]", flush=True)
-    eval_kind("diskann labels, list=100, rescore=200", where="labels && ARRAY[%(kind)s]::smallint[]")
-    conn.execute("RESET enable_seqscan")
-except Exception as e:  # noqa: BLE001 - optional comparator; record why it did not run
-    builds["diskann with labels"] = {"error": f"{type(e).__name__}: {str(e).splitlines()[0]}"}
-    print("diskann labels skipped:", builds["diskann with labels"]["error"], flush=True)
-drop_indexes()
 
-meta = {"taken_at": datetime.now(timezone.utc).isoformat(), "n_vectors": N, "queries": len(Q), "k": K, "passes": a.passes,
-        "versions": dict(conn.execute("SELECT extname, extversion FROM pg_extension WHERE extname IN ('vector','vectorscale')").fetchall()),
-        "sigma": dict(conn.execute("SELECT key, value FROM bench.meta").fetchall()).get("sigma"),
-        "kind_selectivity": {str(k): round(v, 5) for k, v in sorted(KIND_FREQ.items(), key=lambda x: -x[1])}}
-os.makedirs(a.out_dir, exist_ok=True)
-tag = f"filter_{N}{('_' + a.label) if a.label else ''}"
-json.dump({"meta": meta, "builds": builds, "points": points}, open(f"{a.out_dir}/{tag}.json", "w"), indent=1)
 
-md = [f"# Filtered vector search, {N:,} vectors", "", f"{len(Q)} queries, top-{K}, ground truth by exact filtered search. 'rows' is the mean number of rows returned (target {K}); "
-      "'short' counts queries that returned fewer rows than exist.", ""]
-for fam, title in (("uncorrelated", "Independent filter (`bucket < t`, exact selectivities)"), ("kind", "Filter correlated with the query (`kind_id` = the query's own kind)")):
-    specs = list(dict.fromkeys(pt["filter"] for pt in points if pt["family"] == fam))
-    md += [f"## {title}", "", "| strategy | " + " | ".join(specs) + " |", "|---|" + "---|" * len(specs)]
-    for strat in dict.fromkeys(pt["strategy"] for pt in points if pt["family"] == fam):
-        cells = []
-        for sp in specs:
-            pt = next((x for x in points if x["family"] == fam and x["strategy"] == strat and x["filter"] == sp), None)
-            cells.append(f"R {pt['recall']:.2f} · {pt['rows_returned']:.1f} rows · {pt['p50_ms']:.1f} ms" if pt and pt["recall"] is not None else "–")
-        md.append(f"| {strat} | " + " | ".join(cells) + " |")
-    md.append("")
-md += ["## Build cost", "", "| strategy | build time | size |", "|---|---|---|"]
-for lab, b in builds.items():
-    md.append(f"| {lab} | {b.get('build_s', float('nan')):.1f} s | {b.get('size_mb', float('nan')):.0f} MB | " if "error" not in b else f"| {lab} | not run: {b['error']} | |")
-open(f"{a.out_dir}/{tag}.md", "w").write("\n".join(md) + "\n")
-print(f"wrote {a.out_dir}/{tag}.md")
+diskann_section()
+
+write_outputs(points, builds)
