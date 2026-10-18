@@ -23,7 +23,7 @@ class ClientIp(unittest.TestCase):
         self.assertEqual(client_ip(request("127.0.0.1", "203.0.113.9")), "203.0.113.9")
 
     def test_forwarded_header_from_a_public_peer_is_ignored(self):
-        self.assertEqual(client_ip(request("198.51.100.7", "203.0.113.9")), "198.51.100.7")  # spoofing attempt
+        self.assertEqual(client_ip(request("8.8.8.8", "203.0.113.9")), "8.8.8.8")  # spoofing attempt (a documentation range such as 198.51.100.0/24 counts as private to Python 3.12)
 
     def test_without_the_header_the_peer_is_used(self):
         self.assertEqual(client_ip(request("172.18.0.5")), "172.18.0.5")

@@ -20,11 +20,11 @@ Every stage is idempotent and resumable, so re-running is always safe. Stages ca
 
 ## Web app
 
-`docker compose up -d web` serves the app on http://localhost:3000 (Next.js 16; the browser only talks to this origin and `/api/*` is proxied to the API). Pages: Overview, Flights, a flight page with synchronized charts, Search, Ask (natural language to guarded SQL), Database. `./bin/shot / home` takes a screenshot (light or dark, any width) into `docs/screens/`.
+`docker compose up -d web` serves the app on http://localhost:3000 (Next.js 16; the browser only talks to this origin and `/api/*` is proxied to the API). Pages: Overview, Flights, a flight page (synchronized charts, ground track, notes, similar flights), Search, Compare, Ask (natural language to guarded SQL), Ontology, Database, Benchmarks. `./bin/shots-all` retakes every page. `./bin/shot / home` takes a screenshot (light or dark, any width) into `docs/screens/`.
 
 ## Tests
 
-`docker compose exec backend python -m unittest discover -s tests` runs the guard (46 hostile and 18 legitimate queries) and NL-to-SQL pipeline tests (a fake model that obeys prompt injection must still be stopped). Evaluations: `python scripts/eval_search.py` (retrieval), `python scripts/eval_nlsql.py --questions /bench/eval/nlsql_test_questions.json` (NL-to-SQL); results land in `bench/results/`.
+`docker compose exec backend python -m unittest discover -s tests` runs 32 tests: the guard (46 hostile and 18 legitimate queries), the NL-to-SQL pipeline (a fake model that obeys prompt injection must still be stopped), rate limiting, the embedding cache and the MAVLink parser. Evaluations: `python scripts/eval_search.py` (retrieval), `python scripts/eval_nlsql.py --questions /bench/eval/nlsql_test_questions.json` (NL-to-SQL); results land in `bench/results/`.
 
 ## API
 
@@ -69,3 +69,7 @@ Growing a tier later (`TIER=dev` then `k10` then `eligible`) keeps everything al
 | `HOST_DATA_DIR` | where raw logs, Parquet and the index live (needs the disk, see sizes in `docs/decisions.md`) |
 
 If something fails: `./bin/uavlog failed` lists failed/missing logs with errors; `./bin/uavlog ingest --retry-failed`.
+
+## Report, slides and speaker script
+
+LaTeX sources in the repo root: `UAVLog_Presentation.tex` (Beamer, 76 slides), `UAVLog_Concept_Explainer.tex` (report), `UAVLog_Speaker_Script.txt`. Build a PDF with `./bin/latex UAVLog_Presentation.tex` (Docker image from `tools/latex/Dockerfile`). Figures: `./bin/figures` (diagrams, code images), `./bin/shots-all` (page screenshots), `tools/capture-terminal.sh` (database output), `tools/extract-listings.cjs` and `tools/bench-to-dat.cjs` (code listings and chart data).

@@ -194,3 +194,46 @@ is what keeps it small, so a Neon copy would be either unusable or 30 times larg
 Privacy and licence: the snapshot holds GPS tracks and pilot free text from public CC-BY Flight Review logs and no secrets; `DATA_ATTRIBUTION.md` says to
 credit Flight Review. Status: the script has not been exercised end to end yet. First use: `./bin/snapshot create`, then
 `./bin/snapshot restore <file> --as scratch` loads it into a separate database without touching the live one.
+
+## D18. Filtered vector search: route by the planner's row estimate (experiment 3)
+Evidence: `bench/results/filter_100000_sigma0.35.*`, 100,000 vectors, 200 queries. pgvector applies a filter after the ANN scan, so selective filters
+under-return: HNSW post-filter (ef_search 40) returned 0.0 of 10 rows at 0.1% selectivity and 4.1 at 10%; ef_search 400 helps (0.3 and 10) but not at
+the selective end. Iterative scan restores the row count (10 at every level) but costs 50 ms at 0.1%, and does not raise base recall. A B-tree filter
+plus exact sort returns the right 10 rows in 1.0 ms at 0.1% and 7.0 ms at 1% but 55 ms at 10% and 329 ms at 50%. Crossover is near 1,000 rows.
+With both indexes present the planner chose HNSW post-filtering at a 10% filter (4.0 rows, recall 0.37, 1.6 ms): cheap by its cost model, wrong by
+completeness. Decision: `app/search.py` asks the planner for the filtered row estimate (`EXPLAIN (FORMAT JSON)` on the filter alone); at or below
+1,500 rows it filters first and sorts exactly, otherwise HNSW with `hnsw.iterative_scan = relaxed_order`. The path and estimate are returned and shown.
+A filter correlated with the query (its own event kind) is harmless: every variant returned 10 rows; partial indexes (62 s build), list partitions
+(101 s) and DiskANN labels (621 s) added nothing at this size. Limit: one table size, one embedding model.
+
+## D19. Vector indexes: HNSW m=32 for events; IVFFlat and DiskANN stay comparators (experiment 2)
+Evidence: `ann_100000_sigma0.35.*`. Exact search 362 ms. HNSW m=32 reaches recall 0.95 in 2.4 ms and 0.99 in 3.2 ms (build 149 s, 819 MB); m=16
+reaches 0.95 in 2.7 ms and not 0.99. IVFFlat builds 3 to 17 times faster (8.5 to 17 s) but needs 5.5 to 14.8 ms for the same recall. DiskANN is 68 MB
+(12x smaller) but did not pass recall 0.74. Decision: HNSW for event embeddings. Controlled difficulty check (`ann_50000_sigma0.35.*` against
+`ann_50000_sigma0.8.*`, same N, relative contrast 6.0 and 2.0 against 20.5 for the real corpus): the ranking is stable, HNSW m=32 fastest at 0.99 in
+both, DiskANN peaks at 0.845 and 0.889. An earlier 50k-against-100k comparison confounded N and noise and was replaced by this run.
+
+## D20. Columnstore physical design and the engine comparison (experiments 1 and 4)
+Evidence: `columnstore_26940434.*` (100 flights, 26.9 M rows, median of 7) and `engines_70731891.*` (70.7 M rows, median of 5). Segmenting by
+(flight, signal) ordered by time: 147 MB against 3,631 MB rowstore (25x) and the cross-flight query 1,519 ms to 16 ms. Variants change size by under
+10%; chunk count and segmentby change cross-flight speed about 2x. Against DuckDB: DuckDB native wins single-signal slices and the full-scan
+aggregate (Q1 4.9 ms, Q5 478 ms); the columnstore wins pruned access (Q3 18.7 ms, Q4 3.8 ms) and the per-flight summary (Q6 1.0 s against 2.0 and 2.6 s).
+Load: Timescale COPY 287 k rows/s; DuckDB bulk from Parquet 6.2 M rows/s but 603 rows/s row by row. DuckDB stays a comparator because Postgres adds
+concurrent writers, transactions, roles and vectors in the same engine. Not measured: concurrency. A first engines run failed on DuckDB Q1 (a timezone
+package); fixed by casting buckets to text and the run was repeated.
+
+## D21. Fault injection on the event detectors (experiment on detection)
+Evidence: `injection_eval.*`, 30 real flights, 1,043 variants including controls. A constant fault value is held for 1 to 20 s at a random time and the
+unchanged rule engine looks for the right event kind. Below each rule's minimum duration (2 to 3 s) detection is 0 to 7%, by design (the 1 to 3 s
+detections of the battery rule are matches elsewhere in the flight, onset error 100 to 200 s). From 5 s, 90 to 100% are found, typically within 1 s of
+onset. False alarms on unmodified controls: 23% for battery critically low, 3 to 7% for the others. Weakest result: the battery-low rule.
+
+## D22. Flight signatures and a second autopilot
+Signatures (`flight_signature`, vector(32)): 145 statistical and spectral features over 30 signals, scaled, PCA to 32 dimensions (86% of variance).
+Sanity check: share of a flight's 5 nearest neighbours on the same board, 0.069 by chance, 0.253 with scaled features, 0.250 with the signature
+(`signature_eval.*`); compression to 32 dimensions loses nothing measurable. It is a sanity check, not ground truth. ArduPilot: one MAVLink log
+(`vtol.tlog`) is loaded through the same loader and the same ontology; attitude, GPS speed and local position resolve to the canonical signals
+(888 attitude samples per axis, 807 position samples). Vibration, motor outputs, EKF ratios, barometric altitude and flight mode are deliberately not
+mapped because their meaning differs (`app/ontology/seed_data.py`). The 1-second continuous aggregate (`telemetry_1s`) was created `WITH NO DATA`; a full
+refresh over 70 M compressed rows is slow (14 of 300 flights in 45 minutes), so the refresh was cancelled and the charts fall back to the raw path,
+which `api/main.py` does automatically.
