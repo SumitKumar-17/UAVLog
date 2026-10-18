@@ -49,6 +49,7 @@ cmd_stream() {
   while true; do
     cmd_enqueue
     run python scripts/ingest.py --workers "$WORKERS" || true
+    run python scripts/compress.py || true   # compress as we go: rowstore is ~30x larger than columnstore
     if ! kill -0 "$fetch_pid" 2>/dev/null; then break; fi
     sleep 30
   done
