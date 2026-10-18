@@ -1,76 +1,32 @@
 """HTTP API: flights, events, telemetry (server-side min/max envelopes), ontology, hybrid search."""
 import time
-import uuid
 from collections import defaultdict, deque
 from dataclasses import asdict
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
-from psycopg.rows import dict_row
 
 from app.api.deps import lifespan, llm, pool
 from app.api.bench import router as bench_router
+from app.api.common import client_ip, flight_uuid, rows, with_strips
+from app.api.extras import router as extras_router
+from app.api.limits import RateLimit
 from app.api.internals import router as internals_router
-from app.events.ulog_events import NAV_STATE
 from app.nlsql.generate import ask as ask_question
 from app.search import MODES, search
 
 app = FastAPI(title="Semantic Log Analytics [UAV Log]", version="0.1.0", lifespan=lifespan)
 app.include_router(internals_router)
 app.include_router(bench_router)
+app.include_router(extras_router)
+app.add_middleware(RateLimit)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["GET", "POST"], allow_headers=["*"])
-
-
-def rows(p, sql: str, params=None) -> list[dict]:
-    with p.connection() as c, c.cursor(row_factory=dict_row) as cur:
-        cur.execute(sql, params or {})
-        return cur.fetchall()
-
-
-def flight_uuid(value: str) -> str:
-    try:
-        return str(uuid.UUID(value))
-    except ValueError:
-        raise HTTPException(404, "unknown flight")
 
 
 @app.get("/health")
 def health(p=Depends(pool)):
     return {"ok": True, "flights": rows(p, "SELECT count(*) AS n FROM flight")[0]["n"]}
-
-
-def mode_segments(p, flight_ids: list[str]) -> dict[str, list[dict]]:
-    """Flight-mode ribbon per flight (seconds from log start), as runs of the nav_state signal."""
-    segs: dict[str, list[dict]] = {}
-    for r in rows(p, """
-        WITH s AS (SELECT t.flight_id, t.ts, t.value::int AS v FROM telemetry t
-                   JOIN vendor_field vf ON vf.id = t.vendor_field_id AND vf.topic = 'vehicle_status' AND vf.field = 'nav_state'
-                   WHERE t.flight_id = ANY(%(ids)s::uuid[])),
-        g AS (SELECT *, row_number() OVER (PARTITION BY flight_id ORDER BY ts)
-                      - row_number() OVER (PARTITION BY flight_id, v ORDER BY ts) AS grp FROM s)
-        SELECT g.flight_id::text AS fid, g.v, extract(epoch FROM min(g.ts) - f.started_at) AS t0
-        FROM g JOIN flight f ON f.id = g.flight_id GROUP BY g.flight_id, g.v, g.grp, f.started_at ORDER BY 1, 3""", {"ids": flight_ids}):
-        segs.setdefault(r["fid"], []).append({"t0": max(r["t0"], 0.0), "mode": NAV_STATE.get(r["v"], f"mode {r['v']}")})
-    return segs
-
-
-def with_strips(p, items: list[dict]) -> list[dict]:
-    """Attach `modes` (t0, t1, mode) and `marks` (warning/critical events) so a flight can be drawn as a strip."""
-    ids = [str(i["id"]) for i in items]
-    segs = mode_segments(p, ids) if ids else {}
-    marks: dict[str, list[dict]] = {}
-    for r in rows(p, """SELECT e.flight_id::text AS fid, c.key AS kind, e.severity, e.description,
-                               extract(epoch FROM e.ts_start - f.started_at) AS t
-                        FROM event e JOIN concept c ON c.id = e.kind_id JOIN flight f ON f.id = e.flight_id
-                        WHERE e.flight_id = ANY(%s::uuid[]) AND e.severity >= 1 ORDER BY e.ts_start""", (ids,)) if ids else []:
-        marks.setdefault(r["fid"], []).append({k: r[k] for k in ("t", "severity", "kind", "description")})
-    for i in items:
-        fid, dur = str(i["id"]), i["duration_s"] or 0.0
-        runs = segs.get(fid, [])
-        i["modes"] = [{"t0": r["t0"], "t1": runs[n + 1]["t0"] if n + 1 < len(runs) else dur, "mode": r["mode"]} for n, r in enumerate(runs)]
-        i["marks"] = marks.get(fid, [])
-    return items
 
 
 @app.get("/api/stats")
@@ -126,17 +82,38 @@ def signal(flight_id: str, signal: str, p=Depends(pool), from_s: float = 0, to_s
         raise HTTPException(404, "unknown flight")
     end = to_s if to_s is not None else dur[0]["duration_s"]
     width = max((end - from_s) / buckets, 0.01)
-    out = rows(p, """
-        WITH f AS (SELECT started_at FROM flight WHERE id = %(fid)s)
-        SELECT extract(epoch FROM x.b - f.started_at) AS t, x.lo, x.hi, x.mean, x.n FROM f, LATERAL (
-            SELECT time_bucket(make_interval(secs => %(w)s), ts) AS b, min(value) AS lo, max(value) AS hi, avg(value) AS mean, count(*) AS n
-            FROM canonical_telemetry
-            WHERE flight_id = %(fid)s AND signal = %(sig)s
-              AND ts >= f.started_at + make_interval(secs => %(a)s) AND ts <= f.started_at + make_interval(secs => %(b)s)
-            GROUP BY 1) x ORDER BY 1""", {"fid": fid, "sig": signal, "w": width, "a": from_s, "b": end})
+    prm = {"fid": fid, "sig": signal, "w": width, "a": from_s, "b": end}
+    out, source = [], "raw"
+    if width >= 1.0:  # zoomed out: read the continuous aggregate (one row per second, per flight and signal) instead of every sample
+        try:
+            out = rows(p, """
+                WITH f AS (SELECT started_at FROM flight WHERE id = %(fid)s)
+                SELECT extract(epoch FROM x.b - f.started_at) AS t, x.lo, x.hi, x.mean, x.n FROM f, LATERAL (
+                    SELECT time_bucket(make_interval(secs => %(w)s), c.bucket) AS b,
+                           min(least(c.lo * m.scale + m."offset", c.hi * m.scale + m."offset")) AS lo,
+                           max(greatest(c.lo * m.scale + m."offset", c.hi * m.scale + m."offset")) AS hi,
+                           sum((c.mean * m.scale + m."offset") * c.n) / sum(c.n) AS mean, sum(c.n) AS n
+                    FROM telemetry_1s c JOIN field_mapping m ON m.vendor_field_id = c.vendor_field_id
+                    JOIN concept k ON k.id = m.concept_id AND k.kind = 'signal'
+                    WHERE c.flight_id = %(fid)s AND k.key = %(sig)s
+                      AND c.bucket >= f.started_at + make_interval(secs => %(a)s) AND c.bucket <= f.started_at + make_interval(secs => %(b)s)
+                    GROUP BY 1) x ORDER BY 1""", prm)
+            source = "continuous aggregate"
+        except Exception:  # aggregate not created or not populated yet: the raw path below still answers
+            out = []
+    if not out:
+        source = "raw"
+        out = rows(p, """
+            WITH f AS (SELECT started_at FROM flight WHERE id = %(fid)s)
+            SELECT extract(epoch FROM x.b - f.started_at) AS t, x.lo, x.hi, x.mean, x.n FROM f, LATERAL (
+                SELECT time_bucket(make_interval(secs => %(w)s), ts) AS b, min(value) AS lo, max(value) AS hi, avg(value) AS mean, count(*) AS n
+                FROM canonical_telemetry
+                WHERE flight_id = %(fid)s AND signal = %(sig)s
+                  AND ts >= f.started_at + make_interval(secs => %(a)s) AND ts <= f.started_at + make_interval(secs => %(b)s)
+                GROUP BY 1) x ORDER BY 1""", prm)
     if not out:
         raise HTTPException(404, "no data for this signal in this flight")
-    return {"signal": signal, "from_s": from_s, "to_s": end, "bucket_s": width, "points": out}
+    return {"signal": signal, "from_s": from_s, "to_s": end, "bucket_s": width, "source": source, "points": out}
 
 
 @app.get("/api/search")
@@ -145,13 +122,14 @@ def search_events(q: str, p=Depends(pool), client=Depends(llm), k: int = Query(1
                   mode: str = "hybrid"):
     if mode not in MODES:
         raise HTTPException(400, f"mode must be one of {sorted(MODES)}")
+    info: dict = {}
     with p.connection() as c:
-        res = search(c, client, q, k=k, kinds=kind, min_severity=min_severity, hw=hw, mode=mode)
+        res = search(c, client, q, k=k, kinds=kind, min_severity=min_severity, hw=hw, mode=mode, info=info)
     for r in res:
         r["t"] = r["t"].total_seconds()
         r["source_ref"] = r.pop("flight")
         r["flight_id"] = r.pop("flight_uuid")
-    return {"query": q, "mode": mode, "results": res}
+    return {"query": q, "mode": mode, **info, "results": res}
 
 
 @app.get("/api/ontology")
@@ -175,7 +153,7 @@ RATE_PER_MINUTE = 20
 @app.post("/api/ask")
 def ask(body: AskBody, request: Request, p=Depends(pool), client=Depends(llm)):
     """Natural-language question to a guarded, read-only SQL query over the semantic views."""
-    who, now = request.client.host if request.client else "?", time.time()
+    who, now = client_ip(request), time.time()
     q = _recent[who]
     while q and now - q[0] > 60:
         q.popleft()
