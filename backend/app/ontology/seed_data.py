@@ -19,6 +19,8 @@ FAILURE_MODES = {
     "high_vibration": "Excessive airframe vibration",
     "ekf_rejection": "Estimator rejecting sensor measurements",
     "motor_imbalance": "Uneven motor outputs indicating a propulsion fault",
+    "motor_failure": "Motor or ESC failure detected by the autopilot",
+    "attitude_loss": "Attitude exceeded safe limits (loss of control)",
 }
 
 # signal key -> (label, unit, subsystem)
@@ -129,4 +131,7 @@ EVENTS = {
     "gps_poor": ("GPS fix or accuracy degraded", "gps_degraded"),
     "vibration_high": ("Sustained high vibration", "high_vibration"),
     "ekf_innovation_reject": ("Estimator rejecting measurements", "ekf_rejection"),
+    "motor_failure_detected": ("Failure detector reported a motor or ESC failure", "motor_failure"),
+    "imbalanced_prop_detected": ("Failure detector reported an imbalanced propeller", "motor_imbalance"),
+    "attitude_limit_exceeded": ("Roll or pitch exceeded the failure-detector limit", "attitude_loss"),
 }
