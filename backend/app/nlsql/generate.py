@@ -61,6 +61,12 @@ class Answer:
     explanation: str | None = None
 
 
+def is_refusal(reply: str) -> bool:
+    """A refusal mentions CANNOT_ANSWER and carries no SQL (no code fence, no line starting with SELECT or WITH). A substring
+    test for SELECT is wrong: 'pilot-selected labels' contains it."""
+    return "CANNOT_ANSWER" in reply and "```" not in reply and not re.search(r"(?im)^\s*(select|with)\b", reply)
+
+
 def extract_sql(text: str) -> str:
     m = re.search(r"```(?:sql)?\s*(.*?)```", text, re.S | re.I)
     return (m.group(1) if m else text).strip().rstrip(";")
@@ -82,7 +88,7 @@ def ask(pool, llm: LLMClient, question: str, mode: str = "semantic", explain: bo
         t0 = time.time()
         reply = llm.chat(messages, temperature=0)
         ans.generate_ms += (time.time() - t0) * 1000
-        if "CANNOT_ANSWER" in reply and "SELECT" not in reply.upper():
+        if is_refusal(reply):
             ans.cannot_answer = reply.split("CANNOT_ANSWER:", 1)[-1].strip() or "The data cannot answer this question."
             return ans
         sql = extract_sql(reply)
