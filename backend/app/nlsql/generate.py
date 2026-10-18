@@ -17,6 +17,7 @@ Use only the views below. Rules:
 - To compare or filter flights by a signal's level, use semantic.signal_summary (fast). semantic.telemetry has about 70 million rows: only query it with a flight_id AND signal filter.
 - Event kinds are listed in the events.kind comment. Search free text in events.description with ILIKE.
 - Prefer counting DISTINCT flight_id when asked how many flights.
+- To count telemetry samples, use SUM(samples) from semantic.signal_summary (optionally WHERE signal = ...); never count rows of semantic.telemetry across flights.
 - If the views cannot answer the question, reply with exactly: -- CANNOT_ANSWER: <short reason>"""
 
 RULES_RAW = """You answer questions about a corpus of UAV (drone) flight logs by writing ONE PostgreSQL SELECT query.
