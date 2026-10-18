@@ -1,0 +1,13 @@
+{
+ "taken_at": "2026-10-18T12:20:49.464978+00:00",
+ "flights": 300,
+ "features": 145,
+ "dimensions": 32,
+ "variance_kept": 0.858695082649286,
+ "k": 5,
+ "board_agreement_signature": 0.25,
+ "board_agreement_scaled_features": 0.25333333333333335,
+ "board_agreement_chance": 0.06858416945373468,
+ "flights_with_a_same_board_peer": 271,
+ "note": "Fraction of a flight's 5 nearest neighbours that share its board, leave-one-out. A sanity check, not a ground truth: hardware influences sensor scale, so some agreement is expected."
+}
