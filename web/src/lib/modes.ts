@@ -11,3 +11,4 @@ const MODE_VAR: Record<string, string> = {
 };
 export const LEGEND_MODES = Object.keys(MODE_VAR);
 export const modeColor = (mode: string) => `var(${MODE_VAR[mode] ?? "--m-other"})`;
+export const modeColorVar = (mode: string) => MODE_VAR[mode] ?? "--m-other";
