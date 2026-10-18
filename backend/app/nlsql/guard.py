@@ -11,7 +11,8 @@ import sqlglot
 from sqlglot import exp
 from sqlglot.errors import ParseError
 
-MAX_ROWS = 200
+MAX_ROWS = 200  # rows shown
+FETCH_LIMIT = MAX_ROWS + 1  # one extra row is fetched as a sentinel so the caller can tell the result was cut
 MAX_CHARS = 4000
 MAX_TABLES = 8
 
@@ -137,9 +138,9 @@ def check(query: str, policy: Policy | None = None) -> Checked:
         lit = limit.expression if isinstance(limit, exp.Limit) else None
         n_limit = int(lit.name) if isinstance(lit, exp.Literal) and lit.is_int else None
     if limit is None:
-        root = root.limit(MAX_ROWS)
-        notes.append(f"added LIMIT {MAX_ROWS}")
-    elif n_limit is None or n_limit > MAX_ROWS:
-        root = sqlglot.select("*").from_(root.subquery("_q")).limit(MAX_ROWS)
+        root = root.limit(FETCH_LIMIT)
+        notes.append(f"limited to {MAX_ROWS} rows")
+    elif n_limit is None or n_limit > FETCH_LIMIT:
+        root = sqlglot.select("*").from_(root.subquery("_q")).limit(FETCH_LIMIT)
         notes.append(f"capped to {MAX_ROWS} rows")
     return Checked(sql=root.sql(dialect="postgres", comments=False), tables=sorted(set(used_tables)), functions=sorted(set(funcs)), notes=notes)
