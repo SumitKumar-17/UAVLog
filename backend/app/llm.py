@@ -1,7 +1,9 @@
 """Shared client for any OpenAI-compatible API (key and base URL come from the environment).
 
 Embeddings are batched and retried with backoff. Every call can be logged to `llm_call` (tokens, latency)."""
+import threading
 import time
+from collections import OrderedDict
 
 import httpx
 
@@ -26,6 +28,8 @@ class LLMClient:
         self.http = httpx.Client(base_url=base, timeout=timeout,
                                  headers={"Authorization": f"Bearer {settings.openai_api_key}"})
         self.conn, self.pool, self.max_retries = conn, pool, max_retries
+        self._cache: OrderedDict = OrderedDict()  # recent query embeddings: the API round trip (about 1.4 s) dominates search latency
+        self._lock = threading.Lock()
 
     def _post(self, path: str, body: dict) -> tuple[dict, int]:
         for attempt in range(self.max_retries + 1):
@@ -65,6 +69,20 @@ class LLMClient:
             out += [d["embedding"] for d in sorted(data["data"], key=lambda d: d["index"])]
             self._log("embedding", model, data.get("usage", {}), ms, len(chunk))
         return out
+
+    def embed_cached(self, text: str, size: int = 1024) -> list[float]:
+        """Embedding of one query with a small LRU cache (a repeated or example query costs no API call)."""
+        key = (settings.embed_model, settings.embed_dims, " ".join(text.lower().split()))
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+                return self._cache[key]
+        vec = self.embed([text])[0]
+        with self._lock:
+            self._cache[key] = vec
+            while len(self._cache) > size:
+                self._cache.popitem(last=False)
+        return vec
 
     def chat(self, messages: list[dict], model: str | None = None, **params) -> str:
         model = _model(model or settings.llm_model)
