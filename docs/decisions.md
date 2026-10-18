@@ -132,3 +132,50 @@ percentile of each topic's last timestamp, immune to a few outliers). The source
 Five stored rows were corrected with a targeted update after listing them. The same affected the app's "Longest" ordering and chart
 ranges. Lesson recorded: sanity-check derived scalars at ingest (a duration far above the index value should fail loudly).
 Also found: one flight reports a battery voltage of 2,063 V (a sensor glitch). Raw telemetry has outliers; summaries surface them.
+
+## D16. NL-to-SQL: guarded, read-only, and measured with and without the semantic layer (experiment 5)
+
+**Design.** A `semantic` schema of documented views (flights, events, signals, telemetry, ontology, and a precomputed per-flight
+`signal_summary`); the prompt is built from the view and column comments in the catalog, so documentation lives next to the data. Four
+defences: (1) a `sqlglot` guard (one SELECT, allow-listed views and functions, no nested or recursive WITH, row cap with a sentinel row so
+truncation is reported, and the *regenerated* SQL is what runs, never the model's text); (2) a role that sees only the views; (3) a read-only
+transaction with a statement timeout; (4) cost-based admission control (`EXPLAIN` before running; realistic questions plan at under 5,000,
+one signal across all flights at 59,000, counting every sample at 683,000, a telemetry self-join at 515 million; limit 100,000). Tests: 46
+hostile queries refused (each checked for the *intended* reason), 18 legitimate ones accepted, and a pipeline test with a fake model that
+obeys prompt injection and must still be stopped (19 tests).
+
+**Method.** 37 dev questions (34 answerable) and 30 held-out test questions (27 answerable) over 8 categories; gold SQL written twice (semantic
+views and raw tables) and cross-checked to return identical results (this caught a corrupt-duration data bug, D15, and a tied "lowest voltage"
+question). Metric: execution accuracy, i.e. the result set equals the gold's (order-insensitive, numbers within rounding); "strict" requires the
+same columns, "lenient" allows extra columns. Three conditions: semantic views; raw tables plus the *same documentation* written against the raw
+schema (added after the first dev run exposed that plain raw was a weak baseline); raw tables alone. Model gpt-4o-mini, temperature 0, up to two
+self-repair rounds. Paired exact sign tests; bootstrap CIs.
+
+**Process, including mistakes.** The first dev run scored semantic 0.65 vs raw 0.24 but part of that was my harness (Decimal results compared
+as strings), one ambiguous question, and a prompt rule I wrote ("prefer counting DISTINCT flight_id") that made the model count flights when asked
+for events. Those were fixed on the dev set, then the system was frozen, and a held-out test set written before any model run on it was evaluated.
+That first held-out run exposed three further bugs in my infrastructure, all of which unfairly penalised the raw conditions: the guard rejected
+the safe `->>` JSON operator, a trailing `; -- comment` counted as a second statement, and a refusal containing the word "pilot-selected" was
+mistaken for SQL. These were fixed and the held-out set was run a second time. Prompts are byte-identical across both runs (component hashes in
+the result files); both runs are kept. The headline uses run 2 because run 1 overstated the semantic layer's advantage.
+
+**Results** (strict EX, 95% bootstrap CI).
+
+| condition | dev (34) | held-out run 1 (27) | held-out run 2 (27) |
+|---|---|---|---|
+| semantic views | 0.74 [0.59, 0.88] | 0.89 [0.78, 1.00] | **0.89** [0.78, 1.00] (lenient 0.96) |
+| raw tables + same docs | 0.53 [0.35, 0.71] | 0.59 [0.41, 0.78] | **0.70** [0.52, 0.89] |
+| raw tables alone | 0.21 [0.09, 0.35] | 0.22 [0.07, 0.37] | **0.26** [0.11, 0.44] |
+
+Paired, run 2: documentation alone lifts raw from 0.26 to 0.70 (12 questions to 0, p = 0.0005); the semantic views add a further 0.19 over
+documented raw tables, which is suggestive but **not significant at this sample size** (6 to 1, p = 0.125; dev: 10 to 3, p = 0.092; run 1 had
+shown 8 to 0, p = 0.008, which the guard bug had inflated). Failure shape: without documentation the model does not fail loudly, it answers
+with confident wrong results (17 of 27 answered-but-wrong for plain raw): filtering `severity = 1` for "critical", matching event kinds with
+`description ILIKE`, using the `autopilot` column for the board, mapping label codes wrongly. The semantic condition never fabricated an answer
+to an unanswerable question (raw alone fabricated 1 of 3), and its two other misses are an unnecessary refusal (t18) and extra columns under
+strict scoring.
+
+**Limits.** One model, one run at temperature 0, small n; the questions, gold queries and the views were written by the same person, so phrasing
+may lean toward the view vocabulary; the semantic condition also benefits structurally from the precomputed `signal_summary`, which raw tables
+cannot match cheaply (cost admission would refuse the telemetry scans). To strengthen: repeat with a stronger and a weaker model, add
+questions, and test paraphrases. Security evidence (hostile queries, fake obedient model) is separate from accuracy evidence.
