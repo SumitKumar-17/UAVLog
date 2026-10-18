@@ -36,13 +36,13 @@ def extract(path: str, started_at: datetime) -> list[dict]:
     if "vehicle_status" in by:
         d = by["vehicle_status"]
         t = d["timestamp"]
-        for i in _changes(d["nav_state"]):
+        for i in _changes(d["nav_state"]) if "nav_state" in d else []:
             a, b = _mode(d["nav_state"][i - 1]), _mode(d["nav_state"][i])
             add("mode_change", at(t[i]), 0, "vehicle_status", f"Flight mode changed from {a} to {b}", **{"from": a, "to": b})
-        for i in _changes(d["arming_state"]):
+        for i in _changes(d["arming_state"]) if "arming_state" in d else []:
             armed = int(d["arming_state"][i]) == 2
             add("arm" if armed else "disarm", at(t[i]), 0, "vehicle_status", "Motors armed" if armed else "Motors disarmed")
-        if "failsafe" in d:
+        if "failsafe" in d and "nav_state" in d:
             for i in _changes(d["failsafe"]):
                 if d["failsafe"][i]:
                     m = _mode(d["nav_state"][i])
