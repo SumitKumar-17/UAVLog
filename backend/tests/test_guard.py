@@ -70,7 +70,37 @@ MUST_ACCEPT = {
 }
 
 
+RAW_MUST_ACCEPT = {
+    "json text operator": "SELECT metadata->>'sys_hw', count(*) FROM flight GROUP BY 1",
+    "json nested operator": "SELECT metadata->'a'->>'b' FROM flight",
+    "json array containment": "SELECT count(*) FROM flight WHERE metadata->'error_labels' @> '[2]'::jsonb",
+    "json array length": "SELECT count(*) FROM flight WHERE jsonb_array_length(coalesce(metadata->'error_labels', '[]'::jsonb)) > 0",
+}
+RAW_MUST_REFUSE = {
+    "json builder": "SELECT jsonb_build_object('a', 1)",
+    "json aggregate": "SELECT json_agg(f) FROM flight f",
+    "row to json": "SELECT to_jsonb(f) FROM flight f",
+}
+
+
 class GuardTests(unittest.TestCase):
+    def test_raw_policy_allows_json_reads_but_not_builders(self):
+        for name, q in RAW_MUST_ACCEPT.items():
+            with self.subTest(name):
+                check(q, Policy.raw())
+        for name, q in RAW_MUST_REFUSE.items():
+            with self.subTest(name), self.assertRaises(GuardError):
+                check(q, Policy.raw())
+
+    def test_trailing_semicolon_and_comment_are_tolerated_but_stacking_is_not(self):
+        for q in ("SELECT 1; -- note", "SELECT 1 ;", "SELECT 1 /* c */ ; -- d", "SELECT 1;\n-- a\n-- b"):
+            with self.subTest(q):
+                self.assertNotIn(";", check(q).sql)
+        with self.assertRaises(GuardError):
+            check("SELECT 1; SELECT 2")
+        with self.assertRaises(GuardError):
+            check("SELECT 1; -- ok\nDELETE FROM flight")
+
     def test_refuses_hostile_queries(self):
         for name, q in MUST_REFUSE.items():
             with self.subTest(name):

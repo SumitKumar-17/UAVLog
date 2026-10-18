@@ -66,6 +66,15 @@ class PipelineTests(unittest.TestCase):
         ans, _ = self.run_q(["-- CANNOT_ANSWER: no weather data"])
         self.assertEqual(ans.cannot_answer, "no weather data")
 
+    def test_refusal_text_containing_the_word_selected_is_still_a_refusal(self):
+        ans, _ = self.run_q(["-- CANNOT_ANSWER: no table contains pilot-selected cause labels"])
+        self.assertEqual(ans.cannot_answer, "no table contains pilot-selected cause labels")
+
+    def test_cannot_answer_with_sql_is_treated_as_sql(self):
+        ans, _ = self.run_q(["-- CANNOT_ANSWER maybe\nSELECT count(*) AS n FROM semantic.flights"])
+        self.assertIsNone(ans.cannot_answer)
+        self.assertEqual(ans.columns, ["n"])
+
     def test_result_rows_are_capped(self):
         ans, _ = self.run_q(["```sql\nSELECT * FROM semantic.events\n```"])
         self.assertLessEqual(len(ans.rows), 200)
