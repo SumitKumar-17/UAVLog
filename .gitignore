@@ -7,3 +7,10 @@ node_modules/
 .next/
 bench/results/*.tmp
 .pnpm-store/
+UAVLog_*.aux
+UAVLog_*.log
+UAVLog_*.nav
+UAVLog_*.out
+UAVLog_*.snm
+UAVLog_*.toc
+.prev/
