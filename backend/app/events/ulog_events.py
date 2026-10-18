@@ -12,7 +12,15 @@ NAV_STATE = {
 LOG_KIND = {"EMERGENCY": ("log_error", 2), "ALERT": ("log_error", 2), "CRITICAL": ("log_error", 2),
             "ERROR": ("log_error", 2), "WARNING": ("log_warning", 1)}
 MAX_LOG_EVENTS = 50
-TOPICS = ["vehicle_status", "vehicle_land_detected"]
+TOPICS = ["vehicle_status", "vehicle_land_detected", "failure_detector_status"]
+# failure_detector_status flag -> (event kind, label); fd_alt/fd_ext/fd_battery never fired in our 300 logs
+FD_FLAGS = {
+    "fd_roll": ("attitude_limit_exceeded", "roll angle exceeded the safe limit"),
+    "fd_pitch": ("attitude_limit_exceeded", "pitch angle exceeded the safe limit"),
+    "fd_motor": ("motor_failure_detected", "motor failure"),
+    "fd_arm_escs": ("motor_failure_detected", "ESC failed to arm"),
+    "fd_imbalanced_prop": ("imbalanced_prop_detected", "imbalanced propeller"),
+}
 
 
 def _mode(v: int) -> str:
@@ -21,6 +29,12 @@ def _mode(v: int) -> str:
 
 def _changes(arr: np.ndarray) -> np.ndarray:
     return np.nonzero(np.diff(arr.astype(np.int64)) != 0)[0] + 1
+
+
+def _runs(flag: np.ndarray) -> list[tuple[int, int]]:
+    """(first, last) sample index of every contiguous run where the flag is true."""
+    d = np.diff(np.concatenate(([0], (flag != 0).astype(np.int8), [0])))
+    return list(zip(np.nonzero(d == 1)[0].tolist(), (np.nonzero(d == -1)[0] - 1).tolist()))
 
 
 def extract(path: str, started_at: datetime) -> list[dict]:
@@ -53,6 +67,21 @@ def extract(path: str, started_at: datetime) -> list[dict]:
             took_off = not d["landed"][i]
             add("takeoff" if took_off else "landing", at(d["timestamp"][i]), 0, "vehicle_land_detected",
                 "Vehicle took off" if took_off else "Vehicle landed")
+
+    if "failure_detector_status" in by:
+        d = by["failure_detector_status"]
+        t = d["timestamp"]
+        for flag, (kind, label) in FD_FLAGS.items():
+            for s0, e0 in _runs(d[flag]) if flag in d else []:
+                desc, extra = f"Failure detector: {label} for {(t[e0] - t[s0]) / 1e6:.0f} s", {}
+                if flag == "fd_imbalanced_prop" and "imbalanced_prop_metric" in d:
+                    extra["metric_peak"] = float(np.max(d["imbalanced_prop_metric"][s0:e0 + 1]))
+                    desc += f" (imbalance metric peak {extra['metric_peak']:.2f})"
+                if flag == "fd_motor" and "motor_failure_mask" in d:
+                    mask = int(np.bitwise_or.reduce(d["motor_failure_mask"][s0:e0 + 1].astype(np.int64)))
+                    extra["failed_motors"] = [i + 1 for i in range(16) if mask >> i & 1]
+                    desc += f", motors {extra['failed_motors']}"
+                add(kind, at(t[s0]), 2, "failure_detector_status", desc, ts_end=at(t[e0]), flag=flag, **extra)
 
     seen: dict[str, dict] = {}
     for m in u.logged_messages:
