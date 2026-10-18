@@ -14,6 +14,13 @@ const waitFor = process.env.WAIT_SEL || "";
   await page.waitForFunction(() => !document.body.innerText.includes("updating") && !document.querySelector("[aria-busy]"), null, { timeout: 30000 }).catch(() => problems.push("page still busy"));
   await page.waitForTimeout(800);
   await page.screenshot({ path: out, fullPage: true });
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  if (overflow > 0) {
+    const culprits = await page.evaluate(() => [...document.querySelectorAll("body *")]
+      .filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1 && !e.closest("[class*=overflow-x-auto],[class*=overflow-auto]"))
+      .slice(0, 6).map((e) => `${e.tagName.toLowerCase()}${e.className && typeof e.className === "string" ? "." + e.className.split(" ").slice(0, 3).join(".") : ""} "${(e.textContent || "").trim().slice(0, 40)}"`));
+    problems.push(`horizontal overflow: page is ${overflow}px wider than the viewport. Elements past the edge: ${culprits.join(" | ")}`);
+  }
   console.log(problems.length ? problems.join("\n") : "no console errors");
   await browser.close();
 })();
