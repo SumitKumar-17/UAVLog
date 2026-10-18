@@ -99,3 +99,25 @@ motor query). A threshold would be false precision, so the UI does not draw one.
 (same kind and text) into one row with "same event in N more flights", which removes the visible noise tail without claiming
 a relevance score, (2) offers best-match-per-flight, and (3) shows rank, fused score and cosine distance under "Show how
 results were ranked". The API returns `distance` so this stays inspectable.
+
+## D12 addendum. Re-measured after event clean-up; the default full-text weight changed from 0.25 to 0.1
+After merging near-identical log messages (D14) the event set shrank from 3,846 to 3,401 and the benchmark was re-run.
+Conclusion unchanged, one justification withdrawn. Mean nDCG@10 over 65 concept queries: vector-only 0.710, default hybrid
+0.700 at weight 0.25 (paired -0.010 [-0.023, +0.002]), plain RRF 0.600 (paired -0.109 [-0.172, -0.051], significant), full-text
+only 0.48. I had defended weight 0.25 as a hedge for exact-term lookups (a 4% vs 0% miss rate on easy queries); on the new data
+vector-only also has a 0% miss rate, so that argument no longer held. I then tested the hedge directly with 10 exact-term
+lookups (module tags such as `[ekf2]`, `[health_and_arming_checks]`), added as a separate slice so the headline benchmark was not
+altered after seeing results: vector-only scores nDCG@10 1.000 on all of them, as does every fusion weight. That slice saturates,
+so it cannot show benefit or harm; it simply gives no evidence that full-text helps, even where it should. The default is now 0.1,
+the weight selected by leave-one-concept-out (0.708 vs 0.710 for vector-only; hybrid minus vector -0.001 [-0.006, +0.003]),
+i.e. vector retrieval with a light lexical tie-break. Reportable result: in this corpus, with this embedding model, full-text
+fusion does not improve retrieval; plain rank fusion measurably hurts. Hybrid value remains in vector + relational *filters*
+(experiment 3), which this benchmark does not test.
+Human-label case study after the clean-up (300 flights, small n): "Vibration" label (5 flights) median rank 82 of 300, 0 in the
+top 10; crash-related feedback (7 flights) median rank 121, 0 in the top 10. The system does not recover human-labelled causes
+from the current event vocabulary; this is the gap SITL fault injection and a larger labelled tier (k10) are meant to close.
+
+## D14. Collapse log messages that differ only in numbers
+The first flight page opened with eight "timestamp error" lines differing only in counters. Log events are now de-duplicated on
+the message with digits masked: the first occurrence is kept with a repeat count and the last timestamp. 3,846 events became 3,401
+(log warnings 1,085 to 762, log errors 313 to 191). Side effect: fewer, more meaningful rows in search and the event list.
