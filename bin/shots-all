@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# ./bin/shots-all  -> screenshots of every page into docs/screens (needs the stack running)
+set -uo pipefail
+cd "$(dirname "$0")/.."
+./bin/shot / home light 1280 900
+./bin/shot / home dark 1280 900
+./bin/shot / home light 390 800
+./bin/shot /flights/be4e03ae-3cf5-4785-bf22-b53815ad169c flight light 1280 900
+./bin/shot /flights/be4e03ae-3cf5-4785-bf22-b53815ad169c flight light 390 800
+./bin/shot "/search?q=motor%20failure%20during%20takeoff" search light 1280 900
+FILL='input[aria-label="Your question"]|which board had the most failsafes?' CLICK='button:has-text("Ask")' ./bin/shot /ask ask light 1280 900 'text=SQL'
+./bin/shot "/compare?a=be4e03ae-3cf5-4785-bf22-b53815ad169c&b=ea4c8f07-0f5a-4b52-85e2-b0d7d890727d" compare light 1280 900
+./bin/shot /ontology ontology light 1280 900
+./bin/shot /database database light 1280 900
+./bin/shot /benchmarks benchmarks light 1280 900
+for s in ann filter search nlsql injection signature columnstore engines; do ELEMENT="section:has(#$s)" ./bin/shot /benchmarks bench-$s light 1280 900; done
