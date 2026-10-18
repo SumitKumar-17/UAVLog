@@ -31,3 +31,15 @@ moving parts, transactional (data and job status commit together), and itself a 
 ## D6. Data quality guards at ingest
 Old PX4 firmware reports bogus GPS UTC (1970). Start time now requires a plausible GPS time, else falls back to the
 index date. 10 of 300 logs were affected; found by inspecting chunk ranges, not by assumption.
+
+## D7. Events: state transitions and log messages from the ULog, threshold rules from the DB
+Events are the semantic unit for search (text descriptions are embedded next). Sources: PX4 state enums (verified
+against PX4-msgs `VehicleStatus.msg`; several remembered values were wrong), logged messages (deduplicated, capped
+at 50 per flight), and sustained threshold violations found with a gaps-and-islands window query over
+`canonical_telemetry`. Thresholds are data (`app/events/rules.py`), flagged as heuristics to calibrate on labelled flights.
+300 flights produced ~3.8k events.
+
+## D8. Pitfall: psycopg `conn.transaction()` inside an implicit transaction is only a savepoint
+The first events run reported success but persisted nothing: a preceding read had opened an implicit transaction, so
+the "transaction" block was a savepoint and nothing committed. Found by verifying from a fresh connection. Worker
+connections that use transaction blocks now run in autocommit mode so blocks are real transactions.
