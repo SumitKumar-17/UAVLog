@@ -38,7 +38,7 @@ with psycopg.connect(settings.dsn, autocommit=True) as c:
     dist = 1 - sub @ base.T
     dist[np.arange(500), np.argmax(sub @ base.T, axis=1)] = np.inf  # drop the point itself
     d10 = np.sort(dist, axis=1)[:, 9]
-    mean_d = np.mean(np.where(np.isinf(dist), np.nan, dist), axis=1) if False else np.nanmean(np.where(np.isinf(dist), np.nan, dist), axis=1)
+    mean_d = np.nanmean(np.where(np.isinf(dist), np.nan, dist), axis=1)
     dup = float(np.mean(d10 < 1e-6))
     rc_real = float(np.median(mean_d[d10 >= 1e-6] / d10[d10 >= 1e-6]))
     print(f"real corpus difficulty: median RC10 {rc_real:.1f} over queries with a non-duplicate 10th neighbour; {100 * dup:.0f}% of queries have 10 exact duplicates")
