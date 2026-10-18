@@ -91,3 +91,11 @@ Human-label case study (small n, 300 flights): flights labelled "Vibration" (5):
 about 150); crash-related feedback (7): 2 in the top 10 (chance 0.2), median rank 172. Humans label causes and outcomes our
 event vocabulary does not capture. Next: scale labelled flights (all ~1.5k labelled logs in tier k10), and SITL fault injection
 for true detection ground truth.
+
+## D13. No absolute relevance cutoff: cosine distances do not separate relevant from irrelevant (measured)
+For text-embedding-3-small, event distances to a query sit in a narrow 0.40-0.60 band for every query we tried, and
+relevant and irrelevant results overlap (genuine vibration events at 0.56-0.58; unrelated "Motors disarmed" at 0.58 for a
+motor query). A threshold would be false precision, so the UI does not draw one. Instead it (1) collapses identical events
+(same kind and text) into one row with "same event in N more flights", which removes the visible noise tail without claiming
+a relevance score, (2) offers best-match-per-flight, and (3) shows rank, fused score and cosine distance under "Show how
+results were ranked". The API returns `distance` so this stays inspectable.
