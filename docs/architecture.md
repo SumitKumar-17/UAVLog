@@ -138,7 +138,26 @@ Measured on the dev corpus: envelope queries 0.19 to 0.26 s on compressed chunks
 search about 1.4 s, dominated by the embedding API round trip. *Planned:* query-embedding cache, read-only DB role for
 the API, NL-to-SQL endpoint with guardrails, DB-internals endpoint (`EXPLAIN`, index and chunk stats).
 
-## 6. Web app
+## 6. NL-to-SQL
+
+```mermaid
+flowchart LR
+    Q[question] --> P[prompt built from view and column comments in the catalog]
+    P --> M[LLM, temperature 0]
+    M --> G[guard: sqlglot allow-lists, one SELECT, row cap, SQL regenerated from the parse tree]
+    G --> C[cost check: EXPLAIN under the read-only role, admit if planner cost under 100000]
+    C --> X[run: read-only transaction, role uav_reader, statement timeout 8 s]
+    X --> R[rows plus plain-language summary]
+    G -. refused or failed .-> M
+    C -. refused .-> M
+    X -. error .-> M
+```
+
+`semantic.*` views are the only objects the role can read: flights, events, signals, telemetry, ontology, and `signal_summary` (a materialized
+per-flight min/max/mean refreshed after ingest). Refusals and errors are fed back to the model for up to two repair rounds. Evidence: 19 security and
+pipeline tests, and the three-condition accuracy experiment in `docs/decisions.md` D16 (`bench/results/nlsql_eval_*.md`).
+
+## 7. Web app
 
 Next.js 16 (App Router, Cache Components), TypeScript, Tailwind 4, TanStack Query for server state, Zustand for the shared
 zoom window and selected event, uPlot for charts. The browser calls only the web origin; `/api/*` is rewritten to FastAPI, so the
@@ -152,7 +171,7 @@ same setup works on a remote server with no CORS. Design rationale and tokens: `
 | Search | hybrid event search with filters, best-match-per-flight, collapsed duplicates, ranking details |
 | Database | live compression ratio, index and table sizes, queue state, `EXPLAIN ANALYZE` of named queries |
 
-## 7. Deployment
+## 8. Deployment
 
 `docker compose`: `db` (timescale/timescaledb-ha:pg17: TimescaleDB, pgvector, pgvectorscale), `backend` (Python 3.12
 work container for pipeline stages) and `api` (uvicorn on port 8000); both run as the host uid so data files stay manageable. Data lives under `HOST_DATA_DIR`
