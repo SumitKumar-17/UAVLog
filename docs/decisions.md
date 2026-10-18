@@ -43,3 +43,25 @@ at 50 per flight), and sustained threshold violations found with a gaps-and-isla
 The first events run reported success but persisted nothing: a preceding read had opened an implicit transaction, so
 the "transaction" block was a savepoint and nothing committed. Found by verifying from a fresh connection. Worker
 connections that use transaction blocks now run in autocommit mode so blocks are real transactions.
+
+## D9. Pitfall: `UPDATE .. FROM (SELECT .. LIMIT n FOR UPDATE SKIP LOCKED)` can claim more than n rows
+Asking for 25 flights claimed 52: the planner may re-run the locking subquery inside the join. Both queues now use
+`WITH c AS MATERIALIZED (...)`. Verified: requests of 10, 10 and 5 claim exactly 10, 10 and 5. Matters because the claim
+size bounds worker memory.
+
+## D10. Event quality: vocabulary coverage and baseline guard (measured)
+Search exposed two defects before any metric would have: (1) no propulsion events existed, so "motor problem" matched the
+word "Motors armed"; fixed by extracting PX4 `failure_detector_status` (present in 234 of 300 logs; it fires for roll/pitch
+limits in 27/12 logs, motor failure in 4, imbalanced propeller in 1, ESC arming in 1). (2) Rules fired on flights where the
+signal never left the condition (battery estimate stuck at 0%, no GPS at all). Rules now need a same-flight baseline (an
+event is a deviation). Effect on 300 flights: `battery_low` 120 to 97, `gps_poor` 48 to 27 (false events removed);
+new: 70 attitude-limit, 5 motor-failure, 1 imbalanced-propeller events. Total 3,846 events, all embedded.
+Open: thresholds are heuristics (to calibrate on labelled flights); `attitude_limit_exceeded` includes 0 s blips.
+
+## D11. Hybrid retrieval: vector + OR-ed full-text, fused with reciprocal rank fusion (k = 60)
+Vector search alone handles paraphrase ("GPS signal lost" finds "GPS lost 3D fix"); full-text alone fails on natural
+phrasing because `websearch_to_tsquery` ANDs every word, so the lexical side returned nothing until terms were OR-ed.
+Cost: OR-ed terms add lexical noise ("vehicle lost control" also pulls unrelated "..lost" log lines). Known weaknesses to
+address next: results cluster in one flight (needs per-flight diversity), and quality so far is anecdotal; a labelled
+evaluation set (index `error_labels`, failure-detector flags, injected SITL faults) with precision@k is required before
+claiming anything. Embedding cost is negligible (73k tokens for 3.8k events, run twice).
