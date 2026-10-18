@@ -32,5 +32,20 @@ services:
       - ${HOST_DATA_DIR:-./data}:/data
     command: ["sleep", "infinity"]
 
+  api:
+    build: ./backend
+    env_file: .env
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+    command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
 volumes:
   pgdata:
