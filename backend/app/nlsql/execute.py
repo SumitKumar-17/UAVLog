@@ -2,10 +2,11 @@
 (the planner's own estimate is checked with EXPLAIN before the query is allowed to run)."""
 import time
 from dataclasses import dataclass
+from decimal import Decimal
 
 from app.nlsql.guard import MAX_ROWS
 
-ROLES = {"semantic": "uav_reader", "raw": "uav_reader_raw"}  # fixed names; never taken from input
+ROLES = {"semantic": "uav_reader", "raw": "uav_reader_raw", "raw_docs": "uav_reader_raw"}  # fixed names; never taken from input
 MAX_COST = 100_000
 TIMEOUT_MS = 8_000
 
@@ -26,6 +27,8 @@ class Result:
 def _plain(v):
     if v is None or isinstance(v, (bool, int, float, str)):
         return v
+    if isinstance(v, Decimal):
+        return float(v)  # keep numbers numeric (JSON and result comparison); only the rest is stringified
     if isinstance(v, (list, tuple)):
         return [_plain(x) for x in v]
     return str(v)  # Decimal, datetime, UUID, ...
