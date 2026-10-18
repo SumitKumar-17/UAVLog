@@ -1,0 +1,390 @@
+{
+ "meta": {
+  "taken_at": "2026-10-18T11:17:49.110357+00:00",
+  "n_vectors": 50000,
+  "dimensions": 1536,
+  "queries": 200,
+  "k": 10,
+  "passes": 3,
+  "postgres": {
+   "shared_buffers": "3968MB",
+   "maintenance_work_mem": "1500MB",
+   "effective_cache_size": "11904MB",
+   "max_parallel_workers": "4"
+  },
+  "versions": {
+   "timescaledb": "2.30.2",
+   "vector": "0.8.7",
+   "vectorscale": "0.9.1"
+  },
+  "sigma": "0.35",
+  "rc10_synthetic": 6.036338058534376,
+  "rc10_real": "20.48",
+  "real_duplicate_fraction": "0.348",
+  "note": "vectors are real event embeddings scaled up by perturbation (see bench_vectors.py); seqscan disabled for index runs"
+ },
+ "builds": {
+  "HNSW m=16, ef_construction=64": {
+   "build_s": 44.60566830635071,
+   "size_mb": 409.608192
+  },
+  "HNSW m=32, ef_construction=128": {
+   "build_s": 107.63483905792236,
+   "size_mb": 409.608192
+  },
+  "IVFFlat lists=224 (sqrt N)": {
+   "build_s": 6.916801691055298,
+   "size_mb": 411.4432
+  },
+  "IVFFlat lists=50 (N/1000)": {
+   "build_s": 3.9468095302581787,
+   "size_mb": 410.025984
+  },
+  "DiskANN (pgvectorscale), defaults": {
+   "build_s": 68.94843411445618,
+   "size_mb": 34.152448
+  }
+ },
+ "points": [
+  {
+   "index": "exact (sequential scan)",
+   "params": "none",
+   "recall": 1.0,
+   "p50_ms": 243.08051750085724,
+   "p95_ms": 274.5698720484141,
+   "mean_ms": 248.92473550011346,
+   "qps": 4.017278548035433,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=16, ef_construction=64",
+   "params": "ef_search=10",
+   "recall": 0.7045,
+   "p50_ms": 0.8751125005801441,
+   "p95_ms": 1.2236244978339528,
+   "mean_ms": 0.9014895833873501,
+   "qps": 1109.2751579474682,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=16, ef_construction=64",
+   "params": "ef_search=20",
+   "recall": 0.7845,
+   "p50_ms": 0.8809905011730734,
+   "p95_ms": 1.464424901860184,
+   "mean_ms": 0.9475959450173832,
+   "qps": 1055.302109784414,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=16, ef_construction=64",
+   "params": "ef_search=40",
+   "recall": 0.8630000000000001,
+   "p50_ms": 1.062530498529668,
+   "p95_ms": 2.0560885497616255,
+   "mean_ms": 1.2275237499913298,
+   "qps": 814.6481890937451,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=16, ef_construction=64",
+   "params": "ef_search=80",
+   "recall": 0.92,
+   "p50_ms": 1.3206200001150137,
+   "p95_ms": 2.925874550237495,
+   "mean_ms": 1.6196107666716368,
+   "qps": 617.4322995240634,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=16, ef_construction=64",
+   "params": "ef_search=160",
+   "recall": 0.9645,
+   "p50_ms": 1.597102000232553,
+   "p95_ms": 4.152428947600129,
+   "mean_ms": 2.1535643800962134,
+   "qps": 464.3464617274751,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=16, ef_construction=64",
+   "params": "ef_search=320",
+   "recall": 0.99,
+   "p50_ms": 2.085531001284835,
+   "p95_ms": 5.5287741977736005,
+   "mean_ms": 2.8815107682081966,
+   "qps": 347.04017456156436,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=32, ef_construction=128",
+   "params": "ef_search=10",
+   "recall": 0.8180000000000001,
+   "p50_ms": 1.0255204997520195,
+   "p95_ms": 1.7301759491601831,
+   "mean_ms": 1.1258956233299007,
+   "qps": 888.1817988087056,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=32, ef_construction=128",
+   "params": "ef_search=20",
+   "recall": 0.8890000000000001,
+   "p50_ms": 1.1343570004100911,
+   "p95_ms": 2.3282719004782844,
+   "mean_ms": 1.349991334961184,
+   "qps": 740.7454952507178,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=32, ef_construction=128",
+   "params": "ef_search=40",
+   "recall": 0.9425,
+   "p50_ms": 1.2325570005486952,
+   "p95_ms": 3.1776993004314136,
+   "mean_ms": 1.6298087483361694,
+   "qps": 613.5689239739784,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=32, ef_construction=128",
+   "params": "ef_search=80",
+   "recall": 0.979,
+   "p50_ms": 1.473735001127352,
+   "p95_ms": 4.372089549906377,
+   "mean_ms": 2.1156173933013633,
+   "qps": 472.6752593197049,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=32, ef_construction=128",
+   "params": "ef_search=160",
+   "recall": 0.9959999999999999,
+   "p50_ms": 1.8456119996699272,
+   "p95_ms": 5.659086649939127,
+   "mean_ms": 2.6884866100347913,
+   "qps": 371.95647405030564,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "HNSW m=32, ef_construction=128",
+   "params": "ef_search=320",
+   "recall": 0.9995,
+   "p50_ms": 2.547597498050891,
+   "p95_ms": 6.914251051421161,
+   "mean_ms": 3.552098438340181,
+   "qps": 281.5237295245901,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=224 (sqrt N)",
+   "params": "probes=1",
+   "recall": 0.7959999999999999,
+   "p50_ms": 1.204981499540736,
+   "p95_ms": 2.2833566004919685,
+   "mean_ms": 1.3261762466087628,
+   "qps": 754.0475879862531,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=224 (sqrt N)",
+   "params": "probes=2",
+   "recall": 0.8570000000000001,
+   "p50_ms": 1.6591204985161312,
+   "p95_ms": 3.1055616991579877,
+   "mean_ms": 1.8024907315884775,
+   "qps": 554.787873510302,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=224 (sqrt N)",
+   "params": "probes=5",
+   "recall": 0.9484999999999999,
+   "p50_ms": 2.704282000195235,
+   "p95_ms": 4.440167299981113,
+   "mean_ms": 2.8565551383750667,
+   "qps": 350.0720103616987,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=224 (sqrt N)",
+   "params": "probes=10",
+   "recall": 0.9929999999999999,
+   "p50_ms": 3.9263159978872864,
+   "p95_ms": 5.700296100621925,
+   "mean_ms": 4.099383211663128,
+   "qps": 243.93913629614,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=224 (sqrt N)",
+   "params": "probes=20",
+   "recall": 1.0,
+   "p50_ms": 7.058872501147562,
+   "p95_ms": 10.01849910171586,
+   "mean_ms": 7.07444863008277,
+   "qps": 141.35377218624316,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=224 (sqrt N)",
+   "params": "probes=50",
+   "recall": 1.0,
+   "p50_ms": 16.174618000150076,
+   "p95_ms": 20.17243440132006,
+   "mean_ms": 14.861714211698805,
+   "qps": 67.28698895399447,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=224 (sqrt N)",
+   "params": "probes=100",
+   "recall": 1.0,
+   "p50_ms": 28.886768999655033,
+   "p95_ms": 32.95718840126938,
+   "mean_ms": 26.265667326691375,
+   "qps": 38.07251449437922,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=50 (N/1000)",
+   "params": "probes=1",
+   "recall": 0.9459999999999998,
+   "p50_ms": 2.1019744999648537,
+   "p95_ms": 5.00857204933709,
+   "mean_ms": 2.488846558280784,
+   "qps": 401.7925479065163,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=50 (N/1000)",
+   "params": "probes=2",
+   "recall": 0.9665000000000001,
+   "p50_ms": 3.317345001050853,
+   "p95_ms": 6.3893656984873815,
+   "mean_ms": 3.712370195001616,
+   "qps": 269.3696876853534,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=50 (N/1000)",
+   "params": "probes=5",
+   "recall": 1.0,
+   "p50_ms": 7.255950999024208,
+   "p95_ms": 11.573079700428934,
+   "mean_ms": 7.42025605826105,
+   "qps": 134.76623881283575,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=50 (N/1000)",
+   "params": "probes=10",
+   "recall": 1.0,
+   "p50_ms": 12.419444499755627,
+   "p95_ms": 19.13171290161699,
+   "mean_ms": 12.780076019977665,
+   "qps": 78.24679590612855,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=50 (N/1000)",
+   "params": "probes=20",
+   "recall": 1.0,
+   "p50_ms": 23.120582998672035,
+   "p95_ms": 31.864481951197376,
+   "mean_ms": 23.73404645831518,
+   "qps": 42.13356545654067,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "IVFFlat lists=50 (N/1000)",
+   "params": "probes=50",
+   "recall": 1.0,
+   "p50_ms": 56.4745284991659,
+   "p95_ms": 62.55632995034829,
+   "mean_ms": 57.36421108991029,
+   "qps": 17.432471936773286,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "DiskANN (pgvectorscale), defaults",
+   "params": "search_list=20, rescore=50",
+   "recall": 0.5445000000000001,
+   "p50_ms": 2.0723044999613194,
+   "p95_ms": 3.4494858469770406,
+   "mean_ms": 2.3426799665442863,
+   "qps": 426.8615492858426,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "DiskANN (pgvectorscale), defaults",
+   "params": "search_list=50, rescore=50",
+   "recall": 0.5465,
+   "p50_ms": 2.2529914986080257,
+   "p95_ms": 3.8070576489189984,
+   "mean_ms": 2.553185645095558,
+   "qps": 391.66756319537944,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "DiskANN (pgvectorscale), defaults",
+   "params": "search_list=100, rescore=50",
+   "recall": 0.5469999999999999,
+   "p50_ms": 2.463459000864532,
+   "p95_ms": 4.314856649943977,
+   "mean_ms": 2.820778276703398,
+   "qps": 354.51208918436697,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "DiskANN (pgvectorscale), defaults",
+   "params": "search_list=200, rescore=50",
+   "recall": 0.5479999999999999,
+   "p50_ms": 2.8747165015374776,
+   "p95_ms": 5.004188450766378,
+   "mean_ms": 3.2810953283418107,
+   "qps": 304.77627131467,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "DiskANN (pgvectorscale), defaults",
+   "params": "search_list=400, rescore=50",
+   "recall": 0.5479999999999999,
+   "p50_ms": 3.7222364990157075,
+   "p95_ms": 5.9657161984432605,
+   "mean_ms": 4.15896278832103,
+   "qps": 240.44456536330284,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "DiskANN (pgvectorscale), defaults",
+   "params": "search_list=100, rescore=200",
+   "recall": 0.7715,
+   "p50_ms": 4.567846001009457,
+   "p95_ms": 6.742699848837218,
+   "mean_ms": 5.0137299816621335,
+   "qps": 199.45230470279208,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "DiskANN (pgvectorscale), defaults",
+   "params": "search_list=200, rescore=200",
+   "recall": 0.771,
+   "p50_ms": 4.992155501895468,
+   "p95_ms": 7.2702848996414104,
+   "mean_ms": 5.457096286730423,
+   "qps": 183.24763710539955,
+   "rows_returned": 10.0
+  },
+  {
+   "index": "DiskANN (pgvectorscale), defaults",
+   "params": "search_list=400, rescore=400",
+   "recall": 0.8445,
+   "p50_ms": 8.60163899960753,
+   "p95_ms": 10.700513096708164,
+   "mean_ms": 9.006659981599418,
+   "qps": 111.02894991517358,
+   "rows_returned": 10.0
+  }
+ ]
+}
