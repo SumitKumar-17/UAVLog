@@ -33,7 +33,7 @@ N = conn.execute("SELECT count(*) FROM bench.event_vec").fetchone()[0]
 DIM = conn.execute("SELECT vector_dims(embedding) FROM bench.event_vec LIMIT 1").fetchone()[0]
 Q = [(r[0], r[1].to_numpy() if hasattr(r[1], "to_numpy") else np.asarray(r[1])) for r in conn.execute("SELECT qid, embedding FROM bench.query_vec ORDER BY qid")]
 K = a.k
-conn.execute("SET maintenance_work_mem = '2GB'")
+conn.execute("SET maintenance_work_mem = '1500MB'")
 conn.execute("SET max_parallel_maintenance_workers = 3")
 
 
