@@ -72,12 +72,12 @@ export function DatabaseView() {
       </section>
 
       <div className="mt-12 grid gap-x-12 gap-y-10 lg:grid-cols-2">
-        <section aria-labelledby="idx">
+        <section aria-labelledby="idx" className="min-w-0">
           <h2 id="idx" className="mb-2 font-dense text-2xl font-semibold">Indexes</h2>
           <table className="w-full text-[15px] tabular-nums"><thead><tr><th className={th}>Name</th><th className={th}>Method</th><th className={`${th} text-right`}>Size</th></tr></thead>
-            <tbody>{d.indexes.map((i) => <tr key={i.name} className="border-t border-rule"><td className="py-1.5 pr-6">{i.name}</td><td className="pr-6 text-ink-2">{i.method}</td><td className="text-right">{bytes(i.bytes)}</td></tr>)}</tbody></table>
+            <tbody>{d.indexes.map((i) => <tr key={i.name} className="border-t border-rule"><td className="py-1.5 pr-6 [overflow-wrap:anywhere]">{i.name}</td><td className="pr-6 text-ink-2">{i.method}</td><td className="text-right">{bytes(i.bytes)}</td></tr>)}</tbody></table>
         </section>
-        <section aria-labelledby="tbl">
+        <section aria-labelledby="tbl" className="min-w-0">
           <h2 id="tbl" className="mb-2 font-dense text-2xl font-semibold">Tables</h2>
           <table className="w-full text-[15px] tabular-nums"><thead><tr><th className={th}>Name</th><th className={`${th} text-right`}>Rows</th><th className={`${th} text-right`}>Size</th></tr></thead>
             <tbody>{d.tables.map((t) => <tr key={t.name} className="border-t border-rule"><td className="py-1.5 pr-6">{t.name}</td><td className="pr-6 text-right text-ink-2">{t.approx_rows.toLocaleString("en-US")}</td><td className="text-right">{bytes(t.bytes)}</td></tr>)}</tbody></table>
@@ -87,8 +87,8 @@ export function DatabaseView() {
       <section className="mt-12" aria-labelledby="queues">
         <h2 id="queues" className="font-dense text-2xl font-semibold">Pipeline</h2>
         <p className="mb-3 mt-1 max-w-3xl text-ink-2">Each stage claims work from a table with row locks that skip rows other workers hold, so any number of workers can run side by side and a crash only returns its own rows to the queue.</p>
-        <table className="text-[15px] tabular-nums"><thead><tr><th className={th}>Stage</th>{statuses.map((s) => <th key={s} className={`${th} text-right`}>{s}</th>)}</tr></thead>
-          <tbody>{stages.map((st) => <tr key={st} className="border-t border-rule"><td className="py-1.5 pr-6">{st.replaceAll("_", " ")}</td>{statuses.map((s) => <td key={s} className={`pr-6 text-right ${count(st, s) ? "" : "text-muted"}`}>{count(st, s) || "–"}</td>)}</tr>)}</tbody></table>
+        <div className="overflow-x-auto"><table className="text-[15px] tabular-nums"><thead><tr><th className={th}>Stage</th>{statuses.map((s) => <th key={s} className={`${th} text-right`}>{s}</th>)}</tr></thead>
+          <tbody>{stages.map((st) => <tr key={st} className="border-t border-rule"><td className="py-1.5 pr-6">{st.replaceAll("_", " ")}</td>{statuses.map((s) => <td key={s} className={`pr-6 text-right ${count(st, s) ? "" : "text-muted"}`}>{count(st, s) || "–"}</td>)}</tr>)}</tbody></table></div>
         {d.llm.length > 0 && <p className="mt-4 text-sm text-muted">{d.llm.map((l) => `${l.calls} ${l.kind} calls, ${compact(l.prompt_tokens)} tokens, ${l.avg_latency_ms} ms on average`).join("; ")}.</p>}
       </section>
     </div>
