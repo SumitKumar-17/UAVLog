@@ -1,0 +1,23 @@
+[
+  {"id": "code-telemetry-ddl", "file": "backend/alembic/versions/0001_core_schema.py", "start": "# ---- Telemetry", "lines": 16, "lang": "python", "title": "Migration 0001: the telemetry hypertable"},
+  {"id": "code-columnstore-ddl", "file": "backend/alembic/versions/0003_telemetry_columnstore.py", "start": "# One segment = one signal", "lines": 10, "lang": "python", "title": "Migration 0003: columnstore, segmented by series, ordered by time"},
+  {"id": "code-islands", "file": "backend/app/events/rules.py", "start": "ISLANDS = \"\"\"", "lines": 8, "lang": "python", "title": "Threshold events: gaps-and-islands over canonical telemetry"},
+  {"id": "code-rrf-sql", "file": "backend/app/search.py", "start": "VEC_ANN = \"\"\"", "lines": 40, "lang": "python", "title": "Hybrid search: vector and full-text candidates fused with rank fusion"},
+  {"id": "code-router", "file": "backend/app/search.py", "start": "def estimated_rows", "lines": 10, "lang": "python", "title": "The search router: ask the planner how many rows survive the filter"},
+  {"id": "code-router-choice", "file": "backend/app/search.py", "start": "    est = estimated_rows(", "lines": 8, "lang": "python", "title": "The search router: exact path or HNSW"},
+  {"id": "code-guard-1", "file": "backend/app/nlsql/guard.py", "start": "    root = statements[0]", "lines": 22, "lang": "python", "title": "SQL guard: one SELECT, no forbidden statements, top-level WITH only"},
+  {"id": "code-guard-2", "file": "backend/app/nlsql/guard.py", "start": "    used_tables: list[str] = []", "lines": 40, "lang": "python", "title": "SQL guard: table and function allow-lists, row cap with a sentinel row"},
+  {"id": "code-execute", "file": "backend/app/nlsql/execute.py", "start": "def run(pool", "lines": 34, "lang": "python", "title": "Guarded execution: restricted role, read-only, timeout, cost admission"},
+  {"id": "code-claim", "file": "backend/app/jobs.py", "start": "# MATERIALIZED matters", "lines": 14, "lang": "python", "title": "Job queue claim: FOR UPDATE SKIP LOCKED in a materialised CTE"},
+  {"id": "code-semantic-view", "file": "backend/alembic/versions/0006_semantic_layer.py", "start": "CREATE VIEW semantic.events AS", "lines": 8, "lang": "python", "title": "A documented semantic view: events in canonical terms"},
+  {"id": "code-compress", "file": "backend/scripts/compress.py", "start": "    chunks = [r[0] for r in c.execute(", "lines": 6, "lang": "python", "title": "Compression stage: also recompresses partial chunks"},
+  {"id": "code-copy", "file": "backend/app/ingest/load.py", "start": "def telemetry_table(", "lines": 34, "lang": "python", "title": "Loading telemetry: Arrow to CSV to COPY, one transaction per flight"},
+  {"id": "code-restore", "file": "bin/snapshot", "start": "  say \"creating database $new", "lines": 18, "lang": "bash", "title": "Snapshot restore: new database, Timescale pre and post restore"},
+  {"id": "code-pca", "file": "backend/scripts/build_signatures.py", "start": "med = np.nanmedian(X, axis=0)", "lines": 16, "lang": "python", "title": "Behavioural signatures: robust scaling, PCA, cosine-ready vectors"},
+  {"id": "code-duration", "file": "backend/app/ingest/ulog.py", "start": "def robust_duration_s", "lines": 7, "lang": "python", "title": "Robust duration: one garbage timestamp must not decide a flight's length"},
+  {"id": "code-ardupilot-map", "file": "backend/app/ontology/seed_data.py", "start": "ARDUPILOT_FIELDS = [", "lines": 14, "lang": "python", "title": "ArduPilot mappings carry a scale, an offset and a semantic note"},
+  {"id": "code-stream", "file": "bin/uavlog", "start": "cmd_stream() {", "lines": 22, "lang": "bash", "title": "The big-machine entry point: download, ingest, events, embed and compress together"},
+  {"id": "code-cagg", "file": "backend/alembic/versions/0007_signatures_notes_cagg.py", "start": "CREATE MATERIALIZED VIEW telemetry_1s", "lines": 6, "lang": "python", "title": "A 1-second continuous aggregate for zoomed-out charts"},
+  {"id": "code-hostile", "file": "backend/tests/test_guard.py", "start": "MUST_REFUSE = {", "lines": 24, "lang": "python", "title": "Tests: hostile queries that must be refused"},
+  {"id": "code-gold", "file": "bench/eval/nlsql_test_questions.json", "start": "\"id\": \"t11\"", "lines": 8, "lang": "json", "title": "NL-to-SQL benchmark: one question with its semantic and raw gold SQL"}
+]
