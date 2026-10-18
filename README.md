@@ -5,6 +5,8 @@ layer (ontology mapping vendor fields to canonical concepts), hybrid SQL + vecto
 guarded LLM NL-to-SQL. See `AGENTS.md` for architecture and rules, `research/` for background, `docs/decisions.md`
 for design decisions and measurements.
 
+Status, roadmap, report outline and demo script: `docs/status.md`.
+
 ## Run it
 
 ```bash
@@ -28,6 +30,24 @@ Every stage is idempotent and resumable, so re-running is always safe. Stages ca
 
 `docker compose up -d api` serves the API on http://localhost:8000 (interactive docs at `/docs`). Try
 `curl 'localhost:8000/api/search?q=one+rotor+stopped&k=5'`.
+
+## Snapshots: share or move the finished database
+
+Everything that took hours (download, ingest, events, embeddings, summaries) lives in the database, so it can be packed once and restored anywhere.
+
+```bash
+./bin/snapshot create                                  # data/snapshots/uavlog-<time>.tar (+ .sha256), without the benchmark schema
+./bin/snapshot create --to ubuntu@my-ec2:/srv/uavlog   # also upload; DEST can be a folder, user@host:/dir, s3://bucket/prefix,
+                                                       #   gh-release:OWNER/REPO@TAG (2 GB limit), or put:<presigned URL>
+./bin/snapshot restore ubuntu@my-ec2:/srv/uavlog/uavlog-<time>.tar     # or a path, s3://, gh-release:, https://
+./bin/snapshot restore FILE --as scratch               # load into a separate database to inspect, no swap
+./bin/snapshot push-db postgresql://user:pass@host:5432/uavlog         # direct copy to another Postgres (needs TimescaleDB + pgvector)
+```
+
+Restore never destroys anything: it verifies the checksum, loads a **new** database with TimescaleDB's pre/post-restore procedure, compares
+row counts with the manifest, and only then swaps by renaming; the previous database is kept as `uavlog_old_<time>` (`--drop-old` removes
+it). The receiver needs only Docker, this repository and the same database image, and no re-ingest or re-embedding. A snapshot contains
+GPS tracks and pilot notes from public CC-BY Flight Review logs: attribute Flight Review when sharing. It contains no API keys.
 
 ## Scaling to a large machine
 
