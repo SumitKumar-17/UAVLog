@@ -121,3 +121,14 @@ from the current event vocabulary; this is the gap SITL fault injection and a la
 The first flight page opened with eight "timestamp error" lines differing only in counters. Log events are now de-duplicated on
 the message with digits masked: the first occurrence is kept with a repeat count and the last timestamp. 3,846 events became 3,401
 (log warnings 1,085 to 762, log errors 313 to 191). Side effect: fewer, more meaningful rows in search and the event list.
+
+## D15. Flight duration: one corrupt timestamp ruined `last_timestamp` (found by the NL-to-SQL gold cross-check)
+Three of 300 flights had `duration_s` of about 10^13 seconds because some message carried a garbage timestamp and the parser took
+`ULog.last_timestamp`, the maximum over every message. Two more flights were wrong by a factor of 2 to 3. The telemetry itself was
+unaffected (it is read per topic). Caught only because the evaluation's gold queries computed an average duration of two billion
+minutes. Fix: use Flight Review's own index duration when present (it agrees with the corrected telemetry-derived length on every
+checked flight, and in the one case where telemetry ends early it is the log length that is right), else a robust estimate (75th
+percentile of each topic's last timestamp, immune to a few outliers). The source and the parsed value are stored in `metadata` for audit.
+Five stored rows were corrected with a targeted update after listing them. The same affected the app's "Longest" ordering and chart
+ranges. Lesson recorded: sanity-check derived scalars at ingest (a duration far above the index value should fail loudly).
+Also found: one flight reports a battery voltage of 2,063 V (a sensor glitch). Raw telemetry has outliers; summaries surface them.
