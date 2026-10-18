@@ -12,7 +12,7 @@ from app.llm import LLMClient
 async def lifespan(app: FastAPI):
     app.state.pool = ConnectionPool(settings.dsn, min_size=2, max_size=10, open=True,
                                     kwargs={"autocommit": True, "options": "-c timezone=UTC"})
-    app.state.llm = LLMClient() if settings.openai_api_key else None
+    app.state.llm = LLMClient(pool=app.state.pool) if settings.openai_api_key else None
     yield
     app.state.pool.close()
 
