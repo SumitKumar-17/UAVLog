@@ -14,7 +14,7 @@ cp .env.example .env        # set OPENAI_API_KEY (and OPENAI_API_BASE if not the
 ```
 
 Every stage is idempotent and resumable, so re-running is always safe. Stages can be run one at a time:
-`up init index select fetch enqueue ingest compress size status failed`.
+`up init index select fetch enqueue ingest events compress size status failed`.
 
 ## Scaling to a large machine
 

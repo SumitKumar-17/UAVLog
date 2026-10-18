@@ -32,6 +32,7 @@ cmd_select()  { stage "select logs (tier=$TIER)"; run python scripts/select_logs
 cmd_fetch()   { stage "download logs (delay ${FETCH_DELAY}s)"; run python scripts/fetch_logs.py --delay "$FETCH_DELAY"; }
 cmd_enqueue() { stage "enqueue jobs"; run python scripts/enqueue.py; }
 cmd_ingest()  { stage "ingest (workers=$WORKERS)"; run python scripts/ingest.py --workers "$WORKERS" "$@"; }
+cmd_events()  { stage "extract events (workers=$WORKERS)"; run python scripts/events.py --workers "$WORKERS" "$@"; }
 cmd_compress(){ stage "columnstore compression"; run python scripts/compress.py; }
 cmd_size()    { stage "size report"; run python scripts/size_report.py --label "${1:-latest}"; }
 cmd_status()  { stage "status"
@@ -49,17 +50,18 @@ cmd_stream() {
   while true; do
     cmd_enqueue
     run python scripts/ingest.py --workers "$WORKERS" || true
+    run python scripts/events.py --workers "$WORKERS" || true
     run python scripts/compress.py || true   # compress as we go: rowstore is ~30x larger than columnstore
     if ! kill -0 "$fetch_pid" 2>/dev/null; then break; fi
     sleep 30
   done
   wait "$fetch_pid" || echo "downloader reported failures; re-run './bin/uavlog stream' to retry them"
-  cmd_enqueue; cmd_ingest; cmd_compress; cmd_size "tier_$TIER"; cmd_status
+  cmd_enqueue; cmd_ingest; cmd_events; cmd_compress; cmd_size "tier_$TIER"; cmd_status
 }
 
-cmd_all() { cmd_up; cmd_init; cmd_index; cmd_select; cmd_fetch; cmd_enqueue; cmd_ingest; cmd_compress; cmd_size "tier_$TIER"; cmd_status; }
+cmd_all() { cmd_up; cmd_init; cmd_index; cmd_select; cmd_fetch; cmd_enqueue; cmd_ingest; cmd_events; cmd_compress; cmd_size "tier_$TIER"; cmd_status; }
 
 case "${1:-}" in
-  up|init|index|select|fetch|enqueue|ingest|compress|size|status|failed|stream|all) c="$1"; shift; "cmd_$c" "$@" ;;
-  *) sed -n '2,6p' "$0"; echo "stages: up init index select fetch enqueue ingest compress size status failed stream all"; exit 1 ;;
+  up|init|index|select|fetch|enqueue|ingest|events|compress|size|status|failed|stream|all) c="$1"; shift; "cmd_$c" "$@" ;;
+  *) sed -n '2,6p' "$0"; echo "stages: up init index select fetch enqueue ingest events compress size status failed stream all"; exit 1 ;;
 esac
