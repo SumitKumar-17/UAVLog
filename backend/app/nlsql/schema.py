@@ -27,3 +27,15 @@ def semantic_schema(conn) -> str:
     signals = conn.execute("SELECT signal || ' (' || coalesce(unit, '') || ')' FROM semantic.signals ORDER BY signal").fetchall()
     out.append("\nSignal names for telemetry.signal and signal_summary.signal: " + ", ".join(r[0] for r in signals))
     return "\n".join(out).strip()
+
+
+# Same information content as the semantic layer's comments, but written against the raw tables: separates the effect of
+# documentation from the effect of the view structure (renamed columns, offsets in seconds, precomputed summary).
+RAW_NOTES = """
+Notes on the raw tables:
+- flight.metadata (jsonb) keys: sys_hw (board name), rating (pilot rating text; 'none' if unrated), feedback (pilot note), error_labels (JSON array of integer cause codes: 1 other, 2 vibration, 3 airframe design, 4 sensor error, 5 component failure, 6 software, 7 human error, 8 external conditions).
+- event.kind_id references concept.id. Event kinds are concept rows with kind = 'event' and key one of: takeoff, landing, arm, disarm, mode_change, failsafe_activated, log_error, log_warning, battery_low, gps_poor, vibration_high, ekf_innovation_reject, motor_failure_detected, imbalanced_prop_detected, attitude_limit_exceeded.
+- event.severity: 0 info, 1 warning, 2 critical. Seconds since the log started = extract(epoch from event.ts_start - flight.started_at).
+- Failure modes are concept rows with kind = 'failure_mode'. concept_relation(src_id, dst_id, rel): rel 'part_of' links a signal to its subsystem; rel 'indicates' links a signal or an event kind to a failure mode.
+- Telemetry signals are concept rows with kind = 'signal' (keys like battery.voltage, vibration.accel, gps.eph, attitude.roll). Value in canonical units = telemetry.value * field_mapping.scale + field_mapping."offset", joining telemetry.vendor_field_id = field_mapping.vendor_field_id and field_mapping.concept_id = concept.id. telemetry has about 70 million rows: always filter by signal, and aggregate per flight before joining across flights."""
+RAW_DOCS_SCHEMA = RAW_SCHEMA + "\n" + RAW_NOTES
