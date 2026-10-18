@@ -6,10 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from psycopg.rows import dict_row
 
 from app.api.deps import lifespan, llm, pool
+from app.api.internals import router as internals_router
 from app.events.ulog_events import NAV_STATE
 from app.search import MODES, search
 
 app = FastAPI(title="Semantic Log Analytics [UAV Log]", version="0.1.0", lifespan=lifespan)
+app.include_router(internals_router)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["GET"], allow_headers=["*"])
 
 
