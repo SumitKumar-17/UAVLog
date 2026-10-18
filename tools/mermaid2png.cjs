@@ -5,7 +5,7 @@ const { chromium } = require("playwright");
 
 (async () => {
   const browser = await chromium.launch();
-  const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 }, deviceScaleFactor: 2, locale: "en-US" });
+  const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 }, deviceScaleFactor: 4, locale: "en-US" });
   fs.mkdirSync("docs/figures", { recursive: true });
   for (const f of process.argv.slice(2)) {
     const src = fs.readFileSync(f, "utf8");

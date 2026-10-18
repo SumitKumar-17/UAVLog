@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# ./bin/figures  -> renders docs/diagrams/*.mmd and docs/figures/code-spec.json to PNGs in docs/figures (Docker, headless Chromium)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=/tmp -e NODE_PATH=/tmp/pw/node_modules -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v1.55.0-noble \
+  sh -c "[ -d /tmp/pw/node_modules/playwright ] || npm i playwright@1.55.0 --no-save --silent --prefix /tmp/pw >/dev/null 2>&1; node tools/mermaid2png.cjs docs/diagrams/*.mmd; node tools/code2png.cjs docs/figures/code-spec.json"

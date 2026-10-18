@@ -1,0 +1,433 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+\usetheme{default}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\graphicspath{{docs/figures/}{docs/screens/}}
+
+\setbeamercolor{normal text}{fg=black,bg=white}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{itemize items}[circle]
+\setbeamerfont{block title}{size=\footnotesize,series=\bfseries}
+\setbeamerfont{block body}{size=\footnotesize}
+\setbeamerfont{itemize/enumerate body}{size=\footnotesize}
+\setbeamerfont{itemize/enumerate subbody}{size=\scriptsize}
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\AtBeginEnvironment{tabular}{\footnotesize}
+\usepackage{etoolbox}
+\newcommand{\code}[1]{\texttt{\footnotesize #1}}
+\newcommand{\fig}[2]{\includegraphics[#1]{#2}}
+\renewcommand{\arraystretch}{1.12}
+
+\title{Semantic Log Analytics for UAV Flight Logs}
+\subtitle{Treating flight logs as a database problem}
+\author{Sumit Kumar (22CS30056)}
+\institute{Advanced Database Management Systems, term project}
+\date{\footnotesize github.com/SumitKumar-17/UAVLog}
+
+\begin{document}
+
+% 1 -------------------------------------------------------------
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+% 2 -------------------------------------------------------------
+\begin{frame}[shrink=5]{Motivation and problem statement}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Why flight logs are hard}
+\begin{itemize}
+  \item High-rate time series: 300 PX4 flights hold \textbf{70.7 M} samples
+  \item Free text: warnings, failure flags, pilot notes (3,401 events)
+  \item Vendor dialects: PX4 and ArduPilot name the same quantity differently
+  \item Tools plot \textbf{one log at a time}; people ask \emph{``which flights lost a motor?''}
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Problem statement and research questions}
+\begin{itemize}
+  \item \textbf{RQ1} How should high-rate telemetry be stored, and at what cost?
+  \item \textbf{RQ2} Which vector index and which filtering strategy retrieve events best?
+  \item \textbf{RQ3} Can a model write safe, correct SQL, and what does a semantic layer add?
+  \item \textbf{RQ4} Does the pipeline survive failure and scale to hundreds of thousands of logs?
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 3 -------------------------------------------------------------
+\begin{frame}[shrink=5]{Background: the database building blocks}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{TimescaleDB (time series)}
+\begin{itemize}
+  \item \textbf{Hypertable}: one logical table split into time \emph{chunks}
+  \item \textbf{Columnstore}: old chunks stored column-wise and compressed, grouped by \code{segmentby}
+  \item \textbf{Continuous aggregate}: incrementally maintained rollup (1-second min/max/mean)
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{pgvector and pgvectorscale (similarity)}
+\begin{itemize}
+  \item \textbf{HNSW}: layered proximity graph, fast approximate search
+  \item \textbf{IVFFlat}: cluster lists, probe the nearest few
+  \item \textbf{DiskANN}: compressed graph on disk (pgvectorscale)
+  \item Known pitfall: \textbf{filters apply after the index scan}, so filtered queries can under-return
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 4 -------------------------------------------------------------
+\begin{frame}[shrink=5]{The gap in existing work and the proposed architecture}
+\begin{columns}[T]
+\begin{column}{0.4\textwidth}
+\begin{block}{Gap}
+\begin{itemize}
+  \item Log viewers: one flight, no semantics, no text query
+  \item Time-series DBs: no ontology or vendor mapping
+  \item NL-to-SQL demos: rarely guarded or measured
+  \item To our knowledge no published system combines all three over PX4 logs
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.58\textwidth}
+\centering
+\fig{width=\textwidth,height=0.62\textheight,keepaspectratio}{diagram-architecture.png}\par
+{\scriptsize One PostgreSQL instance holds the time series, ontology, events and embeddings.}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 5 -------------------------------------------------------------
+\begin{frame}[shrink=5]{Core contribution 1: schema design}
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\centering
+\fig{width=\textwidth,height=0.42\textheight,keepaspectratio}{diagram-er.png}\par\vspace{0.3em}
+\fig{width=0.8\textwidth,height=0.3\textheight,keepaspectratio}{code-telemetry-ddl.png}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{block}{Design decisions}
+\begin{itemize}
+  \item Narrow long format: a new signal adds rows, never columns
+  \item \code{telemetry} hypertable, 7-day chunks, 70.7 M rows
+  \item \code{vendor\_field} and \code{field\_mapping} carry scale, offset and a note
+  \item \code{event} holds text, a \code{vector(1536)} embedding and a generated \code{tsvector}
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 6 -------------------------------------------------------------
+\begin{frame}[shrink=5]{Core contribution 2: the semantic layer}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Ontology}
+\begin{itemize}
+  \item \textbf{63 concepts, 55 relations}: 34 signals, 7 subsystems, 7 failure modes, 15 event kinds
+  \item Signal $\to$ subsystem $\to$ failure mode $\to$ event, walked with recursive CTEs
+  \item Queries say \code{battery.voltage}, not the vendor field name
+\end{itemize}
+\end{block}
+\begin{block}{ArduPilot: a wrong mapping is worse than a gap}
+\begin{itemize}
+  \item Mapped: attitude, GPS, position, velocity, battery
+  \item Not mapped: vibration, motors, EKF, barometric altitude, mode
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\centering
+\fig{width=\textwidth,height=0.28\textheight,keepaspectratio}{code-semantic-view.png}\par\vspace{0.3em}
+\fig{width=\textwidth,height=0.4\textheight,keepaspectratio}{code-ardupilot-map.png}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 7 -------------------------------------------------------------
+\begin{frame}[shrink=5]{Method 1: pipelines that survive failure}
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\centering
+\fig{width=\textwidth,height=0.7\textheight,keepaspectratio}{diagram-queue.png}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{block}{Job tables in Postgres}
+\begin{itemize}
+  \item Status, attempts, last error, lease time per item
+  \item Claimed with \code{FOR UPDATE SKIP LOCKED}: workers run concurrently
+  \item Idempotent, atomic per item, failure-isolated, stale leases reclaimed
+  \item Grow by enqueueing items, never by changing code
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 8 -------------------------------------------------------------
+\begin{frame}[shrink=5]{Method 2: hybrid search that routes itself}
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\begin{block}{Hybrid retrieval}
+\begin{itemize}
+  \item Vector (HNSW) + full text (GIN) + SQL filters
+  \item Fused by \textbf{reciprocal rank fusion}, weights (1.0, 0.1)
+  \item With a 10\% filter the planner chose HNSW post-filtering: \textbf{4 of 10 rows}, recall 0.37
+\end{itemize}
+\end{block}
+\begin{block}{The router}
+\begin{itemize}
+  \item Estimate filtered rows with \code{EXPLAIN} on the filter alone
+  \item $\le$ 1,500 rows: filter first, sort exactly; else HNSW with iterative scan
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.47\textwidth}
+\centering
+\fig{width=0.55\textwidth,height=0.75\textheight,keepaspectratio}{diagram-router.png}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 9 -------------------------------------------------------------
+\begin{frame}[shrink=5]{Method 3: guarded natural-language SQL}
+\begin{columns}[T]
+\begin{column}{0.46\textwidth}
+\centering
+\fig{width=\textwidth,height=0.25\textheight,keepaspectratio}{diagram-guard.png}\par\vspace{0.3em}
+\begin{block}{Four independent defences}
+\begin{itemize}
+  \item \textbf{Guard} (\code{sqlglot}): one SELECT, allow-lists, SQL rebuilt from the parse tree
+  \item \textbf{Role} that reads only documented views
+  \item \textbf{Read-only} transaction, 8 s timeout
+  \item \textbf{Cost admission}: planner estimate under 100,000
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.52\textwidth}
+\centering
+\fig{width=\textwidth,height=0.72\textheight,keepaspectratio}{code-guard-1.png}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 10 ------------------------------------------------------------
+\begin{frame}[shrink=5]{Optimization: columnstore physical design}
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
+\centering
+{\scriptsize 100 flights, 26.9 M rows, median of 7 warm runs; Q2 all flights, Q3 one flight, Q4 90 days}\par
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+variant & size & Q2 & Q3 & Q4\\
+\midrule
+rowstore + B-tree & 3,631 MB & 1,519 ms & 65 ms & 246 ms\\
+\textbf{segment (flight, signal)} & \textbf{147 MB} & \textbf{16 ms} & 10.8 ms & \textbf{2.7 ms}\\
+no segmentby & 157 MB & 29.7 ms & 13.7 ms & 3.6 ms\\
+1-day chunks & 150 MB & 15.3 ms & 12.3 ms & 3.4 ms\\
+30-day chunks & 143 MB & 8.3 ms & 5.7 ms & 2.4 ms\\
+\bottomrule
+\end{tabular}\par\vspace{0.4em}
+\fig{width=0.8\textwidth,height=0.25\textheight,keepaspectratio}{code-columnstore-ddl.png}
+\end{column}
+\begin{column}{0.37\textwidth}
+\begin{block}{Findings}
+\begin{itemize}
+  \item \textbf{25$\times$ smaller, up to 95$\times$ faster} cross-flight queries
+  \item Design choices change size by under 10\%
+  \item Chunk count and \code{segmentby} change cross-flight speed about 2$\times$
+  \item Partial chunks must be recompressed: found by testing
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 11 ------------------------------------------------------------
+\begin{frame}[shrink=5]{Experimental setup}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Environment}
+\begin{itemize}
+  \item 4 cores, 15 GB RAM, no GPU; everything in Docker
+  \item PostgreSQL 17.11, TimescaleDB 2.30.2, pgvector 0.8.7, pgvectorscale 0.9.1, DuckDB 1.5.6
+  \item \code{shared\_buffers} 3,968 MB, \code{maintenance\_work\_mem} 1,500 MB
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Method}
+\begin{itemize}
+  \item One connection, warm cache, 3 measured passes or median of 5--7 runs
+  \item Recall vs exact search; 200 held-out queries; top 10
+  \item Dev set and held-out set; bootstrap intervals and paired tests
+  \item Every mistake and its fix is in \code{docs/decisions.md}
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 12 ------------------------------------------------------------
+\begin{frame}[shrink=5]{Results I: storage and engine comparison}
+\begin{columns}[T]
+\begin{column}{0.36\textwidth}
+\begin{block}{70.7 M rows, size}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+representation & size & B/row\\
+\midrule
+rowstore + index & 12,459 MB & 176.2\\
+\textbf{columnstore} & \textbf{385 MB} & \textbf{5.4}\\
+Parquet (zstd) & 392 MB & 5.5\\
+DuckDB native & 700 MB & 9.9\\
+\bottomrule
+\end{tabular}
+\end{block}
+\end{column}
+\begin{column}{0.62\textwidth}
+\begin{block}{Query p50 in ms: Timescale vs DuckDB}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+query & Timescale & DuckDB pq & DuckDB nat.\\
+\midrule
+Q1 one signal, one flight & 25.4 & 25.3 & \textbf{4.9}\\
+Q3 one flight, all signals & \textbf{18.7} & 45.7 & 22.5\\
+Q4 90-day window & \textbf{3.8} & 28.4 & 4.5\\
+Q5 all-data aggregate & 811.8 & 1,057.8 & \textbf{478.3}\\
+Q6 per-flight summary & \textbf{1,007.5} & 2,605.3 & 2,004.0\\
+\bottomrule
+\end{tabular}\par
+{\scriptsize Q2 (one signal, all flights): 69.2 / 30.6 / 12.9. Timescale \code{COPY}: 287 k rows/s}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 13 ------------------------------------------------------------
+\begin{frame}[shrink=5]{Results II: vector indexes and filtered search}
+\begin{columns}[T]
+\begin{column}{0.52\textwidth}
+\begin{block}{100,000 vectors, 1,536 dims (exact: 362 ms)}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+index & build & size & p50 at recall 0.95\\
+\midrule
+HNSW m=16 & 56 s & 819 MB & 2.7 ms\\
+\textbf{HNSW m=32} & 149 s & 819 MB & \textbf{2.4 ms}\\
+IVFFlat 316 & \textbf{17 s} & 822 MB & 5.5 ms\\
+DiskANN & 268 s & \textbf{68 MB} & not reached\\
+\bottomrule
+\end{tabular}
+\end{block}
+\end{column}
+\begin{column}{0.46\textwidth}
+\begin{block}{Rows returned of 10, filter keeps\ldots}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+strategy & 0.1\% & 1\% & 10\%\\
+\midrule
+HNSW post-filter, ef 40 & \textbf{0.0} & 0.4 & 4.1\\
+HNSW iterative scan & 10 & 10 & 10\\
+exact sort (B-tree) & 10 & 10 & 10\\
+\bottomrule
+\end{tabular}\par
+{\scriptsize Exact sort 1.0 ms at 0.1\%, 55 ms at 10\%; crossover near 1,000 rows}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 14 ------------------------------------------------------------
+\begin{frame}[shrink=5]{Results III: search quality and NL-to-SQL}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Search, nDCG@10 (65 queries)}
+\begin{tabular}{@{}lr@{}}
+\toprule
+method & nDCG@10\\
+\midrule
+vector only & \textbf{0.710}\\
+vector + light full text & \textbf{0.709}\\
+plain RRF & 0.600\\
+full text only & 0.48\\
+\bottomrule
+\end{tabular}\par
+{\scriptsize Plain fusion is significantly worse: paired $-0.109$, 95\% CI $[-0.172,-0.051]$}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{NL-to-SQL, held-out (27 questions)}
+\begin{tabular}{@{}lr@{}}
+\toprule
+condition & strict EX\\
+\midrule
+semantic views & \textbf{0.89}\\
+raw tables + same docs & 0.70\\
+raw tables alone & 0.26\\
+\bottomrule
+\end{tabular}\par
+{\scriptsize Documentation is the big effect ($p=0.0005$); views add 0.19, not significant ($p=0.125$). 46 hostile queries refused.}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 15 ------------------------------------------------------------
+\begin{frame}[shrink=5]{The interface}
+\begin{columns}[T]
+\begin{column}{0.32\textwidth}
+\centering
+\fig{width=\textwidth,height=0.7\textheight,keepaspectratio}{crop-home-light-1280.png}\par
+{\scriptsize Explorer}
+\end{column}
+\begin{column}{0.32\textwidth}
+\centering
+\fig{width=\textwidth,height=0.7\textheight,keepaspectratio}{crop-flight-light-1280.png}\par
+{\scriptsize One flight: mode ribbon, envelopes}
+\end{column}
+\begin{column}{0.32\textwidth}
+\centering
+\fig{width=\textwidth,height=0.7\textheight,keepaspectratio}{crop-ask-light-1280.png}\par
+{\scriptsize Ask: SQL, cost, guard actions}
+\end{column}
+\end{columns}
+\end{frame}
+
+% 16 ------------------------------------------------------------
+\begin{frame}[shrink=5]{Conclusions, limits and next steps}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Conclusions}
+\begin{itemize}
+  \item One PostgreSQL holds time series, ontology, vectors and guarded NL-to-SQL
+  \item Physical design cut storage \textbf{32$\times$}; filtering strategy mattered more than index choice
+  \item Documentation drives NL-to-SQL accuracy; four layers keep it safe
+  \item Hybrid fusion did \emph{not} help: reported as found
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Limits and next steps}
+\begin{itemize}
+  \item 300 flights, one machine, one model, author-written questions
+  \item Index-benchmark vectors are perturbed copies of real ones
+  \item Next: the large run (10 k+ logs), ArduPilot at scale, concurrency benchmark
+  \item Snapshot tool is untested end to end
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\end{document}
