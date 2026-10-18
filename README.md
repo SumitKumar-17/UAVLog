@@ -18,7 +18,11 @@ Every stage is idempotent and resumable, so re-running is always safe. Stages ca
 
 ## Web app
 
-`docker compose up -d web` serves the app on http://localhost:3000 (Next.js 16; the browser only talks to this origin and `/api/*` is proxied to the API). Pages: Overview, Flights, a flight page with synchronized charts, Search, Database. `./bin/shot / home` takes a screenshot (light or dark, any width) into `docs/screens/`.
+`docker compose up -d web` serves the app on http://localhost:3000 (Next.js 16; the browser only talks to this origin and `/api/*` is proxied to the API). Pages: Overview, Flights, a flight page with synchronized charts, Search, Ask (natural language to guarded SQL), Database. `./bin/shot / home` takes a screenshot (light or dark, any width) into `docs/screens/`.
+
+## Tests
+
+`docker compose exec backend python -m unittest discover -s tests` runs the guard (46 hostile and 18 legitimate queries) and NL-to-SQL pipeline tests (a fake model that obeys prompt injection must still be stopped). Evaluations: `python scripts/eval_search.py` (retrieval), `python scripts/eval_nlsql.py --questions /bench/eval/nlsql_test_questions.json` (NL-to-SQL); results land in `bench/results/`.
 
 ## API
 
