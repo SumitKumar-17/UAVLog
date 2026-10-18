@@ -117,9 +117,19 @@ flowchart LR
     R --> OUT[ranked events with flight + time]
 ```
 
-Filters run inside each candidate query. pgvector applies filters after the ANN scan, so
-`hnsw.iterative_scan = relaxed_order` is enabled; comparing this against partial indexes and partitioning is
-experiment 3.
+Filters run inside each candidate query. pgvector applies filters after the ANN scan, so a selective filter can leave fewer than k rows. Experiment 3
+(D18) measured the alternatives, and the planner itself chooses the wrong path at 10% selectivity, so the search routes by the planner's row estimate for the
+filter alone:
+
+```mermaid
+flowchart TD
+    Q[query text and filters] --> E[EXPLAIN the filter alone: how many events survive?]
+    E --> D{about 1,500 or fewer?}
+    D -- yes --> X[exact path: filter first, then sort by distance; exact and fast because few rows survive]
+    D -- no --> A[HNSW index with iterative scan]
+    X --> F[fuse with full-text, weight 0.1]
+    A --> F
+```
 
 ## 5. API
 
@@ -132,9 +142,14 @@ FastAPI (`app/api`), connection pool, autocommit, one shared LLM client. OpenAPI
 | `GET /api/flights/{id}/signals/{signal}` | min/max/mean envelope per time bucket, computed in the database (`time_bucket` over `canonical_telemetry`); envelopes, not decimation, so safety spikes survive |
 | `GET /api/search` | hybrid event search (`q`, `k`, `kind`, `min_severity`, `hw`, `mode`) |
 | `GET /api/ontology` | concepts and relations |
+| `GET /api/flights/{id}/similar` | flights that behaved most like this one (cosine distance between 32-dimension behavioural signatures) |
+| `GET /api/flights/{id}/track` | ground track in local metres, one point per second, with the mode segments that colour it |
+| `GET/POST /api/flights/{id}/notes`, `DELETE /api/notes/{id}` | investigation notes pinned to a moment (writes can be disabled with `ALLOW_WRITES=0`) |
+| `GET /api/pipeline` | queue counts, recent failures with errors, freshness of derived tables |
+| `GET /api/bench`, `GET /api/bench/{file}` | benchmark result files (strict name whitelist) |
 | `GET /api/stats`, `GET /health` | counts and liveness |
 
-Measured on the dev corpus: envelope queries 0.19 to 0.26 s on compressed chunks (up to 106k samples per signal);
+Zoomed-out envelopes are served from `telemetry_1s`, a continuous aggregate of one row per second per flight and signal, and fall back to the raw hypertable at fine zoom. Every route is rate limited per client (the limiter trusts `X-Forwarded-For` only from a private peer). Measured on the dev corpus: envelope queries 0.19 to 0.26 s on compressed chunks (up to 106k samples per signal);
 search about 1.4 s, dominated by the embedding API round trip. *Planned:* query-embedding cache, read-only DB role for
 the API, NL-to-SQL endpoint with guardrails, DB-internals endpoint (`EXPLAIN`, index and chunk stats).
 
@@ -171,7 +186,23 @@ same setup works on a remote server with no CORS. Design rationale and tokens: `
 | Search | hybrid event search with filters, best-match-per-flight, collapsed duplicates, ranking details |
 | Database | live compression ratio, index and table sizes, queue state, `EXPLAIN ANALYZE` of named queries |
 
-## 8. Deployment
+## 8. Snapshots
+
+```mermaid
+flowchart LR
+    S[snapshot file or URL] --> V[verify SHA-256]
+    V --> C[check TimescaleDB version and pgvector]
+    C --> N[create a NEW database, pre_restore]
+    N --> R[pg_restore, post_restore]
+    R --> K{row counts match the manifest?}
+    K -- no --> X[stop; live database untouched]
+    K -- yes --> W[stop API, rename live to old and new to live, migrate]
+```
+
+`./bin/snapshot create` packs the database (zstd dump without the benchmark schema, manifest, checksum) and can upload to a folder, SSH host, S3, a GitHub
+release or a presigned URL; `restore` pulls from the same places. See D17 and the README.
+
+## 9. Deployment
 
 `docker compose`: `db` (timescale/timescaledb-ha:pg17: TimescaleDB, pgvector, pgvectorscale), `backend` (Python 3.12
 work container for pipeline stages) and `api` (uvicorn on port 8000); both run as the host uid so data files stay manageable. Data lives under `HOST_DATA_DIR`
