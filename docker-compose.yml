@@ -28,6 +28,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - ./bench:/bench
       - ${HOST_DATA_DIR:-./data}:/data
     command: ["sleep", "infinity"]
 
