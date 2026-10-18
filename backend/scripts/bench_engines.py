@@ -68,7 +68,7 @@ flight = str(flights[len(flights) // 2][0])
 t_lo = pg.execute("SELECT percentile_disc(0.3) WITHIN GROUP (ORDER BY ts) FROM telemetry").fetchone()[0]
 SHAPES = {
     "Q1 one signal of one flight, 1 s buckets": ("SELECT time_bucket('1 second', ts) b, min(value), max(value), avg(value) FROM {t} WHERE flight_id = '{f}' AND vendor_field_id = {v} GROUP BY 1",
-                                                 "SELECT time_bucket(INTERVAL 1 SECOND, ts) b, min(value), max(value), avg(value) FROM {t} WHERE flight_id = '{f}' AND vendor_field_id = {v} GROUP BY 1"),
+                                                 "SELECT CAST(time_bucket(INTERVAL 1 SECOND, ts) AS VARCHAR) b, min(value), max(value), avg(value) FROM {t} WHERE flight_id = '{f}' AND vendor_field_id = {v} GROUP BY 1"),
     "Q2 one signal across all flights": ("SELECT flight_id, min(value), max(value) FROM {t} WHERE vendor_field_id = {v} GROUP BY flight_id", None),
     "Q3 every signal of one flight": ("SELECT vendor_field_id, avg(value), max(value) FROM {t} WHERE flight_id = '{f}' GROUP BY 1", None),
     "Q4 one signal in a 90 day window": ("SELECT count(*), avg(value) FROM {t} WHERE ts >= '{t0}' AND ts < '{t0}'::timestamptz + interval '90 days' AND vendor_field_id = {v}", None),
