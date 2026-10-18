@@ -1,4 +1,5 @@
 """Events from ULog state transitions and logged messages. State enums verified against PX4-msgs VehicleStatus.msg."""
+import re
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -83,18 +84,23 @@ def extract(path: str, started_at: datetime) -> list[dict]:
                     desc += f", motors {extra['failed_motors']}"
                 add(kind, at(t[s0]), 2, "failure_detector_status", desc, ts_end=at(t[e0]), flag=flag, **extra)
 
+    # De-duplicate log messages that differ only in numbers (timestamps, counters): keep the first, count the rest.
     seen: dict[str, dict] = {}
     for m in u.logged_messages:
         kind = LOG_KIND.get(m.log_level_str().upper())
         text = m.message.replace("\t", " ").strip()
         if not kind or not text:
             continue
-        if text in seen:
-            seen[text]["attrs"]["count"] += 1
-            seen[text]["ts_end"] = at(m.timestamp)
+        key = re.sub(r"\d+", "#", text)
+        if key in seen:
+            seen[key]["attrs"]["count"] += 1
+            seen[key]["ts_end"] = at(m.timestamp)
             continue
         if len(seen) >= MAX_LOG_EVENTS:
             continue
         add(kind[0], at(m.timestamp), kind[1], "log_message", text, count=1, level=m.log_level_str())
-        seen[text] = out[-1]
+        seen[key] = out[-1]
+    for e in seen.values():
+        if e["attrs"]["count"] > 1:
+            e["description"] += f" (repeated {e['attrs']['count']} times)"
     return out
