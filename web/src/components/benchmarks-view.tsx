@@ -138,6 +138,64 @@ function Engines({ files }: { files: string[] }) {
   );
 }
 
+function Search({ files }: { files: string[] }) {
+  const { data: d } = useQuery({ queryKey: ["bench", files[0]], queryFn: () => file(files[0]), enabled: files.length > 0 });
+  if (!files.length) return <Missing what="search quality" />;
+  if (!d) return <p className="text-ink-2" aria-busy>Loading</p>;
+  const names: Record<string, string> = { vector: "Vector only", hybrid: "Vector + light full-text (0.1)", rrf: "Plain rank fusion", fts: "Full-text only" };
+  return (
+    <div>
+      <p className="mb-3 text-sm text-ink-2">{d.events.toLocaleString("en-US")} events, {d.queries} concept queries ({d.hard_queries} are pure paraphrases). Mean nDCG@10 with 95% bootstrap interval.</p>
+      <div className="overflow-x-auto"><table className="text-[15px] tabular-nums"><thead><tr className="text-left text-muted"><th className="pr-6 pb-1.5 font-normal">Method</th><th className="pr-6 font-normal">All queries</th><th className="pr-6 font-normal">Easy</th><th className="font-normal">Hard paraphrases</th></tr></thead>
+        <tbody>{Object.keys(names).map((m) => d.modes[m] && (
+          <tr key={m} className="border-t border-rule"><td className="py-1.5 pr-6">{names[m]}</td>{["all", "easy", "hard"].map((sl) => { const x = d.modes[m][sl].ndcg10; return <td key={sl} className="pr-6">{x.mean.toFixed(3)} <span className="text-muted">[{x.lo.toFixed(2)}, {x.hi.toFixed(2)}]</span></td>; })}</tr>))}</tbody></table></div>
+      <p className="mt-3 text-sm text-ink-2">Plain rank fusion minus vector only: {d.paired_ndcg10_rrf_minus_vector?.mean.toFixed(3)} [{d.paired_ndcg10_rrf_minus_vector?.lo.toFixed(3)}, {d.paired_ndcg10_rrf_minus_vector?.hi.toFixed(3)}], a significant loss.</p>
+    </div>
+  );
+}
+
+function Nlsql({ files }: { files: string[] }) {
+  const f = files.find((x) => x.includes("run2")) ?? files[0];
+  const { data: d } = useQuery({ queryKey: ["bench", f], queryFn: () => file(f), enabled: !!f });
+  if (!f) return <Missing what="natural-language SQL" />;
+  if (!d) return <p className="text-ink-2" aria-busy>Loading</p>;
+  const label: Record<string, string> = { semantic: "Semantic views", raw_docs: "Raw tables + same documentation", raw: "Raw tables alone" };
+  const rows = ["semantic", "raw_docs", "raw"].map((m) => ({ label: label[m], value: d.summary[m].strict.mean * 100, ci: d.summary[m].strict }));
+  return (
+    <div>
+      <p className="mb-3 text-sm text-ink-2">Held-out set, model {d.model}, strict execution accuracy (result set equals the gold query&apos;s). {f.replace(".json", "")}</p>
+      <Bars rows={rows} unit="%" fmt={(v) => v.toFixed(0)} />
+      <p className="mt-3 text-sm text-ink-2">{Object.entries(d.sign_tests as Record<string, any>).map(([k, v]) => `${k.replaceAll("_", " ")}: ${v.b} to ${v.c}, p = ${v.p.toFixed(4)}`).join("; ")}.</p>
+    </div>
+  );
+}
+
+function Injection({ files }: { files: string[] }) {
+  const { data: d } = useQuery({ queryKey: ["bench", files[0]], queryFn: () => file(files[0]), enabled: files.length > 0 });
+  const series: ChartSeries[] = useMemo(() => !d ? [] : d.faults.map((f: any, i: number) => ({ name: f.fault, color: COLORS[i % 5], points: d.durations_s.map((s: number) => ({ x: s, y: f.by_duration[String(s)]?.detection_rate ?? 0, tip: `${f.fault}, held ${s} s: detected ${Math.round((f.by_duration[String(s)]?.detection_rate ?? 0) * 100)}% of ${f.by_duration[String(s)]?.n} injections` })) })), [d]);
+  if (!files.length) return <Missing what="fault injection" />;
+  if (!d) return <p className="text-ink-2" aria-busy>Loading</p>;
+  return (
+    <div>
+      <p className="mb-2 text-sm text-ink-2">{d.flights} real flights, a constant fault value held for the duration on the horizontal axis at a random time; the unchanged rule engine looks for the right event kind.</p>
+      <LineChart series={series} xLabel="Seconds the fault is held" yLabel="Share of injected faults detected" yDomain={[0, 1.02]} xFormat={(v) => `${v}`} yFormat={(v) => `${Math.round(v * 100)}%`} xLog label="Detection rate against fault duration for each rule" />
+      <p className="mt-2 text-sm text-ink-2">False alarms on unmodified controls: {d.faults.map((f: any) => `${f.fault} ${(f.control_false_alarm_rate * 100).toFixed(0)}%`).join("; ")}.</p>
+    </div>
+  );
+}
+
+function Signature({ files }: { files: string[] }) {
+  const { data: d } = useQuery({ queryKey: ["bench", files[0]], queryFn: () => file(files[0]), enabled: files.length > 0 });
+  if (!files.length) return <Missing what="signature" />;
+  if (!d) return <p className="text-ink-2" aria-busy>Loading</p>;
+  return (
+    <div>
+      <p className="mb-3 text-sm text-ink-2">{d.flights} flights, {d.features} features reduced to {d.dimensions} dimensions ({Math.round(d.variance_kept * 100)}% of the variance). Share of a flight&apos;s 5 nearest neighbours on the same board, leave one out.</p>
+      <Bars rows={[{ label: "Chance (random neighbours)", value: d.board_agreement_chance * 100 }, { label: "Scaled features, cosine", value: d.board_agreement_scaled_features * 100 }, { label: "32-dimension signature, cosine", value: d.board_agreement_signature * 100 }]} unit="%" fmt={(v) => v.toFixed(0)} />
+    </div>
+  );
+}
+
 export function BenchmarksView() {
   const { data, error } = useQuery({ queryKey: ["bench-list"], queryFn: () => api<{ files: string[] }>("/bench") });
   if (error) return <p className="pt-10 text-critical">Could not load benchmark results: {(error as Error).message}</p>;
@@ -151,6 +209,18 @@ export function BenchmarksView() {
       </Section>
       <Section id="filter" title="Filtered vector search" intro="A vector index finds neighbours first and applies the SQL filter afterwards, so a selective filter can leave fewer rows than requested. These are the ways around it.">
         <Filter files={pick(files, "filter_")} />
+      </Section>
+      <Section id="search" title="Search quality" intro="Natural-language queries against the extracted events: which way of ranking finds the right ones.">
+        <Search files={pick(files, "eval_search_")} />
+      </Section>
+      <Section id="nlsql" title="Natural-language SQL" intro="Does a model write correct SQL, and what does the semantic layer add beyond documentation?">
+        <Nlsql files={pick(files, "nlsql_eval_test")} />
+      </Section>
+      <Section id="injection" title="Fault injection on the event detectors" intro="Faults of known size and duration injected into real flights: which does the rule engine find, and which does it miss?">
+        <Injection files={pick(files, "injection_")} />
+      </Section>
+      <Section id="signature" title="Similar flights by behaviour" intro="A sanity check that flights found by signal shape, event rates and mode shares are more alike than chance.">
+        <Signature files={pick(files, "signature_")} />
       </Section>
       <Section id="columnstore" title="Columnstore physical design" intro="How chunk size and the segment and sort columns change storage and query speed for the telemetry table.">
         <Columnstore files={pick(files, "columnstore_")} />
