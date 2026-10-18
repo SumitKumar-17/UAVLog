@@ -3,7 +3,7 @@ import psycopg
 
 from app.config import settings
 from app.ontology.seed_data import (
-    FAILURE_MODES, INDICATES, PX4_HOT_FIELDS, SIGNALS, SUBSYSTEMS,
+    EVENTS, FAILURE_MODES, INDICATES, PX4_HOT_FIELDS, SIGNALS, SUBSYSTEMS,
 )
 
 with psycopg.connect(settings.dsn) as conn, conn.cursor() as cur:
@@ -24,6 +24,9 @@ with psycopg.connect(settings.dsn) as conn, conn.cursor() as cur:
     for k, (label, unit, sub) in SIGNALS.items():
         ids[k] = upsert_concept(k, "signal", label, unit)
 
+    for k, (d, _) in EVENTS.items():
+        ids[k] = upsert_concept(k, "event", k.replace("_", " ").title(), description=d)
+
     def relate(src, dst, rel):
         cur.execute("INSERT INTO concept_relation VALUES (%s,%s,%s) ON CONFLICT DO NOTHING",
                     (ids[src], ids[dst], rel))
@@ -33,6 +36,10 @@ with psycopg.connect(settings.dsn) as conn, conn.cursor() as cur:
     for sig, fms in INDICATES.items():
         for fm in fms:
             relate(sig, fm, "indicates")
+
+    for k, (_, fm) in EVENTS.items():
+        if fm:
+            relate(k, fm, "indicates")
 
     for topic, field, unit, sig, scale, offset in PX4_HOT_FIELDS:
         cur.execute(

@@ -114,3 +114,19 @@ PX4_HOT_FIELDS = [
     ("vehicle_status", "arming_state", "enum", "mode.arming_state", 1, 0),
     ("vehicle_land_detected", "landed", "bool", "state.landed", 1, 0),
 ]
+
+# event kind -> (description, failure mode it is evidence for or None)
+EVENTS = {
+    "takeoff": ("Vehicle left the ground", None),
+    "landing": ("Vehicle touched down", None),
+    "arm": ("Motors armed", None),
+    "disarm": ("Motors disarmed", None),
+    "mode_change": ("Flight mode changed", None),
+    "failsafe_activated": ("A failsafe was triggered", None),
+    "log_error": ("Autopilot logged an error message", None),
+    "log_warning": ("Autopilot logged a warning message", None),
+    "battery_low": ("Battery remaining below threshold", "low_battery"),
+    "gps_poor": ("GPS fix or accuracy degraded", "gps_degraded"),
+    "vibration_high": ("Sustained high vibration", "high_vibration"),
+    "ekf_innovation_reject": ("Estimator rejecting measurements", "ekf_rejection"),
+}
