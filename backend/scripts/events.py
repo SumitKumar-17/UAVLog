@@ -60,10 +60,16 @@ def main() -> None:
         if not ids:
             break
         claimed += len(ids)
-        info = {r[0]: r for r in conn.execute("SELECT id, source_ref, started_at FROM flight WHERE id = ANY(%s)", (ids,))}
+        info = {r[0]: r for r in conn.execute("SELECT id, source_ref, started_at, autopilot FROM flight WHERE id = ANY(%s)", (ids,))}
         futures = {}
         for fid in ids:
-            _, ref, started_at = info[fid]
+            _, ref, started_at, autopilot = info[fid]
+            if autopilot != "px4":  # no ULog to read: only the telemetry rules apply, and they are vendor-neutral
+                try:
+                    total.update(write(conn, fid, rule_events(conn, fid), kind_ids))
+                except Exception as e:  # noqa: BLE001
+                    jobs.fail(conn, fid, STAGE, f"{type(e).__name__}: {e}", a.max_attempts)
+                continue
             path = Path(a.ulg_dir) / f"{ref}.ulg"
             if not path.exists():
                 jobs.fail(conn, fid, STAGE, "log file missing", a.max_attempts)
