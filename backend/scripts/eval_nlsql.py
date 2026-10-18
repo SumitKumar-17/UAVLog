@@ -27,6 +27,7 @@ p.add_argument("--workers", type=int, default=4)
 p.add_argument("--boot", type=int, default=5000)
 a = p.parse_args()
 Q = json.load(open(a.questions))["questions"]
+MODES = ("semantic", "raw_docs", "raw")  # semantic views | raw tables + the same documentation | raw tables alone
 
 
 def cell(v):
@@ -126,7 +127,7 @@ def one(args):
     return rec
 
 
-jobs = [(q, m) for q in Q for m in ("semantic", "raw")]
+jobs = [(q, m) for q in Q for m in MODES]
 with ThreadPoolExecutor(a.workers) as ex:
     res = list(ex.map(one, jobs))
 pool.close()
@@ -151,7 +152,7 @@ md = [f"# NL-to-SQL evaluation ({datetime.now(timezone.utc).date()})", "",
       "Mean over questions with 95% bootstrap CI.", "",
       "| condition | strict EX | lenient EX | first-try EX | mean attempts | mean generate ms |", "|---|---|---|---|---|---|"]
 summary = {}
-for mode in ("semantic", "raw"):
+for mode in MODES:
     rs = pick(mode)
     cells = []
     for k in ("strict", "lenient", "first_try"):
@@ -160,33 +161,43 @@ for mode in ("semantic", "raw"):
         summary.setdefault(mode, {})[k] = {"mean": m, "lo": lo, "hi": hi, "n": len(rs)}
     md.append(f"| {mode} | " + " | ".join(cells) + f" | {np.mean([r['attempts'] for r in rs]):.2f} | {np.mean([r['generate_ms'] for r in rs]):.0f} |")
 
-sem = {r["id"]: r for r in pick("semantic")}
-raw = {r["id"]: r for r in pick("raw")}
-b = sum(sem[i]["strict"] and not raw[i]["strict"] for i in sem)
-c = sum(raw[i]["strict"] and not sem[i]["strict"] for i in sem)
-n = b + c
-pval = min(1.0, 2 * sum(math.comb(n, k) for k in range(0, min(b, c) + 1)) / 2 ** n) if n else 1.0
-md += ["", f"Paired comparison (strict EX): semantic correct and raw wrong on {b} questions, raw correct and semantic wrong on {c}; "
-       f"exact two-sided sign test p = {pval:.4f}.", "", "## By category (strict EX, semantic | raw)", "", "| category | questions | semantic | raw |", "|---|---|---|---|"]
-for cat in dict.fromkeys(q["category"] for q in Q if q["answerable"]):
-    s_, r_ = pick("semantic", cat), pick("raw", cat)
-    md.append(f"| {cat} | {len(s_)} | {sum(x['strict'] for x in s_)}/{len(s_)} | {sum(x['strict'] for x in r_)}/{len(r_)} |")
+def paired(x, y):
+    """Exact two-sided sign test on the questions where exactly one of the two conditions is correct."""
+    dx = {r["id"]: r for r in pick(x)}
+    dy = {r["id"]: r for r in pick(y)}
+    b_ = sum(dx[i]["strict"] and not dy[i]["strict"] for i in dx)
+    c_ = sum(dy[i]["strict"] and not dx[i]["strict"] for i in dx)
+    n_ = b_ + c_
+    return b_, c_, (min(1.0, 2 * sum(math.comb(n_, k) for k in range(0, min(b_, c_) + 1)) / 2 ** n_) if n_ else 1.0)
 
-md += ["", "## What happened to each answerable question", "", "| outcome | semantic | raw |", "|---|---|---|"]
+
+md += ["", "## Paired comparisons (strict EX)", "", "| first | second | first right, second wrong | second right, first wrong | exact sign test p |", "|---|---|---|---|---|"]
+signs = {}
+for x, y in (("semantic", "raw"), ("semantic", "raw_docs"), ("raw_docs", "raw")):
+    b, c, pval = paired(x, y)
+    signs[f"{x}_vs_{y}"] = {"b": b, "c": c, "p": pval}
+    md.append(f"| {x} | {y} | {b} | {c} | {pval:.4f} |")
+
+md += ["", "## By category (strict EX)", "", "| category | questions | semantic | raw + docs | raw |", "|---|---|---|---|---|"]
+for cat in dict.fromkeys(q["category"] for q in Q if q["answerable"]):
+    cols = [pick(m, cat) for m in MODES]
+    md.append(f"| {cat} | {len(cols[0])} | " + " | ".join(f"{sum(x['strict'] for x in c)}/{len(c)}" for c in cols) + " |")
+
+md += ["", "## What happened to each answerable question", "", "| outcome | semantic | raw + docs | raw |", "|---|---|---|---|"]
 for st in ("answered", "refused", "cost_refused", "guard_refused", "db_error"):
-    cnt = {m: sum(r["status"] == st for r in pick(m)) for m in ("semantic", "raw")}
+    cnt = {m: sum(r["status"] == st for r in pick(m)) for m in MODES}
     label = {"answered": "returned rows", "refused": "said it cannot answer", "cost_refused": "stopped by the cost check", "guard_refused": "stopped by the guard", "db_error": "database error"}[st]
-    md.append(f"| {label} | {cnt['semantic']} | {cnt['raw']} |")
-wrong = {m: sum(r["status"] == "answered" and not r["strict"] for r in pick(m)) for m in ("semantic", "raw")}
-md.append(f"| returned rows, but the wrong ones | {wrong['semantic']} | {wrong['raw']} |")
+    md.append(f"| {label} | " + " | ".join(str(cnt[m]) for m in MODES) + " |")
+wrong = {m: sum(r["status"] == "answered" and not r["strict"] for r in pick(m)) for m in MODES}
+md.append("| returned rows, but the wrong ones | " + " | ".join(str(wrong[m]) for m in MODES) + " |")
 
 md += ["", "## Unanswerable questions (success = refusing)", "", "| condition | refused | fabricated an answer |", "|---|---|---|"]
-for mode in ("semantic", "raw"):
+for mode in MODES:
     u = pick(mode, answerable=False)
     md.append(f"| {mode} | {sum(r['strict'] for r in u)} | {sum(not r['strict'] for r in u)} |")
 
 md += ["", "## Questions answered wrongly or not at all", ""]
-for mode in ("semantic", "raw"):
+for mode in MODES:
     md.append(f"### {mode}")
     for r in pick(mode):
         if not r["strict"]:
@@ -195,7 +206,7 @@ for mode in ("semantic", "raw"):
     md.append("")
 
 os.makedirs(a.out_dir, exist_ok=True)
-json.dump({"model": settings.llm_model, "taken_at": datetime.now(timezone.utc).isoformat(), "summary": summary, "sign_test": {"b": b, "c": c, "p": pval}, "results": res},
+json.dump({"model": settings.llm_model, "taken_at": datetime.now(timezone.utc).isoformat(), "summary": summary, "sign_tests": signs, "results": res},
           open(f"{a.out_dir}/nlsql_eval_{a.label}.json", "w"), indent=1, default=str)
 open(f"{a.out_dir}/nlsql_eval_{a.label}.md", "w").write("\n".join(md) + "\n")
-print("\n".join(md[:30]))
+print("\n".join(md[:36]))
