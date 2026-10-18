@@ -31,7 +31,7 @@ register_vector(conn)
 N = conn.execute("SELECT count(*) FROM bench.event_vec").fetchone()[0]
 Q = [(r[0], r[1], r[2].to_numpy() if hasattr(r[2], "to_numpy") else np.asarray(r[2]))
      for r in conn.execute("SELECT qid, kind_id, embedding FROM bench.query_vec ORDER BY qid")]
-conn.execute("SET maintenance_work_mem = '2GB'; SET max_parallel_maintenance_workers = 3; SET statement_timeout = '120s'")
+conn.execute("SET maintenance_work_mem = '1500MB'; SET max_parallel_maintenance_workers = 3; SET statement_timeout = '120s'")
 KIND_FREQ = dict(conn.execute("SELECT kind_id, count(*)::float / %s FROM bench.event_vec GROUP BY 1", (N,)).fetchall())
 
 
