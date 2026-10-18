@@ -160,6 +160,16 @@ export function SignalChart({ flightId, duration, panel, modes, height = 170 }: 
     return { label: s.label, min: lo, max: hi, mean: vals.length ? vals.reduce((p, c) => p + c, 0) / vals.length : NaN };
   });
 
+  const downloadCsv = () => {
+    const x = aligned.data[0] as number[];
+    const head = ["seconds", ...panel.series.flatMap((sr) => [`${sr.label} mean`, `${sr.label} lowest`, `${sr.label} highest`])];
+    const lines = x.map((t, i) => [t.toFixed(3), ...panel.series.flatMap((_, k) => [(aligned.data[k + 1] as (number | null)[])[i], aligned.env[k]?.lo[i], aligned.env[k]?.hi[i]].map((v) => (v == null ? "" : String(v))))].join(","));
+    const url = URL.createObjectURL(new Blob([[head.join(","), ...lines].join("\n")], { type: "text/csv" }));
+    const link = Object.assign(document.createElement("a"), { href: url, download: `${panel.id}-${flightId.slice(0, 8)}.csv` });
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <section className="border-t border-rule pt-3" aria-label={panel.title}>
       <div className="flex items-baseline justify-between" style={{ paddingLeft: AXIS_W }}>
@@ -177,6 +187,7 @@ export function SignalChart({ flightId, duration, panel, modes, height = 170 }: 
             <tbody>{stats.map((s) => <tr key={s.label}><td className="pr-6">{s.label}</td><td className="pr-6">{isFinite(s.min) ? fmt(s.min) : "–"}</td><td className="pr-6">{isFinite(s.mean) ? fmt(s.mean) : "–"}</td><td>{isFinite(s.max) ? fmt(s.max) : "–"}</td></tr>)}</tbody>
           </table>
           <p className="mt-1 text-xs text-muted">Over the visible window. Lowest and highest are the true extremes, not averages.</p>
+          <button onClick={downloadCsv} className="mt-2 rounded border border-rule px-2.5 py-1 hover:border-route">Download this window as CSV</button>
         </details>
       )}
     </section>
