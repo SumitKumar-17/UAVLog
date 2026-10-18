@@ -1,11 +1,14 @@
 """Per-flight task queue (table flight_task): claim with SKIP LOCKED, finish, fail with retry, enqueue."""
+# MATERIALIZED matters: without it Postgres may re-run the LIMIT .. FOR UPDATE SKIP LOCKED subquery inside the
+# join and claim more rows than the limit.
 CLAIM = """
+WITH c AS MATERIALIZED (
+    SELECT flight_id FROM flight_task
+    WHERE stage=%(stage)s AND attempts < %(max)s
+      AND (status='pending' OR (status='running' AND claimed_at < now() - make_interval(mins => %(lease)s)))
+    ORDER BY created_at, flight_id LIMIT %(n)s FOR UPDATE SKIP LOCKED)
 UPDATE flight_task t SET status='running', attempts=attempts+1, claimed_at=now(), worker=%(worker)s
-FROM (SELECT flight_id FROM flight_task
-      WHERE stage=%(stage)s AND attempts < %(max)s
-        AND (status='pending' OR (status='running' AND claimed_at < now() - make_interval(mins => %(lease)s)))
-      ORDER BY created_at, flight_id LIMIT %(n)s FOR UPDATE SKIP LOCKED) c
-WHERE t.flight_id = c.flight_id AND t.stage = %(stage)s
+FROM c WHERE t.flight_id = c.flight_id AND t.stage = %(stage)s
 RETURNING t.flight_id"""
 
 

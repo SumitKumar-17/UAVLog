@@ -22,13 +22,14 @@ from app.config import settings
 from app.ingest.ulog import process
 
 CLAIM = """
-UPDATE ingest_job SET status='running', attempts=attempts+1, claimed_at=now(), worker=%(worker)s
-WHERE log_id IN (
+WITH c AS MATERIALIZED (
     SELECT log_id FROM ingest_job
     WHERE (status='pending' OR (status='running' AND claimed_at < now() - make_interval(mins => %(lease)s)))
       AND attempts < %(max)s
     ORDER BY created_at, log_id LIMIT %(n)s FOR UPDATE SKIP LOCKED)
-RETURNING log_id, payload, attempts"""
+UPDATE ingest_job j SET status='running', attempts=attempts+1, claimed_at=now(), worker=%(worker)s
+FROM c WHERE j.log_id = c.log_id
+RETURNING j.log_id, j.payload, j.attempts"""
 
 
 def telemetry_table(r: dict, vf_ids: dict, fid: str) -> pa.Table | None:
