@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Barlow, Barlow_Semi_Condensed } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col">
         <Providers>
-          <Header />
+          <Suspense fallback={<div className="h-14 border-b border-rule bg-panel" />}><Header /></Suspense>
           <main className="mx-auto w-full max-w-[1280px] flex-1 px-5 pb-16 sm:px-8">{children}</main>
         </Providers>
       </body>
