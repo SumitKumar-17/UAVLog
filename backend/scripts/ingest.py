@@ -4,7 +4,6 @@ Failures are isolated per log and retried up to --max-attempts; a dead worker (e
 stale 'running' jobs from a crashed run are reclaimed after --lease-min minutes.
 """
 import argparse
-import io
 import json
 import multiprocessing as mp
 import socket
@@ -13,12 +12,10 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
 
-import numpy as np
 import psycopg
-import pyarrow as pa
-import pyarrow.csv as pacsv
 
 from app.config import settings
+from app.ingest.load import load
 from app.ingest.ulog import process
 
 CLAIM = """
@@ -30,49 +27,6 @@ WITH c AS MATERIALIZED (
 UPDATE ingest_job j SET status='running', attempts=attempts+1, claimed_at=now(), worker=%(worker)s
 FROM c WHERE j.log_id = c.log_id
 RETURNING j.log_id, j.payload, j.attempts"""
-
-
-def telemetry_table(r: dict, vf_ids: dict, fid: str) -> pa.Table | None:
-    t0_us = np.datetime64(r["t0"].replace(tzinfo=None), "us")
-    parts = []
-    for topic, field, ts_us, vals in r["hot"]:
-        ok = np.isfinite(vals)
-        parts.append(pa.table({
-            "ts": pa.array(t0_us + ts_us[ok].astype("timedelta64[us]"), pa.timestamp("us")),
-            "vf": pa.array(np.full(int(ok.sum()), vf_ids[(topic, field)], np.int16)),
-            "value": vals[ok],
-        }))
-    if not parts:
-        return None
-    t = pa.concat_tables(parts)
-    return t.add_column(0, "flight_id", pa.repeat(pa.scalar(fid), t.num_rows))
-
-
-def load(conn, vf_ids, r) -> int:
-    """Insert flight + telemetry and mark the job done in ONE transaction."""
-    with conn.transaction(), conn.cursor() as cur:
-        cur.execute(
-            """INSERT INTO flight (source, source_ref, autopilot, firmware, vehicle_type, started_at,
-               duration_s, log_sha256, parquet_path, metadata)
-               VALUES ('flight_review', %s, 'px4', %s, %s, %s, %s, %s, %s, %s)
-               ON CONFLICT (log_sha256) DO NOTHING RETURNING id""",
-            (r["log_id"], r["firmware"], r["vehicle_type"], r["t0"], r["duration_s"], r["sha256"],
-             r["parquet_path"], json.dumps(r["metadata"], default=str)),
-        )
-        row, n = cur.fetchone(), 0
-        if row is not None:  # None = identical log content already loaded under another id
-            t = telemetry_table(r, vf_ids, str(row[0]))
-            if t is not None:
-                n = t.num_rows
-                with cur.copy("COPY telemetry (flight_id, ts, vendor_field_id, value) FROM STDIN (FORMAT csv)") as cp:
-                    for off in range(0, n, 1_000_000):
-                        buf = io.BytesIO()
-                        pacsv.write_csv(t.slice(off, 1_000_000), buf, pacsv.WriteOptions(include_header=False))
-                        cp.write(buf.getvalue())
-        cur.execute(
-            "UPDATE ingest_job SET status='done', finished_at=now(), rows_loaded=%s, elapsed_s=%s, last_error=NULL "
-            "WHERE log_id=%s", (n, r["elapsed_s"], r["log_id"]))
-    return n
 
 
 def fail(conn, log_id: str, err: str, max_attempts: int, status: str | None = None) -> None:
