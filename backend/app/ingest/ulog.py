@@ -50,6 +50,13 @@ def start_time_utc(u: ULog, fallback: str) -> datetime:
     return datetime.fromisoformat(fallback).replace(tzinfo=timezone.utc)
 
 
+def robust_duration_s(u: ULog) -> float:
+    """Log length from the data alone. u.last_timestamp is the max over every message, so one message with a garbage
+    timestamp (seen: 1.4e13 s) ruins it; the 75th percentile of each topic's last timestamp is not moved by a few outliers."""
+    lasts = [int(d.data["timestamp"][-1]) for d in u.data_list if len(d.data["timestamp"])]
+    return (float(np.percentile(lasts, 75)) - u.start_timestamp) / 1e6 if lasts else 0.0
+
+
 def process(path: str, rec: dict, parquet_root: str) -> dict:
     """Parse one log. Returns flight metadata plus hot series as (topic, field, ts_us, values)."""
     path = Path(path)
@@ -73,12 +80,19 @@ def process(path: str, rec: dict, parquet_root: str) -> dict:
             if field in data:
                 hot.append((d.name, field, ts_us, data[field].astype(np.float64)))
 
+    # Prefer the Flight Review index duration (it handles these corrupt timestamps); fall back to the robust estimate.
+    parsed = robust_duration_s(u)
+    index_dur = rec.get("duration_s")
+    duration = float(index_dur) if index_dur else parsed
+
     meta = {k: rec.get(k) for k in (
         "description", "feedback", "rating", "error_labels", "wind_speed", "sys_hw", "ver_sw_release",
         "airframe_name", "num_logged_errors", "num_logged_warnings", "flight_mode_durations", "stratum")}
+    meta["duration_parsed_s"] = round(parsed, 1)
+    meta["duration_source"] = "index" if index_dur else "parsed"
     return {
         "log_id": log_id, "sha256": sha256(path), "t0": t0, "topics": topics,
-        "duration_s": (u.last_timestamp - u.start_timestamp) / 1e6,
+        "duration_s": duration,
         "firmware": rec.get("ver_sw_release"), "vehicle_type": rec.get("mav_type"),
         "metadata": meta, "parquet_path": parquet_root, "hot": hot,
     }
