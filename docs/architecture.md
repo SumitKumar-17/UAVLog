@@ -138,7 +138,21 @@ Measured on the dev corpus: envelope queries 0.19 to 0.26 s on compressed chunks
 search about 1.4 s, dominated by the embedding API round trip. *Planned:* query-embedding cache, read-only DB role for
 the API, NL-to-SQL endpoint with guardrails, DB-internals endpoint (`EXPLAIN`, index and chunk stats).
 
-## 6. Deployment
+## 6. Web app
+
+Next.js 16 (App Router, Cache Components), TypeScript, Tailwind 4, TanStack Query for server state, Zustand for the shared
+zoom window and selected event, uPlot for charts. The browser calls only the web origin; `/api/*` is rewritten to FastAPI, so the
+same setup works on a remote server with no CORS. Design rationale and tokens: `docs/design.md`.
+
+| Page | What it shows |
+|---|---|
+| Overview | search hero, flight board (modes + event marks per flight), corpus facts |
+| Flights | all flights as strips, ordered by critical events, recency or length |
+| Flight | overview ribbon, synchronized charts with mode shading and envelopes, event list that jumps the charts, pilot notes |
+| Search | hybrid event search with filters, best-match-per-flight, collapsed duplicates, ranking details |
+| Database | live compression ratio, index and table sizes, queue state, `EXPLAIN ANALYZE` of named queries |
+
+## 7. Deployment
 
 `docker compose`: `db` (timescale/timescaledb-ha:pg17: TimescaleDB, pgvector, pgvectorscale), `backend` (Python 3.12
 work container for pipeline stages) and `api` (uvicorn on port 8000); both run as the host uid so data files stay manageable. Data lives under `HOST_DATA_DIR`
