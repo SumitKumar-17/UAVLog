@@ -1,0 +1,33 @@
+{
+  "note": "A result is relevant for a concept if its event kind is in `kinds`, or it is a log message (log_error/log_warning) whose text matches `regex`. Queries marked hard share no key words with the event text. Relevance is defined independently of the retrieval methods under test.",
+  "concepts": {
+    "motor":     {"kinds": ["motor_failure_detected", "imbalanced_prop_detected"], "regex": "motor|\\besc\\b|propell|actuator",
+                  "queries": [["motor failure detected", false], ["imbalanced propeller", false], ["one of the rotors stopped working", true], ["a prop is damaged and wobbling", true], ["an engine cut out and the drone dropped", true]]},
+    "attitude":  {"kinds": ["attitude_limit_exceeded"], "regex": "attitude|tilt|flip",
+                  "queries": [["roll angle exceeded the safe limit", false], ["pitch limit exceeded", false], ["the drone flipped over", true], ["aircraft tilted too far and lost control", true], ["vehicle went upside down", true]]},
+    "gps":       {"kinds": ["gps_poor"], "regex": "\\bgps\\b|gnss|satellite|position lost|no position",
+                  "queries": [["GPS lost 3D fix", false], ["poor GPS accuracy", false], ["no satellite lock", true], ["position signal dropped out", true], ["navigation signal degraded", true]]},
+    "battery":   {"kinds": ["battery_low"], "regex": "batter|low voltage",
+                  "queries": [["battery critically low", false], ["battery below 20 percent", false], ["running out of power", true], ["the pack is almost empty", true], ["voltage sag under load", true]]},
+    "vibration": {"kinds": ["vibration_high"], "regex": "vibrat|clipping|resonan",
+                  "queries": [["high accelerometer vibration", false], ["accelerometer clipping", false], ["airframe shaking violently", true], ["the frame is resonating", true], ["rough rattling during flight", true]]},
+    "estimator": {"kinds": ["ekf_innovation_reject"], "regex": "ekf|estimator|innovation",
+                  "queries": [["estimator rejecting measurements", false], ["EKF fault", false], ["state estimation unhealthy", true], ["sensor fusion disagreement", true], ["navigation filter reset", true]]},
+    "failsafe":  {"kinds": ["failsafe_activated"], "regex": "failsafe|return to launch|\\brtl\\b|link lost|manual control lost|geofence",
+                  "queries": [["failsafe activated", false], ["return to launch triggered", false], ["autopilot took over automatically", true], ["emergency protection kicked in", true], ["safety fallback engaged", true]]},
+    "takeoff":   {"kinds": ["takeoff"], "regex": null,
+                  "queries": [["vehicle took off", false], ["left the ground", true], ["lift off", true], ["became airborne", true]]},
+    "landing":   {"kinds": ["landing"], "regex": null,
+                  "queries": [["vehicle landed", false], ["touched down", true], ["came back to the ground", true], ["touchdown at the end of the flight", true]]},
+    "arming":    {"kinds": ["arm", "disarm"], "regex": null,
+                  "queries": [["motors armed", false], ["motors disarmed", false], ["propellers spun up before flight", true], ["power to the motors was cut after landing", true]]},
+    "mode":      {"kinds": ["mode_change"], "regex": null,
+                  "queries": [["flight mode changed", false], ["switched to Position mode", false], ["pilot toggled between manual and assisted flying", true], ["control mode switch", true], ["autopilot mode transition", true]]},
+    "compass":   {"kinds": [], "regex": "compass|magnet|\\bmag\\b",
+                  "queries": [["compass error", false], ["magnetometer inconsistent", false], ["heading sensor problem", true], ["magnetic interference", true]]},
+    "sensor":    {"kinds": [], "regex": "baro|gyro|accel|\\bimu\\b",
+                  "queries": [["barometer fault", false], ["gyro unhealthy", false], ["altitude sensor problem", true], ["inertial sensor issue", true]]},
+    "rc":        {"kinds": [], "regex": "manual control|\\brc\\b|radio",
+                  "queries": [["manual control lost", false], ["RC link lost", false], ["radio signal dropped", true], ["remote controller disconnected", true], ["lost contact with the pilot's transmitter", true]]}
+  }
+}
