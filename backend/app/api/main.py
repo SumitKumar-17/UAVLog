@@ -1,18 +1,23 @@
 """HTTP API: flights, events, telemetry (server-side min/max envelopes), ontology, hybrid search."""
+import time
 import uuid
+from collections import defaultdict, deque
+from dataclasses import asdict
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg.rows import dict_row
 
 from app.api.deps import lifespan, llm, pool
 from app.api.internals import router as internals_router
 from app.events.ulog_events import NAV_STATE
+from app.nlsql.generate import ask as ask_question
 from app.search import MODES, search
 
 app = FastAPI(title="Semantic Log Analytics [UAV Log]", version="0.1.0", lifespan=lifespan)
 app.include_router(internals_router)
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["GET"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["GET", "POST"], allow_headers=["*"])
 
 
 def rows(p, sql: str, params=None) -> list[dict]:
@@ -154,3 +159,27 @@ def ontology(p=Depends(pool)):
         "relations": rows(p, """SELECT s.key AS src, d.key AS dst, r.rel FROM concept_relation r
                                 JOIN concept s ON s.id = r.src_id JOIN concept d ON d.id = r.dst_id ORDER BY 1, 2"""),
     }
+
+
+class AskBody(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+    explain: bool = True
+
+
+_recent: dict[str, deque] = defaultdict(deque)
+RATE_PER_MINUTE = 20
+
+
+@app.post("/api/ask")
+def ask(body: AskBody, request: Request, p=Depends(pool), client=Depends(llm)):
+    """Natural-language question to a guarded, read-only SQL query over the semantic views."""
+    who, now = request.client.host if request.client else "?", time.time()
+    q = _recent[who]
+    while q and now - q[0] > 60:
+        q.popleft()
+    if len(q) >= RATE_PER_MINUTE:
+        raise HTTPException(429, "Too many questions; wait a minute.")
+    q.append(now)
+    a = asdict(ask_question(p, client, body.question.strip(), "semantic", body.explain))
+    a["rows"] = a["rows"][:200]
+    return a
