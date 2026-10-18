@@ -10,6 +10,8 @@ const waitFor = process.env.WAIT_SEL || "";
   page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
   page.on("requestfailed", (r) => problems.push(`request failed: ${r.url()}`));
   await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
+  if (process.env.FILL) { const [sel, text] = process.env.FILL.split("|"); await page.fill(sel, text); }
+  if (process.env.CLICK) await page.click(process.env.CLICK);
   if (waitFor) await page.waitForSelector(waitFor, { timeout: 30000 }).catch(() => problems.push(`selector not found: ${waitFor}`));
   await page.waitForFunction(() => !document.body.innerText.includes("updating") && !document.querySelector("[aria-busy]"), null, { timeout: 30000 }).catch(() => problems.push("page still busy"));
   await page.waitForTimeout(800);
