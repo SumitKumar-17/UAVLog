@@ -1,4 +1,5 @@
-"""Threshold-rule events from telemetry via gaps-and-islands SQL. Thresholds are heuristics to be calibrated
+"""Threshold-rule events from telemetry via gaps-and-islands SQL. A rule only fires in flights where the signal
+was also *outside* the condition at some point (an uncalibrated battery reading 0% all flight is not an event). Thresholds are heuristics to be calibrated
 against labelled flights; each rule is data, so tuning never requires code changes."""
 from dataclasses import dataclass
 
@@ -30,7 +31,8 @@ ISLANDS = """
 WITH s AS (SELECT ts, value, (value {op} %(thr)s) AS flag FROM canonical_telemetry
            WHERE flight_id = %(fid)s AND signal = %(sig)s),
 g AS (SELECT *, row_number() OVER (ORDER BY ts) - row_number() OVER (PARTITION BY flag ORDER BY ts) AS grp FROM s)
-SELECT min(ts), max(ts), min(value), max(value) FROM g WHERE flag
+SELECT min(ts), max(ts), min(value), max(value) FROM g
+WHERE flag AND EXISTS (SELECT 1 FROM s WHERE NOT flag)  -- an event is a deviation from a baseline seen in the same flight
 GROUP BY grp HAVING max(ts) - min(ts) >= make_interval(secs => %(min_s)s) ORDER BY 1"""
 
 
