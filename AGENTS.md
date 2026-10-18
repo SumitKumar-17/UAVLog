@@ -10,6 +10,7 @@ Background research (read before making design decisions): `research/01-datasets
 
 - **Everything runs in Docker** (db, backend, workers, web, benchmarks, simulators). No host installs beyond Docker.
 - **Develop on a subset** locally (hundreds of logs). Later the user will provide an **SSH machine** for the full-scale download, ingest and benchmark run. So every data volume, scale factor and path must be configurable, and the full run must be one documented command.
+- **Git:** commit continuously in small, single-purpose commits with short imperative messages, so the history stays clean. Never commit `.env`, `data/` or secrets. If a new `.env` key is needed, tell the user (they will provide it) and add it to `.env.example`.
 - **Format is ours:** no prescribed report or architecture format. Aim to be the best presentation in the class: original architecture diagrams, a strong live demo, a rigorous report.
 
 ## Architecture
