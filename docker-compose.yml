@@ -50,6 +50,7 @@ services:
       - "${API_PORT:-8000}:8000"
     volumes:
       - ./backend:/app
+      - ./bench:/bench:ro
     command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   web:
