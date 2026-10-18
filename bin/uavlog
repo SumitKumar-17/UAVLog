@@ -34,6 +34,9 @@ cmd_enqueue() { stage "enqueue jobs"; run python scripts/enqueue.py; }
 cmd_ingest()  { stage "ingest (workers=$WORKERS)"; run python scripts/ingest.py --workers "$WORKERS" "$@"; }
 cmd_events()  { stage "extract events (workers=$WORKERS)"; run python scripts/events.py --workers "$WORKERS" "$@"; }
 cmd_eval()    { stage "retrieval evaluation"; run python scripts/eval_search.py "$@"; }
+cmd_summary() { stage "refresh signal summary and the 1-second continuous aggregate"; run python scripts/refresh_semantic.py; }
+cmd_signatures() { stage "flight behavioural signatures"; run python scripts/build_signatures.py; }
+cmd_embed()   { stage "embed events"; run python scripts/embed_events.py "$@"; }
 cmd_compress(){ stage "columnstore compression"; run python scripts/compress.py; }
 cmd_size()    { stage "size report"; run python scripts/size_report.py --label "${1:-latest}"; }
 cmd_status()  { stage "status"
@@ -52,18 +55,19 @@ cmd_stream() {
     cmd_enqueue
     run python scripts/ingest.py --workers "$WORKERS" || true
     run python scripts/events.py --workers "$WORKERS" || true
+    run python scripts/embed_events.py || true
     run python scripts/compress.py || true   # compress as we go: rowstore is ~30x larger than columnstore
     if ! kill -0 "$fetch_pid" 2>/dev/null; then break; fi
     sleep 30
   done
   wait "$fetch_pid" || echo "downloader reported failures; re-run './bin/uavlog stream' to retry them"
-  cmd_enqueue; cmd_ingest; cmd_events; cmd_compress; cmd_size "tier_$TIER"; cmd_status
+  cmd_enqueue; cmd_ingest; cmd_events; cmd_embed; cmd_compress; cmd_summary; cmd_signatures; cmd_size "tier_$TIER"; cmd_status
 }
 
-cmd_all() { cmd_up; cmd_init; cmd_index; cmd_select; cmd_fetch; cmd_enqueue; cmd_ingest; cmd_events; cmd_compress; cmd_size "tier_$TIER"; cmd_status; }
+cmd_all() { cmd_up; cmd_init; cmd_index; cmd_select; cmd_fetch; cmd_enqueue; cmd_ingest; cmd_events; cmd_embed; cmd_compress; cmd_summary; cmd_signatures; cmd_size "tier_$TIER"; cmd_status; }
 
 case "${1:-}" in
   snapshot) shift; exec ./bin/snapshot "$@" ;;
-  up|init|index|select|fetch|enqueue|ingest|events|compress|size|status|failed|eval|stream|all) c="$1"; shift; "cmd_$c" "$@" ;;
-  *) sed -n '2,6p' "$0"; echo "stages: up init index select fetch enqueue ingest events compress size status failed eval stream all | snapshot (create restore verify list push-db pull-db)"; exit 1 ;;
+  up|init|index|select|fetch|enqueue|ingest|events|embed|compress|summary|signatures|size|status|failed|eval|stream|all) c="$1"; shift; "cmd_$c" "$@" ;;
+  *) sed -n '2,6p' "$0"; echo "stages: up init index select fetch enqueue ingest events embed compress summary signatures size status failed eval stream all | snapshot (create restore verify list push-db pull-db)"; exit 1 ;;
 esac
