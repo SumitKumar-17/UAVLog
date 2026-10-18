@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# ./bin/render-docs docs/report.md          -> docs/report.pdf          (A4 report, Mermaid diagrams drawn)
+# ./bin/render-docs docs/slides.md --slides -> docs/slides.pdf + docs/slides-NN.png previews (16:9, one slide per section split by a line of ---)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+in="${1:?markdown file}"; mode="${2:-}"; out="${in%.md}.pdf"
+docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=/tmp -e NODE_PATH=/tmp/pw/node_modules -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v1.55.0-noble \
+  sh -c "[ -d /tmp/pw/node_modules/marked ] || npm i playwright@1.55.0 marked@12 --no-save --silent --prefix /tmp/pw >/dev/null 2>&1; node tools/md2pdf.cjs '$in' '$out' $mode"
+echo "$out"
