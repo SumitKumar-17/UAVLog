@@ -1,0 +1,674 @@
+{
+ "meta": {
+  "taken_at": "2026-10-18T10:14:46.575595+00:00",
+  "n_vectors": 100000,
+  "queries": 200,
+  "k": 10,
+  "passes": 2,
+  "versions": {
+   "vector": "0.8.7",
+   "vectorscale": "0.9.1"
+  },
+  "sigma": "0.35",
+  "kind_selectivity": {
+   "97": 0.28153,
+   "100": 0.22307,
+   "93": 0.08538,
+   "94": 0.08139,
+   "96": 0.08022,
+   "99": 0.05628,
+   "104": 0.04665,
+   "98": 0.04564,
+   "101": 0.02852,
+   "103": 0.02416,
+   "167": 0.02086,
+   "95": 0.0165,
+   "102": 0.00812,
+   "165": 0.00137,
+   "166": 0.00031
+  }
+ },
+ "builds": {
+  "hnsw": {
+   "build_s": 62.085325717926025,
+   "size_mb": 819.208192
+  },
+  "hnsw+btrees": {
+   "build_s": 57.15681552886963
+  },
+  "partial hnsw per kind": {
+   "build_s": 61.75918984413147,
+   "size_mb": 819.32288,
+   "indexes": 15
+  },
+  "list partitions + hnsw": {
+   "build_s": 101.11261916160583,
+   "partitions": 15
+  },
+  "diskann with labels": {
+   "error": "QueryCanceled: canceling statement due to statement timeout"
+  }
+ },
+ "points": [
+  {
+   "strategy": "hnsw post-filter, ef_search=40",
+   "family": "uncorrelated",
+   "filter": "0.01%",
+   "recall": 0.0,
+   "rows_returned": 0.0,
+   "short_queries": 200,
+   "p50_ms": 1.3276205008878605,
+   "p95_ms": 2.2742138004105072
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=40",
+   "family": "uncorrelated",
+   "filter": "0.1%",
+   "recall": 0.0034999999999999996,
+   "rows_returned": 0.035,
+   "short_queries": 200,
+   "p50_ms": 1.3590379985544132,
+   "p95_ms": 2.347617849773087
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=40",
+   "family": "uncorrelated",
+   "filter": "1%",
+   "recall": 0.044000000000000004,
+   "rows_returned": 0.44,
+   "short_queries": 200,
+   "p50_ms": 1.6483979979966534,
+   "p95_ms": 3.7741970978458976
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=40",
+   "family": "uncorrelated",
+   "filter": "10%",
+   "recall": 0.38049999999999995,
+   "rows_returned": 4.13,
+   "short_queries": 198,
+   "p50_ms": 1.4905624993843958,
+   "p95_ms": 2.8225792528246503
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=40",
+   "family": "uncorrelated",
+   "filter": "50%",
+   "recall": 0.7869999999999999,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.3731259987252997,
+   "p95_ms": 2.3490954516091733
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=40",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 0.9215686274509806,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.1814885001513176,
+   "p95_ms": 1.9765350509260315
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=40",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 0.6608247422680413,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.9478100002743304,
+   "p95_ms": 2.4176596522011096
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=40",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.1985979999735719,
+   "p95_ms": 1.2366364991976297
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=400",
+   "family": "uncorrelated",
+   "filter": "0.01%",
+   "recall": 0.0007142857142857143,
+   "rows_returned": 0.005,
+   "short_queries": 200,
+   "p50_ms": 3.603268500228296,
+   "p95_ms": 12.034899098580352
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=400",
+   "family": "uncorrelated",
+   "filter": "0.1%",
+   "recall": 0.0345,
+   "rows_returned": 0.345,
+   "short_queries": 200,
+   "p50_ms": 3.442555500441813,
+   "p95_ms": 10.63747410134965
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=400",
+   "family": "uncorrelated",
+   "filter": "1%",
+   "recall": 0.4205,
+   "rows_returned": 4.24,
+   "short_queries": 197,
+   "p50_ms": 3.697472000567359,
+   "p95_ms": 11.366507702041414
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=400",
+   "family": "uncorrelated",
+   "filter": "10%",
+   "recall": 0.9634999999999999,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 3.5107915009575663,
+   "p95_ms": 11.14537130051758
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=400",
+   "family": "uncorrelated",
+   "filter": "50%",
+   "recall": 0.9665,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 3.0296284985524835,
+   "p95_ms": 10.09601594923879
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=400",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 0.9941176470588236,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 2.661107000676566,
+   "p95_ms": 5.231742700198083
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=400",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 0.9463917525773196,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 7.767163499011076,
+   "p95_ms": 11.271612302698486
+  },
+  {
+   "strategy": "hnsw post-filter, ef_search=400",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 2.8076284997951007,
+   "p95_ms": 2.989955450721027
+  },
+  {
+   "strategy": "hnsw iterative relaxed, ef=40",
+   "family": "uncorrelated",
+   "filter": "0.01%",
+   "recall": 0.18785714285714283,
+   "rows_returned": 1.315,
+   "short_queries": 200,
+   "p50_ms": 98.82590249981149,
+   "p95_ms": 133.67426145086938
+  },
+  {
+   "strategy": "hnsw iterative relaxed, ef=40",
+   "family": "uncorrelated",
+   "filter": "0.1%",
+   "recall": 0.9625,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 50.1094480005122,
+   "p95_ms": 101.7934506999154
+  },
+  {
+   "strategy": "hnsw iterative relaxed, ef=40",
+   "family": "uncorrelated",
+   "filter": "1%",
+   "recall": 0.97,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 6.811596498664585,
+   "p95_ms": 15.827999399152757
+  },
+  {
+   "strategy": "hnsw iterative relaxed, ef=40",
+   "family": "uncorrelated",
+   "filter": "10%",
+   "recall": 0.8695,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 2.259613500427804,
+   "p95_ms": 5.866965402128695
+  },
+  {
+   "strategy": "hnsw iterative relaxed, ef=40",
+   "family": "uncorrelated",
+   "filter": "50%",
+   "recall": 0.7869999999999999,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.7742319996614242,
+   "p95_ms": 3.2592833529633918
+  },
+  {
+   "strategy": "hnsw iterative relaxed, ef=40",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 0.9215686274509806,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.3652079996973043,
+   "p95_ms": 2.692989501156262
+  },
+  {
+   "strategy": "hnsw iterative relaxed, ef=40",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 0.6608247422680413,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 2.180225001211511,
+   "p95_ms": 3.47742135199951
+  },
+  {
+   "strategy": "hnsw iterative relaxed, ef=40",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.3146329984010663,
+   "p95_ms": 1.3586798995675053
+  },
+  {
+   "strategy": "hnsw iterative strict, ef=40",
+   "family": "uncorrelated",
+   "filter": "0.01%",
+   "recall": 0.16285714285714284,
+   "rows_returned": 1.14,
+   "short_queries": 200,
+   "p50_ms": 98.03028100031952,
+   "p95_ms": 135.57649849808507
+  },
+  {
+   "strategy": "hnsw iterative strict, ef=40",
+   "family": "uncorrelated",
+   "filter": "0.1%",
+   "recall": 0.8405000000000001,
+   "rows_returned": 9.935,
+   "short_queries": 8,
+   "p50_ms": 58.98955849988852,
+   "p95_ms": 98.33839104776413
+  },
+  {
+   "strategy": "hnsw iterative strict, ef=40",
+   "family": "uncorrelated",
+   "filter": "1%",
+   "recall": 0.884,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 6.847325499620638,
+   "p95_ms": 17.441541698644865
+  },
+  {
+   "strategy": "hnsw iterative strict, ef=40",
+   "family": "uncorrelated",
+   "filter": "10%",
+   "recall": 0.7935,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 2.582050499768229,
+   "p95_ms": 8.391002497774023
+  },
+  {
+   "strategy": "hnsw iterative strict, ef=40",
+   "family": "uncorrelated",
+   "filter": "50%",
+   "recall": 0.7869999999999999,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.540199500595918,
+   "p95_ms": 2.899731901743505
+  },
+  {
+   "strategy": "hnsw iterative strict, ef=40",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 0.9215686274509806,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.3098995004838798,
+   "p95_ms": 2.1410569981526346
+  },
+  {
+   "strategy": "hnsw iterative strict, ef=40",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 0.6608247422680413,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 2.0254979990568245,
+   "p95_ms": 2.6662690994271543
+  },
+  {
+   "strategy": "hnsw iterative strict, ef=40",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.242291498783743,
+   "p95_ms": 1.250367649117834
+  },
+  {
+   "strategy": "hnsw iterative relaxed, scan limit N",
+   "family": "uncorrelated",
+   "filter": "0.01%",
+   "recall": 1.0,
+   "rows_returned": 7.0,
+   "short_queries": 0,
+   "p50_ms": 586.557858499873,
+   "p95_ms": 753.7726452501374
+  },
+  {
+   "strategy": "hnsw iterative relaxed, scan limit N",
+   "family": "uncorrelated",
+   "filter": "0.1%",
+   "recall": 0.966,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 47.20190099942556,
+   "p95_ms": 95.156966349532
+  },
+  {
+   "strategy": "hnsw iterative relaxed, scan limit N",
+   "family": "uncorrelated",
+   "filter": "1%",
+   "recall": 0.97,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 6.195166501129279,
+   "p95_ms": 14.31961895104905
+  },
+  {
+   "strategy": "hnsw iterative relaxed, scan limit N",
+   "family": "uncorrelated",
+   "filter": "10%",
+   "recall": 0.8695,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.8981505018018652,
+   "p95_ms": 4.4929455492820125
+  },
+  {
+   "strategy": "hnsw iterative relaxed, scan limit N",
+   "family": "uncorrelated",
+   "filter": "50%",
+   "recall": 0.7869999999999999,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.3638814998557791,
+   "p95_ms": 2.2412448493923867
+  },
+  {
+   "strategy": "hnsw iterative relaxed, scan limit N",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 0.9215686274509806,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.1521190008352278,
+   "p95_ms": 1.897701200141455
+  },
+  {
+   "strategy": "hnsw iterative relaxed, scan limit N",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 0.6608247422680413,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.901955998619087,
+   "p95_ms": 2.3312237481150078
+  },
+  {
+   "strategy": "hnsw iterative relaxed, scan limit N",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.2279080001462717,
+   "p95_ms": 1.238600898795994
+  },
+  {
+   "strategy": "b-tree filter + exact sort",
+   "family": "uncorrelated",
+   "filter": "0.01%",
+   "recall": 1.0,
+   "rows_returned": 7.0,
+   "short_queries": 0,
+   "p50_ms": 0.46217449926189147,
+   "p95_ms": 0.6226675495781817
+  },
+  {
+   "strategy": "b-tree filter + exact sort",
+   "family": "uncorrelated",
+   "filter": "0.1%",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 0.9735405001265462,
+   "p95_ms": 1.1977931519140836
+  },
+  {
+   "strategy": "b-tree filter + exact sort",
+   "family": "uncorrelated",
+   "filter": "1%",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 7.012794500042219,
+   "p95_ms": 7.424185600393685
+  },
+  {
+   "strategy": "b-tree filter + exact sort",
+   "family": "uncorrelated",
+   "filter": "10%",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 55.06176500057336,
+   "p95_ms": 81.39375294940689
+  },
+  {
+   "strategy": "b-tree filter + exact sort",
+   "family": "uncorrelated",
+   "filter": "50%",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 328.97710799989,
+   "p95_ms": 423.26831539976354
+  },
+  {
+   "strategy": "b-tree filter + exact sort",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 145.28138900095655,
+   "p95_ms": 206.66741960067154
+  },
+  {
+   "strategy": "b-tree filter + exact sort",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 44.219131999852834,
+   "p95_ms": 55.4637888992147
+  },
+  {
+   "strategy": "b-tree filter + exact sort",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 8.529094000550685,
+   "p95_ms": 10.051141601798008
+  },
+  {
+   "strategy": "planner's choice (hnsw + b-trees)",
+   "family": "uncorrelated",
+   "filter": "0.01%",
+   "recall": 1.0,
+   "rows_returned": 7.0,
+   "short_queries": 0,
+   "p50_ms": 0.44068450188206043,
+   "p95_ms": 1.0098973025378646
+  },
+  {
+   "strategy": "planner's choice (hnsw + b-trees)",
+   "family": "uncorrelated",
+   "filter": "0.1%",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.1411439991206862,
+   "p95_ms": 1.8521327503549396
+  },
+  {
+   "strategy": "planner's choice (hnsw + b-trees)",
+   "family": "uncorrelated",
+   "filter": "1%",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 7.244035499752499,
+   "p95_ms": 9.733756398964033
+  },
+  {
+   "strategy": "planner's choice (hnsw + b-trees)",
+   "family": "uncorrelated",
+   "filter": "10%",
+   "recall": 0.36849999999999994,
+   "rows_returned": 3.98,
+   "short_queries": 200,
+   "p50_ms": 1.5575614997942466,
+   "p95_ms": 2.5045928507097415
+  },
+  {
+   "strategy": "planner's choice (hnsw + b-trees)",
+   "family": "uncorrelated",
+   "filter": "50%",
+   "recall": 0.7795000000000001,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.534406499558827,
+   "p95_ms": 2.412209850808722
+  },
+  {
+   "strategy": "planner's choice (hnsw + b-trees)",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 0.9098039215686275,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.1552679989108583,
+   "p95_ms": 1.9184933982614891
+  },
+  {
+   "strategy": "planner's choice (hnsw + b-trees)",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 0.6577319587628866,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.8669804994715378,
+   "p95_ms": 2.396086849330459
+  },
+  {
+   "strategy": "planner's choice (hnsw + b-trees)",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 0.9,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 0.59553149912972,
+   "p95_ms": 0.6033412490069168
+  },
+  {
+   "strategy": "partial hnsw per kind, ef=40",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 0.9147058823529411,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.5036954973766115,
+   "p95_ms": 2.4665253497005324
+  },
+  {
+   "strategy": "partial hnsw per kind, ef=40",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 0.6618556701030928,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 2.0983354988857172,
+   "p95_ms": 3.195675948882126
+  },
+  {
+   "strategy": "partial hnsw per kind, ef=40",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.2786510014848318,
+   "p95_ms": 1.7217894004716072
+  },
+  {
+   "strategy": "list partitions + hnsw, ef=40",
+   "family": "kind",
+   "filter": "common (>10%)",
+   "recall": 0.9303921568627453,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 1.4827315008005826,
+   "p95_ms": 2.252108999527991
+  },
+  {
+   "strategy": "list partitions + hnsw, ef=40",
+   "family": "kind",
+   "filter": "medium (1-10%)",
+   "recall": 0.6587628865979381,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 2.0762940002896357,
+   "p95_ms": 3.1696813484813893
+  },
+  {
+   "strategy": "list partitions + hnsw, ef=40",
+   "family": "kind",
+   "filter": "rare (<1%)",
+   "recall": 1.0,
+   "rows_returned": 10.0,
+   "short_queries": 0,
+   "p50_ms": 0.7636830014234874,
+   "p95_ms": 0.8171187015250325
+  }
+ ]
+}
