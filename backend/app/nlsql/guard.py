@@ -7,6 +7,8 @@ SQL regenerated from the parsed tree, never the text the model produced.
 """
 from dataclasses import dataclass, field
 
+import re
+
 import sqlglot
 from sqlglot import exp
 from sqlglot.errors import ParseError
@@ -30,6 +32,9 @@ FUNCTIONS = {
     "any_value", "make_interval", "to_timestamp", "lpad", "rpad", "initcap", "reverse", "min_by", "max_by", "approx_percentile",
     "median", "mode", "regr_slope", "regr_intercept", "covar_pop", "covar_samp", "width_bucket", "trunc", "exp", "cume_dist",
     "percent_rank",
+    # read-only JSON access and array containment (operators ->, ->>, #>>, @>, &&); JSON *builders* stay blocked
+    "json_extract", "json_extract_scalar", "jsonb_extract", "jsonb_extract_scalar", "array_contains_all", "array_overlaps",
+    "jsonb_array_length", "jsonb_array_elements_text", "jsonb_extract_path_text",
 }
 
 _FORBIDDEN_NAMES = [
@@ -75,8 +80,17 @@ def _fn_name(node: exp.Expression) -> str:
     return node.sql_name().lower()
 
 
+_TRAILING = re.compile(r"(?:\s|;|--[^\n]*|/\*.*?\*/)+$", re.S)
+
+
+def _strip_trailing(query: str) -> str:
+    """Drop trailing semicolons and comments (a model often ends with '; -- note'); the statement itself is untouched."""
+    return _TRAILING.sub("", query.strip())
+
+
 def check(query: str, policy: Policy | None = None) -> Checked:
     policy = policy or Policy.semantic()
+    query = _strip_trailing(query or "")
     if not query or not query.strip():
         raise GuardError("The query is empty.")
     if len(query) > MAX_CHARS:
