@@ -28,6 +28,11 @@
   --m-mission: #6250d6;
   --m-return: #e34948;
   --m-other: #98a6b3;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --grid: #dbe3e9;
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
@@ -51,6 +56,11 @@
     --m-mission: #9085e9;
     --m-return: #e66767;
     --m-other: #5b6e80;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+    --grid: #1f3040;
   }
 }
 :root[data-theme="dark"] {
@@ -74,6 +84,11 @@
   --m-mission: #9085e9;
   --m-return: #e66767;
   --m-other: #5b6e80;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #c98500;
+  --grid: #1f3040;
 }
 
 @theme inline {
@@ -99,3 +114,13 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font-sans
 ::selection { background: color-mix(in srgb, var(--route) 28%, transparent); }
 :focus-visible { outline: 2px solid var(--route); outline-offset: 2px; border-radius: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* uPlot legend restyled to the app's type and tokens (values lead, names follow) */
+.uplot, .uplot * { font-family: var(--font-dense); }
+.u-legend { font-size: 13px; text-align: left; padding: 4px 0 0 56px; color: var(--ink-2); }
+.u-legend .u-series { padding: 0 14px 0 0; }
+.u-legend .u-marker { width: 14px !important; height: 3px !important; border-radius: 2px; vertical-align: middle; }
+.u-legend .u-value { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.u-legend .u-label { color: var(--ink-2); }
+.u-select { background: color-mix(in srgb, var(--route) 14%, transparent) !important; }
+.u-cursor-x { border-right: 1px solid var(--route) !important; }
