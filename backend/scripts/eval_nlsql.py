@@ -16,7 +16,11 @@ from psycopg_pool import ConnectionPool
 
 from app.config import settings
 from app.llm import LLMClient
+import hashlib
+
+from app.nlsql import generate as G
 from app.nlsql.generate import ask
+from app.nlsql.schema import RAW_DOCS_SCHEMA, RAW_SCHEMA
 
 p = argparse.ArgumentParser()
 p.add_argument("--questions", default="/bench/eval/nlsql_questions.json")
@@ -206,7 +210,11 @@ for mode in MODES:
     md.append("")
 
 os.makedirs(a.out_dir, exist_ok=True)
-json.dump({"model": settings.llm_model, "taken_at": datetime.now(timezone.utc).isoformat(), "summary": summary, "sign_tests": signs, "results": res},
+prompt_hashes = {k: hashlib.sha256(v.encode()).hexdigest()[:12] for k, v in {
+    "rules_semantic": G.RULES_SEMANTIC, "rules_raw": G.RULES_RAW, "examples_semantic": str(G.EXAMPLES),
+    "examples_raw": str(G.RAW_EXAMPLES), "raw_schema": RAW_SCHEMA, "raw_docs_schema": RAW_DOCS_SCHEMA}.items()}
+md += ["", "Prompt component hashes (audit): " + ", ".join(f"{k} {v}" for k, v in prompt_hashes.items())]
+json.dump({"model": settings.llm_model, "prompt_hashes": prompt_hashes, "questions_file": a.questions, "taken_at": datetime.now(timezone.utc).isoformat(), "summary": summary, "sign_tests": signs, "results": res},
           open(f"{a.out_dir}/nlsql_eval_{a.label}.json", "w"), indent=1, default=str)
 open(f"{a.out_dir}/nlsql_eval_{a.label}.md", "w").write("\n".join(md) + "\n")
 print("\n".join(md[:36]))
