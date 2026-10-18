@@ -44,6 +44,8 @@ Everything that took hours (download, ingest, events, embeddings, summaries) liv
 ./bin/snapshot push-db postgresql://user:pass@host:5432/uavlog         # direct copy to another Postgres (needs TimescaleDB + pgvector)
 ```
 
+**Status: `bin/snapshot` is written but has not been run end to end yet.** Try it safely first with `./bin/snapshot restore FILE --as scratch`.
+
 Restore never destroys anything: it verifies the checksum, loads a **new** database with TimescaleDB's pre/post-restore procedure, compares
 row counts with the manifest, and only then swaps by renaming; the previous database is kept as `uavlog_old_<time>` (`--drop-old` removes
 it). The receiver needs only Docker, this repository and the same database image, and no re-ingest or re-embedding. A snapshot contains

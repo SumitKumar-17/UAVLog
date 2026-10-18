@@ -179,3 +179,18 @@ strict scoring.
 may lean toward the view vocabulary; the semantic condition also benefits structurally from the precomputed `signal_summary`, which raw tables
 cannot match cheaply (cost admission would refuse the telemetry scans). To strengthen: repeat with a stronger and a weaker model, add
 questions, and test paraphrases. Security evidence (hostile queries, fake obedient model) is separate from accuracy evidence.
+
+## D17. Portable database snapshots instead of re-ingesting (`bin/snapshot`)
+Everything that took hours (download, ingest, events, embeddings, summaries) lives in the database, so the right sharing unit is a database snapshot,
+not the raw logs. Design: `pg_dump` custom format with zstd, plus a manifest (versions, row counts, embedding model, migration head, git commit) and a
+SHA-256 checksum, in one tar file; the benchmark schema is excluded because it is regenerable and large. Transports are generic (folder, SSH/rsync such
+as an EC2 host, S3, GitHub release up to 2 GB, presigned URL) and `push-db`/`pull-db` copy directly between two Postgres servers. Restore is
+non-destructive by construction: verify the checksum, check that the TimescaleDB version is at least the dump's, load into a NEW database using the
+required `timescaledb_pre_restore()`/`timescaledb_post_restore()` procedure, compare row counts with the manifest, and only then swap by renaming, keeping
+the previous database as `<name>_old_<time>`. A failed restore leaves the live database untouched.
+Why not Neon (considered because it was the first example given): Neon's documentation lists TimescaleDB with "only Apache-2 licensed features supported.
+Compression is not supported", and the free plan allows 1 GB of Postgres storage per project. Our telemetry depends on the columnstore, whose 32x compression
+is what keeps it small, so a Neon copy would be either unusable or 30 times larger. (Checked against Neon's extension and plans pages on 2026-10-18.)
+Privacy and licence: the snapshot holds GPS tracks and pilot free text from public CC-BY Flight Review logs and no secrets; `DATA_ATTRIBUTION.md` says to
+credit Flight Review. Status: the script has not been exercised end to end yet. First use: `./bin/snapshot create`, then
+`./bin/snapshot restore <file> --as scratch` loads it into a separate database without touching the live one.

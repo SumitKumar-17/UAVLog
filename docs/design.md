@@ -41,3 +41,12 @@ below 3:1 against the surface, which obliges visible labels: every strip has a l
 `./bin/shot <path> <name> [light|dark] [width]` screenshots any page in Docker (Playwright), prints console errors and
 reports horizontal overflow with the elements causing it. Found and fixed: header overflow and a table overflow at 390 px,
 a blocking-prerender error from `usePathname()` in the root layout, and misleading idle legend text ("no data").
+
+## Later additions
+- **Ground track** (flight page): local metres, north up, coloured by flight mode with the same fixed mode colours; start is an open circle, end a square,
+  critical events are triangles; clicking jumps every chart to that moment. Shape carries meaning so colour is never alone.
+- **Compare**: two flights on one axis with two categorical hues (slots 1 and 2), a legend and per-point tooltips; alignment at takeoff is a switch because
+  most differences in timing are the pilot's, not the aircraft's.
+- **Ontology**: one column per concept kind, so kind is encoded by position and a column title, with a hue per column as a secondary cue; hover or focus a node
+  to fade everything it is not connected to; a plain relations table is the alternative for keyboard and screen-reader use.
+- **Notes** are plain text, at most 500 characters, pinned to a moment, and selecting one jumps the charts there.
