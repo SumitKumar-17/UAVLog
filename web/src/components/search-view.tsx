@@ -3,7 +3,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { api, type Ontology, type SearchResult } from "@/lib/api";
+import { api, type Ontology, type SearchResponse, type SearchResult } from "@/lib/api";
 import { clock, kindLabel } from "@/lib/format";
 import { EXAMPLES, SearchBox } from "./search-box";
 import { Severity } from "./severity";
@@ -24,7 +24,7 @@ export function SearchView() {
     queryKey: ["search", q, kinds, minSev],
     enabled: q.trim().length > 0,
     placeholderData: keepPreviousData,
-    queryFn: () => api<{ results: SearchResult[] }>("/search", { q, k: 80, kind: kinds, min_severity: minSev || undefined }),
+    queryFn: () => api<SearchResponse>("/search", { q, k: 80, kind: kinds, min_severity: minSev || undefined }),
   });
 
   // Identical events (same kind and text, e.g. "Motors disarmed") collapse into one row listing the other flights.
@@ -74,6 +74,9 @@ export function SearchView() {
             <label className="flex items-center gap-2"><input type="checkbox" checked={details} onChange={(e) => setDetails(e.target.checked)} className="accent-[var(--route)]" />Show how results were ranked</label>
           </div>
 
+          {details && res.data?.filter_estimated_rows != null && (
+            <p className="mt-3 text-sm text-ink-2">The filter keeps about {res.data.filter_estimated_rows.toLocaleString("en-US")} events, so the search used its {res.data.strategy?.startsWith("exact") ? "exact path (filter first, then sort by distance)" : "approximate index path"}.</p>
+          )}
           <div className={`${res.isFetching ? "opacity-60" : ""}`} aria-live="polite">
             {res.error && <p className="py-8 text-critical">Search failed: {(res.error as Error).message}</p>}
             {!res.error && res.data && groups.length === 0 && (
