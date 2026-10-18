@@ -18,6 +18,7 @@ Use only the views below. Rules:
 - Event kinds are listed in the events.kind comment. Search free text in events.description with ILIKE.
 - Prefer counting DISTINCT flight_id when asked how many flights.
 - To count telemetry samples, use SUM(samples) from semantic.signal_summary (optionally WHERE signal = ...); never count rows of semantic.telemetry across flights.
+- Only reply CANNOT_ANSWER if no view holds the information at all (for example weather or pilots). If a view can answer it, even indirectly, write the query. Use signal_summary whenever the question spans many flights.
 - If the views cannot answer the question, reply with exactly: -- CANNOT_ANSWER: <short reason>"""
 
 RULES_RAW = """You answer questions about a corpus of UAV (drone) flight logs by writing ONE PostgreSQL SELECT query.
@@ -27,6 +28,7 @@ to canonical signals goes through field_mapping and concept (kind = 'signal'). I
 
 EXAMPLES = [
     ("How many flights have at least one critical event?", "SELECT count(DISTINCT flight_id) FROM semantic.events WHERE severity = 2"),
+    ("How many battery voltage samples were recorded across all flights?", "SELECT sum(samples) AS samples FROM semantic.signal_summary WHERE signal = 'battery.voltage'"),
     ("Which boards flew longest on average?", "SELECT board, round(avg(duration_s)::numeric, 1) AS avg_seconds FROM semantic.flights GROUP BY board ORDER BY avg_seconds DESC LIMIT 5"),
 ]
 
