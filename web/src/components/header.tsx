@@ -9,6 +9,7 @@ const NAV = [
   { href: "/search", label: "Search" },
   { href: "/ask", label: "Ask" },
   { href: "/database", label: "Database" },
+  { href: "/benchmarks", label: "Benchmarks" },
 ];
 
 function ThemeToggle() {
