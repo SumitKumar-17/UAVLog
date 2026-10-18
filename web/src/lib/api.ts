@@ -79,3 +79,15 @@ export async function api<T>(path: string, params: Record<string, string | numbe
   }
   return res.json();
 }
+
+export type Internals = {
+  versions: { postgres: string; timescaledb: string; pgvector: string };
+  columnstore: { chunks: number; compressed_chunks: number; before_bytes: number; after_bytes: number; before_index_bytes: number };
+  telemetry_rows: number;
+  indexes: { name: string; on_table: string; method: string; bytes: number }[];
+  tables: { name: string; bytes: number; approx_rows: number }[];
+  queues: { stage: string; status: string; n: number }[];
+  llm: { kind: string; calls: number; prompt_tokens: number; completion_tokens: number; avg_latency_ms: number }[];
+  demos: { id: string; title: string; about: string }[];
+};
+export type Explain = { name: string; title: string; about: string; sql: string; plan: string[]; execution: string };
