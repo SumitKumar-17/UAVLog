@@ -4,7 +4,7 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from app.api.common import flight_uuid, mode_segments, rows
+from app.api.common import flight_uuid, mode_segments, rows, with_strips
 from app.api.deps import pool
 
 router = APIRouter(prefix="/api")
@@ -17,12 +17,14 @@ def similar(flight_id: str, p=Depends(pool), k: int = Query(6, ge=1, le=20)):
     fid = flight_uuid(flight_id)
     if not rows(p, "SELECT 1 FROM flight_signature WHERE flight_id = %s", (fid,)):
         raise HTTPException(404, "no signature for this flight yet; run scripts/build_signatures.py")
-    return rows(p, """
-        SELECT f.id, f.source_ref, f.metadata->>'sys_hw' AS hw, f.duration_s, s.signature <=> q.signature AS distance,
+    found = rows(p, """
+        SELECT f.id, f.source_ref, f.started_at, f.firmware, f.metadata->>'sys_hw' AS hw, f.duration_s, s.signature <=> q.signature AS distance,
+               (SELECT count(*) FROM event e WHERE e.flight_id = f.id) AS events,
                (SELECT count(*) FROM event e WHERE e.flight_id = f.id AND e.severity = 2) AS critical_events
         FROM flight_signature s JOIN flight f ON f.id = s.flight_id,
              (SELECT signature FROM flight_signature WHERE flight_id = %(f)s) q
         WHERE s.flight_id <> %(f)s ORDER BY s.signature <=> q.signature LIMIT %(k)s""", {"f": fid, "k": k})
+    return with_strips(p, found)
 
 
 @router.get("/flights/{flight_id}/track")
