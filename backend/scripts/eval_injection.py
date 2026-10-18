@@ -52,7 +52,7 @@ series = {}  # (flight, signal) -> (timestamps, canonical values)
 for f in ids:
     for _, sig, _, _ in FAULTS:
         rows = conn.execute("SELECT ts, value FROM canonical_telemetry WHERE flight_id = %s AND signal = %s ORDER BY ts", (f, sig)).fetchall()
-        series[(f, sig)] = (np.array([r[0] for r in rows], dtype="datetime64[us]"), np.array([r[1] for r in rows]))
+        series[(f, sig)] = (np.array([r[0].astimezone(timezone.utc).replace(tzinfo=None) for r in rows], dtype="datetime64[us]"), np.array([r[1] for r in rows]))
 
 
 def insert(vid, sig, ts, canon):
