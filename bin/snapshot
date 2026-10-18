@@ -1,0 +1,211 @@
+#!/usr/bin/env bash
+# Portable snapshots of the whole database (flights, telemetry, events, embeddings, ontology, summaries) so that nobody has to
+# re-download, re-ingest or re-embed. Works with any destination you can reach: a folder, SSH (rsync) such as an EC2 box, S3,
+# a GitHub release, or a presigned URL. Restore never destroys: it loads a NEW database, verifies it, then swaps by renaming.
+#
+#   ./bin/snapshot create [--to DEST] [--with-parquet] [--out DIR]      dump + manifest + checksum, optionally upload
+#   ./bin/snapshot restore SOURCE [--yes] [--as NAME] [--drop-old]      pull, verify, load, verify again, swap
+#   ./bin/snapshot verify FILE                                          checksum and manifest summary
+#   ./bin/snapshot list                                                 snapshots on this machine
+#   ./bin/snapshot push-db URL | pull-db URL                            direct copy to or from another Postgres (needs TimescaleDB + pgvector)
+#
+# DEST / SOURCE: a path | user@host:/dir | ssh://user@host/dir | s3://bucket/prefix | gh-release:OWNER/REPO@TAG | put:https://presigned-url | https://...
+set -euo pipefail
+cd "$(dirname "$0")/.."
+[ -f .env ] || { echo "missing .env (copy .env.example)"; exit 1; }
+set -a; . ./.env; set +a
+
+SNAP_DIR="${SNAPSHOT_DIR:-data/snapshots}"
+EXTS="('timescaledb','vector','vectorscale','pg_trgm','pg_stat_statements')"
+die() { echo "error: $*" >&2; exit 1; }
+say() { echo "==> $*"; }
+sha() { if command -v sha256sum >/dev/null; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi; }
+dbx() { docker compose exec -T db "$@"; }
+psqlx() { docker compose exec -T db psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -qAt "$@"; }
+human() { du -h "$1" | cut -f1; }
+
+ensure_db() {
+  docker compose up -d db >/dev/null 2>&1
+  until docker compose exec -T db pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; do sleep 2; done
+}
+
+# ---------------------------------------------------------------- transports
+push_file() {  # FILE DEST
+  local f="$1" dest="$2" base; base=$(basename "$1")
+  case "$dest" in
+    s3://*) command -v aws >/dev/null || die "the AWS CLI is needed for s3:// (https://aws.amazon.com/cli/)"
+            aws s3 cp "$f" "${dest%/}/$base" && aws s3 cp "$f.sha256" "${dest%/}/$base.sha256" ;;
+    gh-release:*) command -v gh >/dev/null || die "the GitHub CLI (gh) is needed for gh-release:"
+            local spec="${dest#gh-release:}" repo tag; repo="${spec%@*}"; tag="${spec#*@}"
+            [ "$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")" -lt 2000000000 ] || die "GitHub release assets are limited to 2 GB; use s3:// or ssh instead"
+            gh release view "$tag" -R "$repo" >/dev/null 2>&1 || gh release create "$tag" -R "$repo" --title "Database snapshot $tag" --notes "Snapshot made with bin/snapshot. Restore: ./bin/snapshot restore gh-release:$repo@$tag"
+            gh release upload "$tag" "$f" "$f.sha256" -R "$repo" --clobber ;;
+    put:https://*|put:http://*) curl --fail --progress-bar -T "$f" "${dest#put:}" ;;
+    https://*|http://*) die "cannot upload to a plain URL; use put:<presigned URL>" ;;
+    ssh://*) local rest="${dest#ssh://}"; rsync -avP --partial "$f" "$f.sha256" "${rest%%/*}:/${rest#*/}/" ;;
+    *:*)  case "$dest" in /*|./*) cp "$f" "$f.sha256" "$dest/" ;; *) rsync -avP --partial "$f" "$f.sha256" "$dest/" ;; esac ;;
+    *)    mkdir -p "$dest" && cp "$f" "$f.sha256" "$dest/" ;;
+  esac
+}
+
+fetch_file() {  # SOURCE DESTDIR -> prints the local tar path
+  local src="$1" out="$2" base; mkdir -p "$out"
+  case "$src" in
+    s3://*) command -v aws >/dev/null || die "the AWS CLI is needed for s3://"
+            base=$(basename "$src"); aws s3 cp "$src" "$out/$base" >&2; aws s3 cp "$src.sha256" "$out/$base.sha256" >&2 2>/dev/null || true ;;
+    gh-release:*) command -v gh >/dev/null || die "the GitHub CLI (gh) is needed for gh-release:"
+            local spec="${src#gh-release:}" repo tag; repo="${spec%@*}"; tag="${spec#*@}"
+            gh release download "$tag" -R "$repo" -p 'uavlog-*.tar*' -D "$out" --clobber >&2; base=$(ls -t "$out"/uavlog-*.tar | head -1 | xargs basename) ;;
+    https://*|http://*) base=$(basename "${src%%\?*}"); curl --fail -L -C - --progress-bar -o "$out/$base" "$src" >&2; curl -fsL "$src.sha256" -o "$out/$base.sha256" 2>/dev/null || true ;;
+    ssh://*) local rest="${src#ssh://}"; base=$(basename "$src"); rsync -avP --partial "${rest%%/*}:/${rest#*/}" "${rest%%/*}:/${rest#*/}.sha256" "$out/" >&2 || rsync -avP "${rest%%/*}:/${rest#*/}" "$out/" >&2 ;;
+    /*|./*|[A-Za-z0-9._-]*) if [ -f "$src" ]; then base=$(basename "$src"); [ "$(cd "$(dirname "$src")" && pwd)" = "$(cd "$out" && pwd)" ] || cp "$src" "$out/"; [ -f "$src.sha256" ] && cp "$src.sha256" "$out/" || true
+                            else base=$(basename "$src"); rsync -avP --partial "$src" "$src.sha256" "$out/" >&2 || rsync -avP "$src" "$out/" >&2; fi ;;
+  esac
+  echo "$out/$base"
+}
+
+verify_tar() {  # TAR
+  local tar="$1" want="" got; got=$(sha "$tar")
+  [ -f "$tar.sha256" ] && want=$(cut -d' ' -f1 < "$tar.sha256")
+  if [ -n "$want" ]; then [ "$want" = "$got" ] || die "checksum mismatch for $tar (expected $want, got $got): the download is corrupt, try again"; say "checksum ok ($got)"
+  else echo "warning: no .sha256 file next to the snapshot; computed $got (compare it with the sender's)" >&2; fi
+}
+
+# ---------------------------------------------------------------- create
+cmd_create() {
+  local dest="" with_pq=0 out="$SNAP_DIR"
+  while [ $# -gt 0 ]; do case "$1" in --to) dest="$2"; shift 2;; --with-parquet) with_pq=1; shift;; --out) out="$2"; shift 2;; *) die "unknown option $1";; esac; done
+  ensure_db; mkdir -p "$out"
+  local ts name work; ts=$(date -u +%Y%m%dT%H%M%SZ); name="uavlog-$ts"; work="$out/.build-$name"; mkdir -p "$work"
+  trap 'rm -rf "$work"' EXIT
+  say "manifest"
+  local gitc; gitc=$(git rev-parse --short HEAD 2>/dev/null | tr -cd 'a-f0-9'); [ -n "$gitc" ] || gitc=unknown  # hex only, safe to embed
+  psqlx -d "$POSTGRES_DB" -c "
+    SELECT json_build_object(
+      'format', 1, 'created_at', now(), 'git_commit', '$gitc', 'database', current_database(),
+      'postgres', current_setting('server_version'),
+      'extensions', (SELECT json_object_agg(extname, extversion) FROM pg_extension WHERE extname IN $EXTS),
+      'alembic_head', (SELECT version_num FROM alembic_version),
+      'embedding', json_build_object('model', (SELECT embedding_model FROM event WHERE embedding_model IS NOT NULL LIMIT 1), 'dimensions', 1536),
+      'counts', json_build_object('flights', (SELECT count(*) FROM flight), 'events', (SELECT count(*) FROM event),
+          'events_embedded', (SELECT count(embedding) FROM event), 'telemetry_rows', (SELECT count(*) FROM telemetry),
+          'concepts', (SELECT count(*) FROM concept), 'signal_summary_rows', (SELECT count(*) FROM semantic.signal_summary)),
+      'contents', 'database dump without the benchmark schema, roles or secrets',
+      'licence_note', 'Derived from public PX4 Flight Review logs (CC-BY). Contains GPS tracks and free-text pilot notes from those public logs. Attribute Flight Review and its uploaders.'
+    )" > "$work/manifest.json"
+  say "dumping the database (zstd, without the bench schema)"
+  dbx pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc --compress=zstd:3 --no-owner --exclude-schema=bench > "$work/db.dump"
+  cat > "$work/README.txt" <<TXT
+UAV Log database snapshot, made $ts. Restore on any machine with the project checked out and Docker running:
+  ./bin/snapshot restore <this file or its location>
+Needs the same database image (timescale/timescaledb-ha:pg17) or a newer TimescaleDB. See manifest.json for what is inside.
+TXT
+  local tar="$out/$name.tar"
+  tar -C "$work" -cf "$tar" manifest.json db.dump README.txt
+  echo "$(sha "$tar")  $(basename "$tar")" > "$tar.sha256"
+  say "snapshot: $tar ($(human "$tar")), sha256 $(cut -d' ' -f1 < "$tar.sha256")"
+  if [ "$with_pq" = 1 ]; then
+    [ -d data/parquet ] || die "data/parquet not found"
+    say "archiving the Parquet raw layer (large)"
+    tar -C data -cf "$out/$name-parquet.tar" parquet && echo "$(sha "$out/$name-parquet.tar")  $name-parquet.tar" > "$out/$name-parquet.tar.sha256"
+    say "parquet: $out/$name-parquet.tar ($(human "$out/$name-parquet.tar"))"
+  fi
+  if [ -n "$dest" ]; then
+    say "uploading to $dest"; push_file "$tar" "$dest"
+    [ "$with_pq" = 1 ] && push_file "$out/$name-parquet.tar" "$dest"
+    say "uploaded. Restore elsewhere with: ./bin/snapshot restore $dest/$(basename "$tar")"
+  fi
+}
+
+# ---------------------------------------------------------------- restore
+cmd_restore() {
+  local src="${1:-}" yes=0 as="" drop_old=0; [ -n "$src" ] || die "usage: restore SOURCE [--yes] [--as NAME] [--drop-old]"; shift
+  while [ $# -gt 0 ]; do case "$1" in --yes) yes=1; shift;; --as) as="$2"; shift 2;; --drop-old) drop_old=1; shift;; *) die "unknown option $1";; esac; done
+  ensure_db
+  local ts work tar; ts=$(date -u +%Y%m%dT%H%M%SZ); work="$SNAP_DIR/.restore-$ts"; mkdir -p "$work"
+  trap 'rm -rf "$work"' EXIT
+  say "fetching $src"; tar=$(fetch_file "$src" "$SNAP_DIR/incoming")
+  [ -f "$tar" ] || die "could not fetch $src"
+  verify_tar "$tar"
+  tar -C "$work" -xf "$tar" manifest.json db.dump
+  say "snapshot contents"; sed 's/,"/,\n  "/g' "$work/manifest.json" | head -30
+  # version compatibility: TimescaleDB must be the same or newer than the dump's, and pgvector must exist
+  local want_ts have_ts; want_ts=$(grep -o '"timescaledb" : "[^"]*"' "$work/manifest.json" | grep -o '[0-9][0-9.]*' | head -1 || true)
+  have_ts=$(psqlx -d postgres -c "SELECT default_version FROM pg_available_extensions WHERE name='timescaledb'")
+  [ -z "$want_ts" ] || [ "$(printf '%s\n%s\n' "$want_ts" "$have_ts" | sort -V | head -1)" = "$want_ts" ] || die "this machine has TimescaleDB $have_ts but the snapshot needs $want_ts or newer; update the db image"
+  [ -n "$(psqlx -d postgres -c "SELECT 1 FROM pg_available_extensions WHERE name='vector'")" ] || die "pgvector is not available in this database image"
+
+  local live="$POSTGRES_DB" new="${as:-${POSTGRES_DB}_restore_$ts}"
+  if [ -z "$as" ] && [ "$yes" != 1 ]; then
+    read -r -p "Replace the live database '$live' with this snapshot? The current one is kept as ${live}_old_$ts. [y/N] " ans
+    [ "$ans" = y ] || [ "$ans" = Y ] || die "cancelled, nothing was changed"
+  fi
+  [ -z "$(psqlx -d postgres -c "SELECT 1 FROM pg_database WHERE datname='$new'")" ] || die "database '$new' already exists; choose another --as name"
+  say "creating database $new and restoring (TimescaleDB pre/post restore procedure)"
+  psqlx -d postgres -c "CREATE DATABASE \"$new\""
+  psqlx -d "$new" -c "DO \$\$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='uav_reader') THEN CREATE ROLE uav_reader NOLOGIN; END IF;
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='uav_reader_raw') THEN CREATE ROLE uav_reader_raw NOLOGIN; END IF; END \$\$;
+    CREATE EXTENSION IF NOT EXISTS timescaledb; SELECT timescaledb_pre_restore();" >/dev/null
+  local log="$work/restore.log"
+  dbx pg_restore -U "$POSTGRES_USER" -d "$new" --no-owner < "$work/db.dump" 2> "$log" || true
+  psqlx -d "$new" -c "SELECT timescaledb_post_restore();" >/dev/null
+  local bad; bad=$(grep -i '^pg_restore: error' "$log" | grep -vi 'already exists' || true)
+  if [ -n "$bad" ]; then echo "$bad" | head -10 >&2; die "restore reported errors (full log: $log); the live database was not touched. Drop the partial copy with: docker compose exec db psql -U $POSTGRES_USER -d postgres -c 'DROP DATABASE \"$new\"'"; fi
+  psqlx -d "$new" -c "GRANT uav_reader TO CURRENT_USER; GRANT uav_reader_raw TO CURRENT_USER; ANALYZE;" >/dev/null 2>&1 || true
+
+  say "verifying the restored copy against the manifest"
+  local mism=0 key
+  for key in flights events events_embedded telemetry_rows; do
+    local want got sqlq
+    want=$(grep -o "\"$key\" : [0-9]*" "$work/manifest.json" | grep -o '[0-9]*$' | head -1)
+    case "$key" in flights) sqlq="SELECT count(*) FROM flight";; events) sqlq="SELECT count(*) FROM event";; events_embedded) sqlq="SELECT count(embedding) FROM event";; telemetry_rows) sqlq="SELECT count(*) FROM telemetry";; esac
+    got=$(psqlx -d "$new" -c "$sqlq")
+    if [ "$want" = "$got" ]; then echo "  $key: $got (matches)"; else echo "  $key: expected $want, got $got" >&2; mism=1; fi
+  done
+  [ "$mism" = 0 ] || die "counts do not match the manifest; the live database was not touched (copy kept as '$new')"
+
+  if [ -n "$as" ]; then say "restored into '$new' (no swap, as requested). Inspect it, then drop it when done."; return; fi
+  say "swapping: stopping the API, renaming $live to ${live}_old_$ts and $new to $live"
+  docker compose stop api >/dev/null 2>&1 || true
+  psqlx -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname IN ('$live','$new') AND pid <> pg_backend_pid()" >/dev/null
+  psqlx -d postgres -c "ALTER DATABASE \"$live\" RENAME TO \"${live}_old_$ts\"; ALTER DATABASE \"$new\" RENAME TO \"$live\""
+  docker compose up -d api backend >/dev/null 2>&1 || true
+  say "applying any newer migrations"; docker compose exec -T backend alembic upgrade head 2>&1 | tail -2 || true
+  if [ "$drop_old" = 1 ]; then psqlx -d postgres -c "DROP DATABASE \"${live}_old_$ts\""; say "old database dropped"
+  else say "done. The previous database is kept as ${live}_old_$ts; drop it with --drop-old next time or: docker compose exec db psql -U $POSTGRES_USER -d postgres -c 'DROP DATABASE \"${live}_old_$ts\"'"; fi
+}
+
+cmd_verify() { local f="${1:?usage: verify FILE}"; verify_tar "$f"; tar -xOf "$f" manifest.json | sed 's/,"/,\n  "/g' | head -30; }
+cmd_list() { ls -lh "$SNAP_DIR"/uavlog-*.tar 2>/dev/null || echo "no snapshots in $SNAP_DIR"; }
+
+# ---------------------------------------------------------------- direct database to database copy
+copy_db() {  # DIRECTION URL  (push: local -> URL, pull: URL -> local)
+  local dir="$1" url="${2:?usage: push-db|pull-db URL}" local_url="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432"
+  ensure_db
+  if [ "$dir" = push ]; then
+    say "pushing the local database to the remote one (it must be empty and have TimescaleDB and pgvector)"
+    dbx psql -v ON_ERROR_STOP=1 "$url" -qAt -c "CREATE EXTENSION IF NOT EXISTS timescaledb; CREATE EXTENSION IF NOT EXISTS vector; SELECT timescaledb_pre_restore();" >/dev/null
+    dbx pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc --compress=zstd:3 --no-owner --exclude-schema=bench | dbx pg_restore -d "$url" --no-owner 2> >(grep -vi 'already exists' >&2) || true
+    dbx psql "$url" -qAt -c "SELECT timescaledb_post_restore(); ANALYZE;" >/dev/null
+    say "remote now has $(dbx psql "$url" -qAt -c 'SELECT count(*) FROM flight') flights"
+  else
+    say "pulling the remote database into a NEW local database (use 'restore --as' semantics: nothing is overwritten)"
+    local new="${POSTGRES_DB}_pull_$(date -u +%Y%m%dT%H%M%SZ)"
+    psqlx -d postgres -c "CREATE DATABASE \"$new\""
+    psqlx -d "$new" -c "CREATE EXTENSION IF NOT EXISTS timescaledb; SELECT timescaledb_pre_restore();" >/dev/null
+    dbx pg_dump -d "$url" -Fc --compress=zstd:3 --no-owner --exclude-schema=bench | dbx pg_restore -U "$POSTGRES_USER" -d "$new" --no-owner 2> >(grep -vi 'already exists' >&2) || true
+    psqlx -d "$new" -c "SELECT timescaledb_post_restore(); ANALYZE;" >/dev/null
+    say "pulled into database '$new' ($(psqlx -d "$new" -c 'SELECT count(*) FROM flight') flights); swap it in with a snapshot restore or point DATABASE_URL at it"
+  fi
+}
+
+case "${1:-}" in
+  create) shift; cmd_create "$@" ;;
+  restore) shift; cmd_restore "$@" ;;
+  verify) shift; cmd_verify "$@" ;;
+  list) cmd_list ;;
+  push-db) shift; copy_db push "$@" ;;
+  pull-db) shift; copy_db pull "$@" ;;
+  *) sed -n '2,13p' "$0"; exit 1 ;;
+esac
