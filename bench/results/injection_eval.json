@@ -1,0 +1,244 @@
+{
+ "taken_at": "2026-10-18T12:33:48.621729+00:00",
+ "flights": 30,
+ "durations_s": [
+  1,
+  2,
+  3,
+  5,
+  10,
+  20
+ ],
+ "faults": [
+  {
+   "fault": "battery critically low",
+   "signal": "battery.remaining",
+   "injected_value": 8.0,
+   "kind": "battery_low",
+   "by_duration": {
+    "1": {
+     "detection_rate": 0.06666666666666667,
+     "median_onset_error_s": -100.43755349999999,
+     "n": 30,
+     "extra_events": 9
+    },
+    "2": {
+     "detection_rate": 0.06666666666666667,
+     "median_onset_error_s": -199.79828449999997,
+     "n": 30,
+     "extra_events": 8
+    },
+    "3": {
+     "detection_rate": 0.06666666666666667,
+     "median_onset_error_s": -103.2303735,
+     "n": 30,
+     "extra_events": 8
+    },
+    "5": {
+     "detection_rate": 0.9,
+     "median_onset_error_s": 0.095525,
+     "n": 30,
+     "extra_events": 9
+    },
+    "10": {
+     "detection_rate": 0.9666666666666667,
+     "median_onset_error_s": 0.133739,
+     "n": 30,
+     "extra_events": 8
+    },
+    "20": {
+     "detection_rate": 0.9666666666666667,
+     "median_onset_error_s": 0.147827,
+     "n": 30,
+     "extra_events": 8
+    }
+   },
+   "control_false_alarm_rate": 0.23333333333333334,
+   "control_n": 30
+  },
+  {
+   "fault": "GPS lost 3D fix",
+   "signal": "gps.fix_type",
+   "injected_value": 1.0,
+   "kind": "gps_poor",
+   "by_duration": {
+    "1": {
+     "detection_rate": 0.0,
+     "median_onset_error_s": null,
+     "n": 30,
+     "extra_events": 2
+    },
+    "2": {
+     "detection_rate": 0.0,
+     "median_onset_error_s": null,
+     "n": 30,
+     "extra_events": 2
+    },
+    "3": {
+     "detection_rate": 0.8333333333333334,
+     "median_onset_error_s": 0.07891200000000001,
+     "n": 30,
+     "extra_events": 2
+    },
+    "5": {
+     "detection_rate": 0.9,
+     "median_onset_error_s": 0.097274,
+     "n": 30,
+     "extra_events": 2
+    },
+    "10": {
+     "detection_rate": 0.9666666666666667,
+     "median_onset_error_s": 0.098908,
+     "n": 30,
+     "extra_events": 2
+    },
+    "20": {
+     "detection_rate": 0.9666666666666667,
+     "median_onset_error_s": 0.09266200000000001,
+     "n": 30,
+     "extra_events": 2
+    }
+   },
+   "control_false_alarm_rate": 0.03333333333333333,
+   "control_n": 30
+  },
+  {
+   "fault": "GPS accuracy degraded",
+   "signal": "gps.eph",
+   "injected_value": 9.0,
+   "kind": "gps_poor",
+   "by_duration": {
+    "1": {
+     "detection_rate": 0.0,
+     "median_onset_error_s": null,
+     "n": 30,
+     "extra_events": 2
+    },
+    "2": {
+     "detection_rate": 0.0,
+     "median_onset_error_s": null,
+     "n": 30,
+     "extra_events": 2
+    },
+    "3": {
+     "detection_rate": 0.0,
+     "median_onset_error_s": null,
+     "n": 30,
+     "extra_events": 2
+    },
+    "5": {
+     "detection_rate": 0.9,
+     "median_onset_error_s": 0.087747,
+     "n": 30,
+     "extra_events": 2
+    },
+    "10": {
+     "detection_rate": 0.9,
+     "median_onset_error_s": 0.09513200000000001,
+     "n": 30,
+     "extra_events": 2
+    },
+    "20": {
+     "detection_rate": 0.9333333333333333,
+     "median_onset_error_s": 0.0761785,
+     "n": 30,
+     "extra_events": 2
+    }
+   },
+   "control_false_alarm_rate": 0.03333333333333333,
+   "control_n": 30
+  },
+  {
+   "fault": "high vibration",
+   "signal": "vibration.accel",
+   "injected_value": 50.0,
+   "kind": "vibration_high",
+   "by_duration": {
+    "1": {
+     "detection_rate": 0.034482758620689655,
+     "median_onset_error_s": -36.153538999999995,
+     "n": 29,
+     "extra_events": 1
+    },
+    "2": {
+     "detection_rate": 0.034482758620689655,
+     "median_onset_error_s": -55.604478,
+     "n": 29,
+     "extra_events": 1
+    },
+    "3": {
+     "detection_rate": 0.034482758620689655,
+     "median_onset_error_s": -74.657705,
+     "n": 29,
+     "extra_events": 1
+    },
+    "5": {
+     "detection_rate": 0.9310344827586207,
+     "median_onset_error_s": 0.5745929999999999,
+     "n": 29,
+     "extra_events": 1
+    },
+    "10": {
+     "detection_rate": 1.0,
+     "median_onset_error_s": 0.581176,
+     "n": 29,
+     "extra_events": 1
+    },
+    "20": {
+     "detection_rate": 1.0,
+     "median_onset_error_s": 0.6441290000000001,
+     "n": 29,
+     "extra_events": 1
+    }
+   },
+   "control_false_alarm_rate": 0.034482758620689655,
+   "control_n": 29
+  },
+  {
+   "fault": "estimator rejecting position",
+   "signal": "ekf.pos_test_ratio",
+   "injected_value": 3.0,
+   "kind": "ekf_innovation_reject",
+   "by_duration": {
+    "1": {
+     "detection_rate": 0.0,
+     "median_onset_error_s": null,
+     "n": 30,
+     "extra_events": 3
+    },
+    "2": {
+     "detection_rate": 0.0,
+     "median_onset_error_s": null,
+     "n": 30,
+     "extra_events": 3
+    },
+    "3": {
+     "detection_rate": 0.9333333333333333,
+     "median_onset_error_s": 0.1108345,
+     "n": 30,
+     "extra_events": 3
+    },
+    "5": {
+     "detection_rate": 0.9666666666666667,
+     "median_onset_error_s": 0.11827599999999999,
+     "n": 30,
+     "extra_events": 3
+    },
+    "10": {
+     "detection_rate": 1.0,
+     "median_onset_error_s": 0.1154845,
+     "n": 30,
+     "extra_events": 3
+    },
+    "20": {
+     "detection_rate": 1.0,
+     "median_onset_error_s": 0.1218295,
+     "n": 30,
+     "extra_events": 3
+    }
+   },
+   "control_false_alarm_rate": 0.06666666666666667,
+   "control_n": 30
+  }
+ ]
+}
