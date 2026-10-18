@@ -52,12 +52,17 @@ export type SearchResult = {
   kind: string;
   severity: number;
   description: string;
-  flight_id: string; // Flight Review log id (source_ref)
+  flight_id: string; // database id, used in routes
+  source_ref: string; // Flight Review log id
   t: number;
   score: number;
+  distance: number | null;
   vec_rank: number | null;
   fts_rank: number | null;
 };
+
+export type OntologyConcept = { key: string; kind: string; label: string; unit: string | null; description: string | null };
+export type Ontology = { concepts: OntologyConcept[]; relations: { src: string; dst: string; rel: string }[] };
 
 export type Stats = { flights: number; events: number; telemetry_rows: number; concepts: number; db_bytes: number };
 
