@@ -65,3 +65,29 @@ Cost: OR-ed terms add lexical noise ("vehicle lost control" also pulls unrelated
 address next: results cluster in one flight (needs per-flight diversity), and quality so far is anecdotal; a labelled
 evaluation set (index `error_labels`, failure-detector flags, injected SITL faults) with precision@k is required before
 claiming anything. Embedding cost is negligible (73k tokens for 3.8k events, run twice).
+
+## D12. Retrieval evaluation: vector wins; plain RRF hurts; full-text adds nothing measurable (measured)
+Benchmark (`bench/eval/concepts.json`, `./backend/scripts/eval_search.py`, results in `bench/results/eval_search_concept.md`):
+65 natural-language queries (39 hard, i.e. paraphrases sharing no words with the event text) over 14 concepts, 3,846 events,
+text-embedding-3-small. Relevance = right event kind, or a log message matching a concept regex; defined independently of the
+methods under test. Mean nDCG@10 with 95% bootstrap CI:
+
+| method | all | hard |
+|---|---|---|
+| vector only | 0.700 | 0.58 |
+| default hybrid (vector 1, full-text 0.25) | 0.700 | 0.58 |
+| plain RRF (1, 1) | 0.623 | 0.46 |
+| full-text only | 0.48 | 0.32 |
+
+Paired differences: plain RRF minus vector -0.077 [-0.142, -0.022] (significant); default hybrid minus vector -0.000
+[-0.013, +0.012] (equal). Leave-one-concept-out selection of the full-text weight gives 0.695 vs 0.700 for vector-only,
+so the weight was not tuned on the test queries. I had assumed hybrid would beat vector; the data rejected that.
+Decision: default to a vector-dominant fusion (weight 0.25), a judgment call: it is indistinguishable from vector-only here
+and keeps exact-term lookups working (easy-query miss rate 0% vs 4%, within noise). Plain RRF stays available for reproducibility.
+
+What this does NOT show: it measures mapping of everyday phrasing to the right event categories, not fault detection (events
+come from the autopilot's own detectors and heuristic thresholds). Regex-defined relevance mildly favours lexical methods.
+Human-label case study (small n, 300 flights): flights labelled "Vibration" (5): 1 in the top 10, median rank 52 of 300 (chance
+about 150); crash-related feedback (7): 2 in the top 10 (chance 0.2), median rank 172. Humans label causes and outcomes our
+event vocabulary does not capture. Next: scale labelled flights (all ~1.5k labelled logs in tier k10), and SITL fault injection
+for true detection ground truth.

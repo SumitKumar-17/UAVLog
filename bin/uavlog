@@ -33,6 +33,7 @@ cmd_fetch()   { stage "download logs (delay ${FETCH_DELAY}s)"; run python script
 cmd_enqueue() { stage "enqueue jobs"; run python scripts/enqueue.py; }
 cmd_ingest()  { stage "ingest (workers=$WORKERS)"; run python scripts/ingest.py --workers "$WORKERS" "$@"; }
 cmd_events()  { stage "extract events (workers=$WORKERS)"; run python scripts/events.py --workers "$WORKERS" "$@"; }
+cmd_eval()    { stage "retrieval evaluation"; run python scripts/eval_search.py "$@"; }
 cmd_compress(){ stage "columnstore compression"; run python scripts/compress.py; }
 cmd_size()    { stage "size report"; run python scripts/size_report.py --label "${1:-latest}"; }
 cmd_status()  { stage "status"
@@ -62,6 +63,6 @@ cmd_stream() {
 cmd_all() { cmd_up; cmd_init; cmd_index; cmd_select; cmd_fetch; cmd_enqueue; cmd_ingest; cmd_events; cmd_compress; cmd_size "tier_$TIER"; cmd_status; }
 
 case "${1:-}" in
-  up|init|index|select|fetch|enqueue|ingest|events|compress|size|status|failed|stream|all) c="$1"; shift; "cmd_$c" "$@" ;;
-  *) sed -n '2,6p' "$0"; echo "stages: up init index select fetch enqueue ingest events compress size status failed stream all"; exit 1 ;;
+  up|init|index|select|fetch|enqueue|ingest|events|compress|size|status|failed|eval|stream|all) c="$1"; shift; "cmd_$c" "$@" ;;
+  *) sed -n '2,6p' "$0"; echo "stages: up init index select fetch enqueue ingest events compress size status failed eval stream all"; exit 1 ;;
 esac
