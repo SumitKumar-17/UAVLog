@@ -16,6 +16,11 @@ cp .env.example .env        # set OPENAI_API_KEY (and OPENAI_API_BASE if not the
 Every stage is idempotent and resumable, so re-running is always safe. Stages can be run one at a time:
 `up init index select fetch enqueue ingest events compress size status failed`.
 
+## API
+
+`docker compose up -d api` serves the API on http://localhost:8000 (interactive docs at `/docs`). Try
+`curl 'localhost:8000/api/search?q=one+rotor+stopped&k=5'`.
+
 ## Scaling to a large machine
 
 ```bash

@@ -121,8 +121,25 @@ Filters run inside each candidate query. pgvector applies filters after the ANN 
 `hnsw.iterative_scan = relaxed_order` is enabled; comparing this against partial indexes and partitioning is
 experiment 3.
 
-## 5. Deployment
+## 5. API
 
-`docker compose`: `db` (timescale/timescaledb-ha:pg17: TimescaleDB, pgvector, pgvectorscale) and `backend`
-(Python 3.12, runs as the host uid so data files stay manageable). Data lives under `HOST_DATA_DIR`
+FastAPI (`app/api`), connection pool, autocommit, one shared LLM client. OpenAPI docs at `/docs`.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/flights` | flight list with event counts, labels, filters (`hw`, `label`, paging) |
+| `GET /api/flights/{id}` | metadata, all events (offsets in seconds from takeoff of the log), available signals |
+| `GET /api/flights/{id}/signals/{signal}` | min/max/mean envelope per time bucket, computed in the database (`time_bucket` over `canonical_telemetry`); envelopes, not decimation, so safety spikes survive |
+| `GET /api/search` | hybrid event search (`q`, `k`, `kind`, `min_severity`, `hw`, `mode`) |
+| `GET /api/ontology` | concepts and relations |
+| `GET /api/stats`, `GET /health` | counts and liveness |
+
+Measured on the dev corpus: envelope queries 0.19 to 0.26 s on compressed chunks (up to 106k samples per signal);
+search about 1.4 s, dominated by the embedding API round trip. *Planned:* query-embedding cache, read-only DB role for
+the API, NL-to-SQL endpoint with guardrails, DB-internals endpoint (`EXPLAIN`, index and chunk stats).
+
+## 6. Deployment
+
+`docker compose`: `db` (timescale/timescaledb-ha:pg17: TimescaleDB, pgvector, pgvectorscale), `backend` (Python 3.12
+work container for pipeline stages) and `api` (uvicorn on port 8000); both run as the host uid so data files stay manageable. Data lives under `HOST_DATA_DIR`
 (raw logs, Parquet, index). The same compose file and `bin/uavlog stream` run on the large machine.
