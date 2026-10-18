@@ -51,6 +51,20 @@ def rows(p, query: str, params=None) -> list[dict]:
         return cur.fetchall()
 
 
+TABLES = ["event", "flight", "concept", "concept_relation", "vendor_field", "field_mapping", "ingest_job", "flight_task", "llm_call"]
+
+
+def table_sizes(p) -> list[dict]:
+    """Exact row counts (these tables are small; reltuples is -1 until a table is analysed). Names come from a fixed list."""
+    out = []
+    with p.connection() as c:
+        for t in TABLES:
+            n = c.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(t))).fetchone()[0]
+            b = c.execute("SELECT pg_total_relation_size(%s::regclass)", (t,)).fetchone()[0]
+            out.append({"name": t, "bytes": b, "approx_rows": n})
+    return sorted(out, key=lambda r: -r["bytes"])
+
+
 @router.get("")
 def internals(p=Depends(pool)):
     cs = rows(p, "SELECT * FROM hypertable_columnstore_stats('telemetry')")[0]
@@ -69,10 +83,7 @@ def internals(p=Depends(pool)):
                               FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid JOIN pg_am am ON am.oid = c.relam
                               WHERE indrelid::regclass::text IN ('event', 'flight', 'concept', 'field_mapping', 'vendor_field')
                               ORDER BY bytes DESC LIMIT 12"""),
-        "tables": rows(p, """SELECT relname AS name, pg_total_relation_size(c.oid) AS bytes, reltuples::bigint AS approx_rows
-                             FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-                             WHERE n.nspname = 'public' AND c.relkind = 'r' AND relname IN ('event', 'flight', 'concept', 'concept_relation',
-                                   'vendor_field', 'field_mapping', 'ingest_job', 'flight_task', 'llm_call') ORDER BY bytes DESC"""),
+        "tables": table_sizes(p),
         "queues": rows(p, """SELECT 'ingest' AS stage, status, count(*) AS n FROM ingest_job GROUP BY status
                              UNION ALL SELECT stage, status, count(*) FROM flight_task GROUP BY stage, status ORDER BY 1, 2"""),
         "llm": rows(p, """SELECT kind, count(*) AS calls, coalesce(sum(prompt_tokens), 0) AS prompt_tokens,
