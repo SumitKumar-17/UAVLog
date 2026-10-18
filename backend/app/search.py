@@ -6,9 +6,10 @@ is enabled to keep filtered queries from under-returning (see docs/decisions.md)
 import re
 
 RRF_K = 60
-# (vector weight, full-text weight). Default "hybrid" is vector-dominant: on our benchmark plain RRF ("rrf") hurts
-# (nDCG@10 0.62 vs 0.70) while weights up to 0.5 are indistinguishable from vector-only (docs/decisions.md D12).
-MODES = {"hybrid": (1.0, 0.25), "rrf": (1.0, 1.0), "vector": (1.0, 0.0), "fts": (0.0, 1.0)}
+# (vector weight, full-text weight). Default "hybrid" is vector with a light lexical tie-break (0.1, the weight chosen by
+# leave-one-concept-out selection). Plain RRF ("rrf") hurts (nDCG@10 0.60 vs 0.71); weights up to 0.25 are indistinguishable
+# from vector-only; full-text adds no measurable benefit, even on exact-term lookups (docs/decisions.md D12).
+MODES = {"hybrid": (1.0, 0.1), "rrf": (1.0, 1.0), "vector": (1.0, 0.0), "fts": (0.0, 1.0)}
 
 SQL = """
 WITH q AS (SELECT %(vec)s::vector AS v, to_tsquery('english', %(tsq)s) AS tq),
