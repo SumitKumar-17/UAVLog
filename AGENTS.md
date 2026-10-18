@@ -18,7 +18,7 @@ Background research (read before making design decisions): `research/01-datasets
 ## Architecture
 
 ```
-.ulg/.bin → ingest workers (PgQueuer) → raw Parquet (per topic, partitioned by log id)
+.ulg/.bin → ingest workers (Postgres job tables) → raw Parquet (per topic, partitioned by log id)
           → canonical store (Postgres + TimescaleDB + pgvector) → semantic indexes → FastAPI → Next.js
 ```
 
@@ -37,7 +37,7 @@ Background research (read before making design decisions): `research/01-datasets
 | Frontend | Next.js 16 + TypeScript, Tailwind, shadcn/ui, TanStack Query, Zustand (shared time cursor) |
 | Charts / map | uPlot (server-side downsampling per viewport; **min/max envelopes** for safety signals, not LTTB), MapLibre + deck.gl |
 | Backend | FastAPI, SQLAlchemy 2, Alembic (pgvector/Timescale DDL as raw SQL in migrations) |
-| Queue | PgQueuer (Postgres-native, SKIP LOCKED); no Celery/Redis |
+| Queue | Own Postgres job tables (`ingest_job`, `flight_task`) with SKIP LOCKED claims; no Celery/Redis/PgQueuer |
 | LLM | Shared `httpx` client for any OpenAI-compatible API (`OPENAI_API_KEY`, `OPENAI_API_BASE` from env); model names in config, never hardcoded; every call logged to `llm_call` |
 | Infra | Docker Compose, Grafana + `pg_stat_statements` for DB metrics |
 
