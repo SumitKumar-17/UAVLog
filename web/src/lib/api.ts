@@ -47,6 +47,8 @@ export type FlightDetail = {
 export type EnvelopePoint = { t: number; lo: number; hi: number; mean: number; n: number };
 export type Envelope = { signal: string; from_s: number; to_s: number; bucket_s: number; points: EnvelopePoint[] };
 
+export type SearchResponse = { query: string; mode: string; strategy?: string; filter_estimated_rows?: number | null; results: SearchResult[] };
+
 export type SearchResult = {
   id: number;
   kind: string;
@@ -116,3 +118,13 @@ export async function ask(question: string): Promise<AskAnswer> {
   }
   return res.json();
 }
+
+export type Track = { points: { t: number; x: number; y: number; z: number | null }[]; modes: { t0: number; mode: string }[] };
+export type Note = { id: number; t_s: number; body: string; created_at: string };
+export type SimilarFlight = FlightSummary & { distance: number };
+export type PipelineState = {
+  stages: { stage: string; status: string; n: number; last_finished: string | null }[];
+  failures: { stage: string; item: string; status: string; attempts: number; error: string | null; finished_at: string | null }[];
+  ingest_seconds: { avg_s: number | null; max_s: number | null; rows: number | null };
+  derived: { signal_summary_rows: number; signatures: number; flights: number; events_without_embedding: number; notes: number };
+};
