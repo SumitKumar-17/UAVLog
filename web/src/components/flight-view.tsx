@@ -6,7 +6,11 @@ import { api, type FlightDetail } from "@/lib/api";
 import { clock } from "@/lib/format";
 import { PANELS } from "@/lib/panels";
 import { useView } from "@/lib/store";
+import Link from "next/link";
 import { EventList } from "./event-list";
+import { NotesPanel } from "./notes-panel";
+import { SimilarFlights } from "./similar-flights";
+import { TrackPlot } from "./track-plot";
 import { FlightTimeline } from "./flight-timeline";
 import { SignalChart } from "./signal-chart";
 
@@ -48,6 +52,7 @@ export function FlightView({ id }: { id: string }) {
         <dl className="mt-2 flex flex-wrap gap-x-8 gap-y-1 text-[15px]">
           {facts.map(([k, v]) => (<div key={k} className="flex gap-2"><dt className="text-muted">{k}</dt><dd className="font-semibold">{v}</dd></div>))}
           <div><a className="underline decoration-rule underline-offset-2 hover:decoration-route" href={`https://review.px4.io/plot_app?log=${f.source_ref}`} target="_blank" rel="noreferrer">Open in Flight Review</a></div>
+          <div><Link className="underline decoration-rule underline-offset-2 hover:decoration-route" href={`/compare?a=${f.id}`}>Compare with another flight</Link></div>
         </dl>
         {(labels.length > 0 || m.rating || note) && (
           <div className="mt-3 max-w-3xl border-l-2 border-route pl-3 text-[15px]">
@@ -65,8 +70,17 @@ export function FlightView({ id }: { id: string }) {
             {panels.map((p) => <SignalChart key={p.id} flightId={f.id} duration={f.duration_s} panel={p} modes={f.modes} />)}
             {panels.length === 0 && <p className="text-ink-2">This flight has none of the signals we chart.</p>}
           </div>
+          <section className="mt-12" aria-labelledby="notes"><h2 id="notes" className="mb-3 font-dense text-2xl font-semibold">Notes</h2><NotesPanel flightId={f.id} duration={f.duration_s} /></section>
+          <section className="mt-12" aria-labelledby="similar">
+            <h2 id="similar" className="font-dense text-2xl font-semibold">Flights that behaved like this one</h2>
+            <p className="mb-3 mt-1 max-w-2xl text-ink-2">Matched on how the flights behaved (signal statistics, event rates, time in each mode), not on what their text says.</p>
+            <SimilarFlights flightId={f.id} />
+          </section>
         </div>
-        <aside className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-auto"><EventList events={f.events} duration={f.duration_s} /></aside>
+        <aside className="space-y-8 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-auto">
+          <section aria-labelledby="track"><h2 id="track" className="mb-2 font-dense text-2xl font-semibold">Track</h2><TrackPlot flightId={f.id} events={f.events} duration={f.duration_s} /></section>
+          <EventList events={f.events} duration={f.duration_s} />
+        </aside>
       </div>
     </div>
   );
