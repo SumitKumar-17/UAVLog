@@ -1,0 +1,60 @@
+{
+  "label": "columnstore",
+  "taken_at": "2026-10-18T07:41:44.935743+00:00",
+  "flights": 300,
+  "telemetry_rows": 70731891,
+  "bytes": {
+    "db_total": 401880755,
+    "telemetry_total": 384385024,
+    "telemetry_table": 24764416,
+    "telemetry_index": 8912896,
+    "telemetry_toast": 350707712,
+    "other_tables": 17495731,
+    "parquet": 4030186109,
+    "ulg_raw": 8750770472
+  },
+  "chunks": {
+    "total": 134,
+    "compressed": 134
+  },
+  "per_flight": {
+    "rows": 235772.97,
+    "telemetry_bytes": 1281283.4133333333,
+    "db_bytes": 1339602.5166666666,
+    "parquet_bytes": 13433953.696666667,
+    "ulg_bytes": 29169234.906666666
+  },
+  "bytes_per_row_telemetry": 5.43439484743876,
+  "projection": {
+    "300": {
+      "db_gb": 0.401880755,
+      "parquet_gb": 4.030186109,
+      "ulg_gb": 8.750770472,
+      "rows_millions": 70.731891
+    },
+    "1000": {
+      "db_gb": 1.3396025166666665,
+      "parquet_gb": 13.433953696666668,
+      "ulg_gb": 29.169234906666667,
+      "rows_millions": 235.77297
+    },
+    "10000": {
+      "db_gb": 13.396025166666666,
+      "parquet_gb": 134.33953696666669,
+      "ulg_gb": 291.6923490666667,
+      "rows_millions": 2357.7297
+    },
+    "76365": {
+      "db_gb": 102.29874618525,
+      "parquet_gb": 1025.88387404595,
+      "ulg_gb": 2227.5086236476,
+      "rows_millions": 18004.802854049998
+    },
+    "478918": {
+      "db_gb": 641.5597580769667,
+      "parquet_gb": 6433.762236500207,
+      "ulg_gb": 13969.671643030986,
+      "rows_millions": 112915.91924646
+    }
+  }
+}
