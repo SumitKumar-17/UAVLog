@@ -15,7 +15,8 @@ const waitFor = process.env.WAIT_SEL || "";
   if (waitFor) await page.waitForSelector(waitFor, { timeout: 30000 }).catch(() => problems.push(`selector not found: ${waitFor}`));
   await page.waitForFunction(() => !document.body.innerText.includes("updating") && !document.querySelector("[aria-busy]"), null, { timeout: 30000 }).catch(() => problems.push("page still busy"));
   await page.waitForTimeout(800);
-  await page.screenshot({ path: out, fullPage: true });
+  if (process.env.ELEMENT) await page.locator(process.env.ELEMENT).first().screenshot({ path: out });
+  else await page.screenshot({ path: out, fullPage: true });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   if (overflow > 0) {
     const culprits = await page.evaluate(() => [...document.querySelectorAll("body *")]
