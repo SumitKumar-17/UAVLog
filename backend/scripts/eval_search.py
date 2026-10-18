@@ -57,6 +57,7 @@ with psycopg.connect(settings.dsn, autocommit=True) as conn:
             "(%s::text IS NOT NULL AND k.key IN ('log_error','log_warning') AND e.description ~* %s)",
             (c["kinds"], c["regex"], c["regex"]))}
         (rel.__setitem__(name, ids) if len(ids) >= a.min_relevant else skipped.append((name, len(ids))))
+    grp = {n: c.get("group", "concept") for n, c in spec.items()}
     queries = [(n, t, h) for n, c in spec.items() if n in rel for t, h in c["queries"]]
     llm = LLMClient(conn)
     vecs = llm.embed([t for _, t, _ in queries])
@@ -65,16 +66,16 @@ with psycopg.connect(settings.dsn, autocommit=True) as conn:
     for (n, t, h), v in zip(queries, vecs):
         for m in MODES:
             res = search(conn, llm, t, k=DEEP, pool=200, mode=m, vec=v)
-            rows[m].append({"concept": n, "query": t, "hard": h, **metrics(res, rel[n])})
+            rows[m].append({"concept": n, "group": grp[n], "query": t, "hard": h, **metrics(res, rel[n])})
 
     report = {"taken_at": datetime.now(timezone.utc).isoformat(), "events": n_events, "embed_model": settings.embed_model,
-              "queries": len(queries), "hard_queries": sum(h for _, _, h in queries), "skipped_concepts": skipped,
+              "queries": len(queries), "hard_queries": sum(h for n, _, h in queries if grp[n] == "concept"), "skipped_concepts": skipped,
               "relevant_sizes": {k: len(v) for k, v in rel.items()}, "modes": {}, "per_query": rows}
     md = [f"# Retrieval evaluation ({report['taken_at'][:10]})", "",
-          f"{n_events} events, {len(queries)} queries ({report['hard_queries']} hard) over {len(rel)} concepts; "
+          f"{n_events} events, {sum(grp[n] == 'concept' for n, _, _ in queries)} concept queries ({report['hard_queries']} hard) over {sum(g == 'concept' for n, g in grp.items() if n in rel)} concepts, plus {sum(grp[n] == 'keyword' for n, _, _ in queries)} keyword lookups reported separately; "
           f"skipped (fewer than {a.min_relevant} relevant events): {skipped or 'none'}. Embedding model {settings.embed_model}. "
           "Mean over queries with 95% bootstrap CI.", ""]
-    for slice_name, pick in (("all", lambda r: True), ("easy", lambda r: not r["hard"]), ("hard", lambda r: r["hard"])):
+    for slice_name, pick in (("all", lambda r: r["group"] == "concept"), ("easy", lambda r: r["group"] == "concept" and not r["hard"]), ("hard", lambda r: r["group"] == "concept" and r["hard"])):
         md += [f"## {slice_name} queries", "", "| mode | P@5 | P@10 | nDCG@10 | MRR | miss rate | distinct flights/10 |", "|---|---|---|---|---|---|---|"]
         for m in MODES:
             sel = [r for r in rows[m] if pick(r)]
@@ -87,9 +88,9 @@ with psycopg.connect(settings.dsn, autocommit=True) as conn:
         md.append("")
     # paired comparisons on nDCG@10
     for a_, b_ in (("rrf", "vector"), ("hybrid", "vector"), ("hybrid", "rrf"), ("hybrid", "fts")):
-        d = np.array([x["ndcg10"] - y["ndcg10"] for x, y in zip(rows[a_], rows[b_])])
+        d = np.array([x["ndcg10"] - y["ndcg10"] for x, y in zip(rows[a_], rows[b_]) if x["group"] == "concept"])
         mean, lo, hi = ci(d)
-        md.append(f"Paired nDCG@10 difference, {a_} minus {b_}: {mean:+.3f} [{lo:+.3f}, {hi:+.3f}] over {len(d)} queries")
+        md.append(f"Paired nDCG@10 difference, {a_} minus {b_}: {mean:+.3f} [{lo:+.3f}, {hi:+.3f}] over {len(d)} concept queries")
         report[f"paired_ndcg10_{a_}_minus_{b_}"] = {"mean": mean, "lo": lo, "hi": hi}
     # per-concept view (hybrid)
     md += ["", "## Per concept (mean nDCG@10)", "", "| concept | relevant events | rrf | hybrid | vector | fts |", "|---|---|---|---|---|---|"]
@@ -101,27 +102,44 @@ with psycopg.connect(settings.dsn, autocommit=True) as conn:
     WS = [0.0, 0.1, 0.25, 0.5, 1.0]
     by_w = {0.0: rows["vector"], 1.0: rows["rrf"]}
     for w in WS[1:-1]:
-        by_w[w] = [{"concept": n, "query": t, "hard": h, **metrics(search(conn, llm, t, k=DEEP, pool=200, vec=v, weights=(1.0, w)), rel[n])}
+        by_w[w] = [{"concept": n, "group": grp[n], "query": t, "hard": h, **metrics(search(conn, llm, t, k=DEEP, pool=200, vec=v, weights=(1.0, w)), rel[n])}
                    for (n, t, h), v in zip(queries, vecs)]
     md += ["", "## Fusion weight sensitivity (nDCG@10, mean [95% CI])", "", "| full-text weight | all | easy | hard |", "|---|---|---|---|"]
     for w in WS:
         cells = []
-        for pick in (lambda r: True, lambda r: not r["hard"], lambda r: r["hard"]):
+        for pick in (lambda r: r["group"] == "concept", lambda r: r["group"] == "concept" and not r["hard"], lambda r: r["group"] == "concept" and r["hard"]):
             mean, lo, hi = ci(np.array([r["ndcg10"] for r in by_w[w] if pick(r)]))
             cells.append(f"{mean:.3f} [{lo:.3f}, {hi:.3f}]")
         md.append(f"| {w:g} | " + " | ".join(cells) + " |")
     # leave-one-concept-out: pick w on the other concepts, score on the held-out one (avoids tuning on the test queries)
-    concepts_ = list(rel)
+    concepts_ = [c for c in rel if grp[c] == "concept"]
     loco, chosen = [], {}
     for held in concepts_:
-        best_w = max(WS, key=lambda w: np.mean([r["ndcg10"] for r in by_w[w] if r["concept"] != held]))
+        best_w = max(WS, key=lambda w: np.mean([r["ndcg10"] for r in by_w[w] if r["group"] == "concept" and r["concept"] != held]))
         chosen[held] = best_w
         loco += [r["ndcg10"] for r in by_w[best_w] if r["concept"] == held]
     mean, lo, hi = ci(np.array(loco))
     md += ["", f"Leave-one-concept-out selected weight: mean nDCG@10 {mean:.3f} [{lo:.3f}, {hi:.3f}] "
-           f"(vector-only {np.mean([r['ndcg10'] for r in by_w[0.0]]):.3f}, plain RRF {np.mean([r['ndcg10'] for r in by_w[1.0]]):.3f}); "
+           f"(vector-only {np.mean([r['ndcg10'] for r in by_w[0.0] if r['group'] == 'concept']):.3f}, plain RRF {np.mean([r['ndcg10'] for r in by_w[1.0] if r['group'] == 'concept']):.3f}); "
            f"weights chosen per held-out concept: {sorted(set(chosen.values()))}"]
-    report["fusion_weights"] = {str(w): float(np.mean([r["ndcg10"] for r in by_w[w]])) for w in WS}
+    report["fusion_weights"] = {str(w): float(np.mean([r["ndcg10"] for r in by_w[w] if r["group"] == "concept"])) for w in WS}
+    # exact-term lookups (module tags): where full-text should help, if it helps anywhere
+    md += ["", "## Keyword lookups (exact module tags; nDCG@10, mean [95% CI] by full-text weight)", "", "| full-text weight | nDCG@10 | P@10 | MRR |", "|---|---|---|---|"]
+    kwres = {}
+    for w in WS:
+        kr = [r for r in by_w[w] if r["group"] == "keyword"]
+        cells = []
+        for key in ("ndcg10", "p10", "mrr"):
+            mean, lo, hi = ci(np.array([r[key] for r in kr]))
+            cells.append(f"{mean:.3f} [{lo:.3f}, {hi:.3f}]")
+            kwres.setdefault(str(w), {})[key] = {"mean": mean, "lo": lo, "hi": hi, "n": len(kr)}
+        md.append(f"| {w:g} | " + " | ".join(cells) + " |")
+    report["keyword"] = kwres
+    kv = [r for r in by_w[0.0] if r["group"] == "keyword"]
+    for w in (0.25, 1.0):
+        d = np.array([a_["ndcg10"] - b_["ndcg10"] for a_, b_ in zip([r for r in by_w[w] if r["group"] == "keyword"], kv)])
+        mean, lo, hi = ci(d)
+        md.append(f"Paired nDCG@10 difference on keyword lookups, weight {w:g} minus vector-only: {mean:+.3f} [{lo:+.3f}, {hi:+.3f}] over {len(d)} queries")
     report["loco"] = {"mean": mean, "lo": lo, "hi": hi, "chosen": chosen}
 
     # human-label case study: rank flights by their best event score for a query
