@@ -1,3 +1,8 @@
+# backend and api run the same code and dependencies: one image, so they can never drift apart
+x-app-image: &app-image
+  build: ./backend
+  image: uavlog-app
+
 services:
   db:
     image: timescale/timescaledb-ha:pg17
@@ -18,7 +23,7 @@ services:
       retries: 20
 
   backend:
-    build: ./backend
+    <<: *app-image
     env_file: .env
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     environment:
@@ -33,7 +38,7 @@ services:
     command: ["sleep", "infinity"]
 
   api:
-    build: ./backend
+    <<: *app-image
     env_file: .env
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     environment:
