@@ -27,13 +27,14 @@
 | planner's choice (hnsw + b-trees) | R 0.91 · 10.0 rows · 1.2 ms | R 0.66 · 10.0 rows · 1.9 ms | R 0.90 · 10.0 rows · 0.6 ms |
 | partial hnsw per kind, ef=40 | R 0.91 · 10.0 rows · 1.5 ms | R 0.66 · 10.0 rows · 2.1 ms | R 1.00 · 10.0 rows · 1.3 ms |
 | list partitions + hnsw, ef=40 | R 0.93 · 10.0 rows · 1.5 ms | R 0.66 · 10.0 rows · 2.1 ms | R 1.00 · 10.0 rows · 0.8 ms |
+| diskann labels, list=100, rescore=200 | R 0.77 · 10.0 rows · 5.0 ms | R 0.46 · 10.0 rows · 8.5 ms | R 1.00 · 10.0 rows · 4.1 ms |
 
 ## Build cost
 
 | strategy | build time | size |
 |---|---|---|
-| hnsw | 62.1 s | 819 MB | 
-| hnsw+btrees | 57.2 s | nan MB | 
-| partial hnsw per kind | 61.8 s | 819 MB | 
-| list partitions + hnsw | 101.1 s | nan MB | 
-| diskann with labels | not run: QueryCanceled: canceling statement due to statement timeout | |
+| hnsw | 62.1 s | 819 MB |
+| hnsw+btrees | 57.2 s | n/a |
+| partial hnsw per kind | 61.8 s | 819 MB |
+| list partitions + hnsw | 101.1 s | n/a |
+| diskann with labels | 620.8 s | n/a |
