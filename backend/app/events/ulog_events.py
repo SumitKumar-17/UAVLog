@@ -3,7 +3,6 @@ import re
 from datetime import datetime, timedelta
 
 import numpy as np
-from pyulog import ULog
 
 NAV_STATE = {
     0: "Manual", 1: "Altitude", 2: "Position", 3: "Mission", 4: "Hold", 5: "Return", 6: "Position slow",
@@ -39,6 +38,8 @@ def _runs(flag: np.ndarray) -> list[tuple[int, int]]:
 
 
 def extract(path: str, started_at: datetime) -> list[dict]:
+    from pyulog import ULog  # imported here so the API (which only needs NAV_STATE) runs without the parser installed
+
     u = ULog(path, message_name_filter_list=TOPICS)
     at = lambda us: started_at + timedelta(microseconds=int(us) - u.start_timestamp)  # noqa: E731
     out: list[dict] = []

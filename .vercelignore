@@ -1,0 +1,11 @@
+web
+slides
+script
+docs
+research
+data
+tools
+backend/tests
+backend/scripts
+node_modules
+.git

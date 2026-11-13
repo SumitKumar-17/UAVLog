@@ -1,13 +1,15 @@
 """Serves benchmark result files (JSON) to the Benchmarks page. Names are validated against a strict pattern and a prefix
 whitelist, and the resolved path must stay inside the results directory."""
 import json
+import os
 import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/api/bench")
-RESULTS = Path("/bench/results")
+# /bench/results inside the Docker image; bench/results in the repository (Vercel); BENCH_DIR overrides both
+RESULTS = Path(os.environ.get("BENCH_DIR") or ("/bench/results" if Path("/bench/results").is_dir() else Path(__file__).resolve().parents[3] / "bench" / "results"))
 PREFIXES = ("ann_", "filter_", "columnstore_", "engines_", "nlsql_eval_", "eval_search_", "injection_", "signature_", "moments_")
 NAME = re.compile(r"^[A-Za-z0-9_.\-]+\.json$")
 
