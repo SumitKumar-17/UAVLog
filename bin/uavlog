@@ -16,7 +16,7 @@ auto=$(( cores / 2 < mem_gb / 6 ? cores / 2 : mem_gb / 6 )); [ "$auto" -lt 1 ] &
 WORKERS="${WORKERS:-$auto}"       # ~6 GB RAM per parse worker (large logs)
 
 run() { docker compose exec -T backend "$@"; }
-sql() { docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q "$@"; }
+sql() { ./bin/psql -q "$@"; }
 sel_args=(--tier "$TIER")
 [ -n "${N_LABELED:-}" ] && sel_args+=(--n-labeled "$N_LABELED")
 [ -n "${N_ERRORS:-}" ] && sel_args+=(--n-errors "$N_ERRORS")
@@ -24,8 +24,10 @@ sel_args=(--tier "$TIER")
 
 stage() { echo; echo "==> $*"; }
 
-cmd_up()      { stage "start containers"; docker compose up -d --build db backend; run true
-                until docker compose exec -T db pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; do sleep 2; done; }
+cmd_up()      { stage "start containers"
+                if [ -n "${DATABASE_URL:-}" ]; then docker compose up -d --build backend; run true           # a hosted database is configured
+                else docker compose --profile local up -d --build db backend; run true
+                     until docker compose exec -T db pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; do sleep 2; done; fi; }
 cmd_init()    { stage "migrate + seed ontology"; run alembic upgrade head; run python scripts/seed_ontology.py; }
 cmd_index()   { stage "fetch log index"; run python scripts/fetch_index.py; }
 cmd_select()  { stage "select logs (tier=$TIER)"; run python scripts/select_logs.py "${sel_args[@]}"; }

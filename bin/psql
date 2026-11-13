@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# ./bin/psql [psql args]  -> psql against the project's database: the local container when it is running, otherwise DATABASE_URL
+# (a hosted database such as Tiger Cloud) through a client container. Example: ./bin/psql -c 'select count(*) from flight'
+set -euo pipefail
+cd "$(dirname "$0")/.."
+set -a; . ./.env; set +a
+if [ -n "$(docker compose ps -q db 2>/dev/null)" ]; then
+  exec docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" "$@"
+fi
+[ -n "${DATABASE_URL:-}" ] || { echo "no local db container is running and DATABASE_URL is not set" >&2; exit 1; }
+exec docker run --rm -i --network host postgres:17-alpine psql "${DATABASE_URL/+psycopg/}" "$@"

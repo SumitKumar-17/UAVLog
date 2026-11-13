@@ -123,3 +123,33 @@ def graph(p=Depends(pool)):
     for c in cols:
         by.setdefault(c["table"], []).append({"name": c["name"], "type": c["type"], "pk": c["pk"]})
     return {"nodes": [{**t, "columns": by.get(t["name"], [])} for t in ts], "edges": edges}
+
+
+@router.get("/performance")
+def performance(p=Depends(pool)):
+    """Live database health: cache hit ratio, connections, scan patterns per table and the statements that cost the most (pg_stat_statements)."""
+    out: dict = {}
+    out["database"] = rows(p, """
+        SELECT pg_database_size(current_database()) AS bytes, d.numbackends AS connections, d.xact_commit AS commits, d.xact_rollback AS rollbacks, d.temp_files, d.temp_bytes,
+               round(100.0 * d.blks_hit / nullif(d.blks_hit + d.blks_read, 0), 2) AS cache_hit_pct, d.deadlocks, d.stats_reset
+        FROM pg_stat_database d WHERE d.datname = current_database()""")[0]
+    out["settings"] = rows(p, """SELECT name, setting || coalesce(unit, '') AS value FROM pg_settings
+                                 WHERE name IN ('shared_buffers', 'work_mem', 'maintenance_work_mem', 'max_connections', 'effective_cache_size', 'random_page_cost', 'max_parallel_workers_per_gather')
+                                 ORDER BY name""")
+    out["tables"] = rows(p, """
+        SELECT relname AS name, n_live_tup AS live_rows, seq_scan, coalesce(idx_scan, 0) AS idx_scan, n_tup_ins AS inserts, n_tup_upd AS updates,
+               round(100.0 * coalesce(idx_scan, 0) / nullif(seq_scan + coalesce(idx_scan, 0), 0), 1) AS index_pct
+        FROM pg_stat_user_tables WHERE schemaname IN ('public', 'semantic') AND relname NOT LIKE '\\_%%' AND relname NOT LIKE '%%\\_chunk'
+        ORDER BY seq_scan + coalesce(idx_scan, 0) DESC LIMIT 12""")
+    try:
+        out["statements"] = rows(p, """
+            SELECT left(regexp_replace(query, '\\s+', ' ', 'g'), 220) AS query, calls, round(total_exec_time::numeric, 1) AS total_ms, round(mean_exec_time::numeric, 2) AS mean_ms,
+                   round(max_exec_time::numeric, 1) AS max_ms, rows,
+                   round(100.0 * shared_blks_hit / nullif(shared_blks_hit + shared_blks_read, 0), 1) AS hit_pct
+            FROM pg_stat_statements WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+              AND query NOT ILIKE '%%pg_stat_statements%%' AND query NOT ILIKE 'SET %%' AND query NOT ILIKE 'COMMIT%%' AND query NOT ILIKE 'BEGIN%%'
+            ORDER BY total_exec_time DESC LIMIT 10""")
+        out["statements_available"] = True
+    except Exception:
+        out["statements"], out["statements_available"] = [], False
+    return out

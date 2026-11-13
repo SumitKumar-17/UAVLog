@@ -180,3 +180,11 @@ export type Patterns = { kind: string; seconds: number; flights: number; target_
 
 export type PlanNode = { "Node Type": string; "Relation Name"?: string; "Index Name"?: string; Alias?: string; "Startup Cost": number; "Total Cost": number; "Plan Rows": number; "Plan Width": number; "Join Type"?: string; "Parent Relationship"?: string; "Filter"?: string; "Index Cond"?: string; "Hash Cond"?: string; "Group Key"?: string[]; "Sort Key"?: string[]; Plans?: PlanNode[] };
 export type Explained = { sql: string; plan: PlanNode; limit: number };
+
+export type Performance = {
+  database: { bytes: number; connections: number; commits: number; rollbacks: number; temp_files: number; temp_bytes: number; cache_hit_pct: number | null; deadlocks: number; stats_reset: string | null };
+  settings: { name: string; value: string }[];
+  tables: { name: string; live_rows: number; seq_scan: number; idx_scan: number; inserts: number; updates: number; index_pct: number | null }[];
+  statements: { query: string; calls: number; total_ms: number; mean_ms: number; max_ms: number; rows: number; hit_pct: number | null }[];
+  statements_available: boolean;
+};

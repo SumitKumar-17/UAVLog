@@ -191,7 +191,7 @@ the previous database as `<name>_old_<time>`. A failed restore leaves the live d
 Why not Neon (considered because it was the first example given): Neon's documentation lists TimescaleDB with "only Apache-2 licensed features supported.
 Compression is not supported", and the free plan allows 1 GB of Postgres storage per project. Our telemetry depends on the columnstore, whose 32x compression
 is what keeps it small, so a Neon copy would be either unusable or 30 times larger. (Checked against Neon's extension and plans pages on 2026-10-18.)
-Privacy and licence: the snapshot holds GPS tracks and pilot free text from public CC-BY Flight Review logs and no secrets; `DATA_ATTRIBUTION.md` says to
+Privacy and licence: the snapshot holds GPS tracks and pilot free text from public CC-BY Flight Review logs and no secrets; `docs/data-attribution.md` says to
 credit Flight Review. Status: the script has not been exercised end to end yet. First use: `./bin/snapshot create`, then
 `./bin/snapshot restore <file> --as scratch` loads it into a separate database without touching the live one.
 

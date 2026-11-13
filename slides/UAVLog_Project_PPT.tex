@@ -9,7 +9,7 @@
 \usepackage{pgfplots}
 \usepackage{etoolbox}
 \pgfplotsset{compat=1.16}
-\graphicspath{{docs/figures/}{docs/screens/}}
+\graphicspath{{docs/assets/figures/}{docs/assets/screens/}}
 
 \setbeamercolor{normal text}{fg=black,bg=white}
 \setbeamertemplate{navigation symbols}{}
@@ -30,10 +30,10 @@
   showstringspaces=false,columns=fullflexible,keepspaces=true,xleftmargin=1.6em,framexleftmargin=1.4em,aboveskip=0pt,belowskip=0pt}
 \lstdefinestyle{term}{style=code,numbers=none,xleftmargin=0pt,framexleftmargin=0pt,basicstyle=\fontsize{7}{8.3}\selectfont\ttfamily}
 % a source excerpt, a terminal capture, and a slide made of one of each
-\newcommand{\listing}[1]{\lstinputlisting[style=code,firstnumber=1]{docs/listings/#1.txt}}
-\newcommand{\terminal}[1]{\lstinputlisting[style=term]{docs/listings/#1.txt}}
-\newcommand{\listingr}[3]{\lstinputlisting[style=code,firstline=#2,lastline=#3,firstnumber=#2]{docs/listings/#1.txt}}
-\newcommand{\terminalr}[3]{\lstinputlisting[style=term,firstline=#2,lastline=#3]{docs/listings/#1.txt}}
+\newcommand{\listing}[1]{\lstinputlisting[style=code,firstnumber=1]{docs/assets/listings/#1.txt}}
+\newcommand{\terminal}[1]{\lstinputlisting[style=term]{docs/assets/listings/#1.txt}}
+\newcommand{\listingr}[3]{\lstinputlisting[style=code,firstline=#2,lastline=#3,firstnumber=#2]{docs/assets/listings/#1.txt}}
+\newcommand{\terminalr}[3]{\lstinputlisting[style=term,firstline=#2,lastline=#3]{docs/assets/listings/#1.txt}}
 
 \title{Semantic Log Analytics [UAV Log]}
 \subtitle{UAV flight logs as a database problem: time series, semantics, search and guarded SQL}
@@ -654,11 +654,11 @@ Vibration, motor outputs, EKF ratios, barometric altitude and flight mode: they 
 \begin{column}{0.56\textwidth}
 \begin{tikzpicture}
 \pgfaxis{xlabel={Seconds the fault is held},ylabel={Faults detected (\%)},xmode=log,xtick={1,2,3,5,10,20},xticklabels={1,2,3,5,10,20},ymin=-3,ymax=105}
-\addplot table[x=dur,y=rate] {docs/plots/inj_battery_crit.dat};\addlegendentry{battery low}
-\addplot table[x=dur,y=rate] {docs/plots/inj_gps_lost_3d_.dat};\addlegendentry{GPS lost}
-\addplot table[x=dur,y=rate] {docs/plots/inj_gps_accuracy.dat};\addlegendentry{GPS accuracy}
-\addplot table[x=dur,y=rate] {docs/plots/inj_high_vibrati.dat};\addlegendentry{vibration}
-\addplot table[x=dur,y=rate] {docs/plots/inj_estimator_re.dat};\addlegendentry{estimator}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_battery_crit.dat};\addlegendentry{battery low}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_gps_lost_3d_.dat};\addlegendentry{GPS lost}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_gps_accuracy.dat};\addlegendentry{GPS accuracy}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_high_vibrati.dat};\addlegendentry{vibration}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_estimator_re.dat};\addlegendentry{estimator}
 \end{axis}
 \end{tikzpicture}
 \end{column}
@@ -743,11 +743,11 @@ full text only & 0.48 & 0.31\\
 \begin{column}{0.56\textwidth}
 \begin{tikzpicture}
 \pgfaxis{xlabel={Recall at 10},ylabel={Median latency (ms, log)},ymode=log,xmin=0.4,xmax=1.0}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_hnsw_m_16_ef_constructio.dat};\addlegendentry{HNSW m=16}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_hnsw_m_32_ef_constructio.dat};\addlegendentry{HNSW m=32}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_ivfflat_lists_316_sqrt_n.dat};\addlegendentry{IVFFlat 316}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_ivfflat_lists_100_n_1000.dat};\addlegendentry{IVFFlat 100}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_diskann_pgvectorscale_de.dat};\addlegendentry{DiskANN}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_hnsw_m_16_ef_constructio.dat};\addlegendentry{HNSW m=16}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_hnsw_m_32_ef_constructio.dat};\addlegendentry{HNSW m=32}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_ivfflat_lists_316_sqrt_n.dat};\addlegendentry{IVFFlat 316}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_ivfflat_lists_100_n_1000.dat};\addlegendentry{IVFFlat 100}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_diskann_pgvectorscale_de.dat};\addlegendentry{DiskANN}
 \end{axis}
 \end{tikzpicture}
 \end{column}
@@ -815,10 +815,10 @@ DiskANN, either $\sigma$ & 6.0 / 2.0 & not reached & not reached\\
 \begin{column}{0.54\textwidth}
 \begin{tikzpicture}
 \pgfaxis{xlabel={Share of rows the filter keeps},ylabel={Rows returned (of 10)},xtick={0,1,2,3,4},xticklabels={0.01\%,0.1\%,1\%,10\%,50\%},ymin=-0.3,ymax=10.8}
-\addplot table[x=x,y=rows] {docs/plots/filter_post40.dat};\addlegendentry{post-filter ef 40}
-\addplot table[x=x,y=rows] {docs/plots/filter_post400.dat};\addlegendentry{post-filter ef 400}
-\addplot table[x=x,y=rows] {docs/plots/filter_iter.dat};\addlegendentry{iterative scan}
-\addplot table[x=x,y=rows] {docs/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
+\addplot table[x=x,y=rows] {docs/assets/plots/filter_post40.dat};\addlegendentry{post-filter ef 40}
+\addplot table[x=x,y=rows] {docs/assets/plots/filter_post400.dat};\addlegendentry{post-filter ef 400}
+\addplot table[x=x,y=rows] {docs/assets/plots/filter_iter.dat};\addlegendentry{iterative scan}
+\addplot table[x=x,y=rows] {docs/assets/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
 \end{axis}
 \end{tikzpicture}
 \end{column}
@@ -839,8 +839,8 @@ DiskANN, either $\sigma$ & 6.0 / 2.0 & not reached & not reached\\
 \begin{column}{0.54\textwidth}
 \begin{tikzpicture}
 \pgfaxis{xlabel={Share of rows the filter keeps},ylabel={Median latency (ms, log)},ymode=log,xtick={0,1,2,3,4},xticklabels={0.01\%,0.1\%,1\%,10\%,50\%}}
-\addplot table[x=x,y=p50] {docs/plots/filter_iter.dat};\addlegendentry{iterative scan}
-\addplot table[x=x,y=p50] {docs/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
+\addplot table[x=x,y=p50] {docs/assets/plots/filter_iter.dat};\addlegendentry{iterative scan}
+\addplot table[x=x,y=p50] {docs/assets/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
 \end{axis}
 \end{tikzpicture}
 \end{column}

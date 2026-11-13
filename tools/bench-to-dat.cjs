@@ -1,6 +1,6 @@
-// Turn benchmark result JSON into plain data files for pgfplots: node tools/bench-to-dat.cjs  ->  docs/plots/*.dat
+// Turn benchmark result JSON into plain data files for pgfplots: node tools/bench-to-dat.cjs  ->  docs/assets/plots/*.dat
 const fs = require("fs");
-const R = "bench/results/", O = "docs/plots/";
+const R = "bench/results/", O = "docs/assets/plots/";
 fs.mkdirSync(O, { recursive: true });
 const J = (f) => JSON.parse(fs.readFileSync(R + f, "utf8"));
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");

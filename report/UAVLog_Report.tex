@@ -14,7 +14,7 @@
 \usepackage{fancyhdr}
 \usepackage{float}
 \pgfplotsset{compat=1.16}
-\graphicspath{{docs/figures/}{docs/screens/}}
+\graphicspath{{docs/assets/figures/}{docs/assets/screens/}}
 \hypersetup{colorlinks=true,linkcolor=black,urlcolor=black}
 
 \newtcolorbox{definition}[1][]{colback=white,colframe=black,fonttitle=\bfseries,title=Definition,breakable,#1}
@@ -26,10 +26,10 @@
 \lstdefinestyle{code}{basicstyle=\fontsize{7.6}{9}\selectfont\ttfamily,breaklines=true,frame=single,rulecolor=\color{black!40},numbers=left,
   numberstyle=\tiny\color{black!55},numbersep=5pt,showstringspaces=false,columns=fullflexible,keepspaces=true,xleftmargin=1.5em,framexleftmargin=1.3em}
 \lstdefinestyle{term}{style=code,numbers=none,xleftmargin=0pt,framexleftmargin=0pt,basicstyle=\fontsize{7.2}{8.6}\selectfont\ttfamily}
-\newcommand{\listing}[1]{\lstinputlisting[style=code]{docs/listings/#1.txt}}
-\newcommand{\listingr}[3]{\lstinputlisting[style=code,firstline=#2,lastline=#3,firstnumber=#2]{docs/listings/#1.txt}}
-\newcommand{\terminal}[1]{\lstinputlisting[style=term]{docs/listings/#1.txt}}
-\newcommand{\terminalr}[3]{\lstinputlisting[style=term,firstline=#2,lastline=#3]{docs/listings/#1.txt}}
+\newcommand{\listing}[1]{\lstinputlisting[style=code]{docs/assets/listings/#1.txt}}
+\newcommand{\listingr}[3]{\lstinputlisting[style=code,firstline=#2,lastline=#3,firstnumber=#2]{docs/assets/listings/#1.txt}}
+\newcommand{\terminal}[1]{\lstinputlisting[style=term]{docs/assets/listings/#1.txt}}
+\newcommand{\terminalr}[3]{\lstinputlisting[style=term,firstline=#2,lastline=#3]{docs/assets/listings/#1.txt}}
 \newcommand{\shot}[3][0.95]{\begin{figure}[H]\centering\includegraphics[width=#1\textwidth]{#2}\caption{#3}\end{figure}}
 \newcommand{\pgfaxis}[1]{\begin{axis}[width=0.85\linewidth,height=6.2cm,#1,grid=major,grid style={black!12},tick label style={font=\scriptsize},label style={font=\footnotesize},legend style={font=\scriptsize,at={(0.5,-0.22)},anchor=north,legend columns=3},cycle list={{blue!70!black,mark=*},{red!75!black,mark=square*},{green!45!black,mark=triangle*},{orange!85!black,mark=diamond*},{violet,mark=pentagon*}},every axis plot/.append style={thick,mark size=1.6pt}]}
 
@@ -274,11 +274,11 @@ A constant fault value is held for a stated duration at a random time in the mid
 \begin{center}
 \begin{tikzpicture}
 \pgfaxis{xlabel={Seconds the fault is held},ylabel={Faults detected (\%)},xmode=log,xtick={1,2,3,5,10,20},xticklabels={1,2,3,5,10,20},ymin=-3,ymax=105}
-\addplot table[x=dur,y=rate] {docs/plots/inj_battery_crit.dat};\addlegendentry{battery low}
-\addplot table[x=dur,y=rate] {docs/plots/inj_gps_lost_3d_.dat};\addlegendentry{GPS lost}
-\addplot table[x=dur,y=rate] {docs/plots/inj_gps_accuracy.dat};\addlegendentry{GPS accuracy}
-\addplot table[x=dur,y=rate] {docs/plots/inj_high_vibrati.dat};\addlegendentry{vibration}
-\addplot table[x=dur,y=rate] {docs/plots/inj_estimator_re.dat};\addlegendentry{estimator}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_battery_crit.dat};\addlegendentry{battery low}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_gps_lost_3d_.dat};\addlegendentry{GPS lost}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_gps_accuracy.dat};\addlegendentry{GPS accuracy}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_high_vibrati.dat};\addlegendentry{vibration}
+\addplot table[x=dur,y=rate] {docs/assets/plots/inj_estimator_re.dat};\addlegendentry{estimator}
 \end{axis}
 \end{tikzpicture}
 \end{center}
@@ -328,11 +328,11 @@ Plain fusion is significantly worse than vector only: paired difference $-0.109$
 \begin{center}
 \begin{tikzpicture}
 \pgfaxis{xlabel={Recall at 10},ylabel={Median latency (ms, log)},ymode=log,xmin=0.4,xmax=1.0}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_hnsw_m_16_ef_constructio.dat};\addlegendentry{HNSW m=16}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_hnsw_m_32_ef_constructio.dat};\addlegendentry{HNSW m=32}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_ivfflat_lists_316_sqrt_n.dat};\addlegendentry{IVFFlat 316}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_ivfflat_lists_100_n_1000.dat};\addlegendentry{IVFFlat 100}
-\addplot table[x=recall,y=p50] {docs/plots/ann_100000sigma035_diskann_pgvectorscale_de.dat};\addlegendentry{DiskANN}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_hnsw_m_16_ef_constructio.dat};\addlegendentry{HNSW m=16}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_hnsw_m_32_ef_constructio.dat};\addlegendentry{HNSW m=32}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_ivfflat_lists_316_sqrt_n.dat};\addlegendentry{IVFFlat 316}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_ivfflat_lists_100_n_1000.dat};\addlegendentry{IVFFlat 100}
+\addplot table[x=recall,y=p50] {docs/assets/plots/ann_100000sigma035_diskann_pgvectorscale_de.dat};\addlegendentry{DiskANN}
 \end{axis}
 \end{tikzpicture}
 \end{center}
@@ -378,18 +378,18 @@ The real corpus has RC10 20.5, so both synthetic sets are harder than the real d
 \begin{center}
 \begin{tikzpicture}
 \pgfaxis{xlabel={Share of rows the filter keeps},ylabel={Rows returned (of 10)},xtick={0,1,2,3,4},xticklabels={0.01\%,0.1\%,1\%,10\%,50\%},ymin=-0.3,ymax=10.8}
-\addplot table[x=x,y=rows] {docs/plots/filter_post40.dat};\addlegendentry{post-filter ef 40}
-\addplot table[x=x,y=rows] {docs/plots/filter_post400.dat};\addlegendentry{post-filter ef 400}
-\addplot table[x=x,y=rows] {docs/plots/filter_iter.dat};\addlegendentry{iterative scan}
-\addplot table[x=x,y=rows] {docs/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
+\addplot table[x=x,y=rows] {docs/assets/plots/filter_post40.dat};\addlegendentry{post-filter ef 40}
+\addplot table[x=x,y=rows] {docs/assets/plots/filter_post400.dat};\addlegendentry{post-filter ef 400}
+\addplot table[x=x,y=rows] {docs/assets/plots/filter_iter.dat};\addlegendentry{iterative scan}
+\addplot table[x=x,y=rows] {docs/assets/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
 \end{axis}
 \end{tikzpicture}
 \end{center}
 \begin{center}
 \begin{tikzpicture}
 \pgfaxis{xlabel={Share of rows the filter keeps},ylabel={Median latency (ms, log)},ymode=log,xtick={0,1,2,3,4},xticklabels={0.01\%,0.1\%,1\%,10\%,50\%}}
-\addplot table[x=x,y=p50] {docs/plots/filter_iter.dat};\addlegendentry{iterative scan}
-\addplot table[x=x,y=p50] {docs/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
+\addplot table[x=x,y=p50] {docs/assets/plots/filter_iter.dat};\addlegendentry{iterative scan}
+\addplot table[x=x,y=p50] {docs/assets/plots/filter_btree.dat};\addlegendentry{B-tree + exact sort}
 \end{axis}
 \end{tikzpicture}
 \end{center}

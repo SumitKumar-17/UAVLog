@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ./bin/deck-shots  -> one-screen (1440x810) screenshots of every page and feature into docs/screens/deck-*.png, for the slides and the video.
+# ./bin/deck-shots  -> one-screen (1440x810) screenshots of every page and feature into docs/assets/screens/deck-*.png, for the slides and the video.
 # Run it where the stack is up (the web app on WEB_PORT).
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -26,11 +26,10 @@ CLICK='role=tab[name="Browse tables"]' WAIT_MS=2000 S /data deck-data-browse lig
 CLICK='role=tab[name="Browse tables"]' CLICK2='role=tab[name="Structure"]' S /data deck-data-structure light 1440 810
 S /database deck-database light 1440 810
 SCROLLY=620 S /database deck-database-plan light 1440 810
-for s in ann filter search nlsql injection moments columnstore engines; do SCROLL="#$s" WAIT_MS=2500 S /benchmarks deck-bench-$s light 1440 810; done
+for s in ann filter injection moments columnstore engines; do SCROLL="#$s" WAIT_MS=2500 S /benchmarks deck-bench-$s light 1440 810; done
 SCROLLY=330 WAIT_MS=3500 S /flights/$F deck-flight-behaviour light 1440 810
 S "/patterns" deck-patterns light 1440 810
 FILL='textarea|SELECT f.board, count(*) AS events FROM semantic.flights f JOIN semantic.events e ON e.flight_id = f.flight_id GROUP BY f.board ORDER BY events DESC LIMIT 10' CLICK='button:has-text("Explain")' WAIT_MS=2500 S /workbench deck-workbench-plan light 1440 810
 SCROLL='#cal' S /fleet deck-fleet-calendar light 1440 810
 CLICK='button:has-text("Find similar moments")' CLICK2='button:has-text("Overlay") >> nth=0' WAIT_MS=3000 SCROLL='#moments' S /flights/$F deck-flight-overlay light 1440 810
 THEME=dark S / deck-overview-dark light 1440 810
-THEME=dark SCROLL='#galaxy' S /fleet deck-fleet-dark light 1440 810

@@ -5,10 +5,10 @@ field names onto shared concepts, hybrid SQL and vector retrieval with pgvector,
 layers. Every design choice is backed by a measurement in `bench/results/`.
 
 <p align="center">
-  <img src="docs/screens/deck-overview-light-1440.png" width="49%" alt="Overview">
-  <img src="docs/screens/deck-flight-report-light-1440.png" width="49%" alt="Incident report with citations">
-  <img src="docs/screens/deck-map-light-1440.png" width="49%" alt="Map of flights">
-  <img src="docs/screens/deck-data-map-light-1440.png" width="49%" alt="Data explorer schema map">
+  <img src="docs/assets/screens/deck-overview-light-1440.png" width="49%" alt="Overview">
+  <img src="docs/assets/screens/deck-flight-report-light-1440.png" width="49%" alt="Incident report with citations">
+  <img src="docs/assets/screens/deck-map-light-1440.png" width="49%" alt="Map of flights">
+  <img src="docs/assets/screens/deck-data-map-light-1440.png" width="49%" alt="Data explorer schema map">
 </p>
 
 ## What it does
@@ -76,9 +76,10 @@ Signal windows for "similar moments": `docker compose exec backend python script
 | `backend/` | FastAPI (`app/api`), ingest and event rules (`app/ingest`, `app/events`), ontology (`app/ontology`), search router, guarded NL-to-SQL (`app/nlsql`), Alembic migrations, scripts, tests |
 | `web/` | Next.js 16 application (pages in `src/app`, components in `src/components`) |
 | `bench/` | benchmark results (`results/`) and the evaluation question sets (`eval/`) |
-| `docs/` | decision log, architecture, status, diagrams, figures, screenshots |
+| `docs/` | decision log, architecture, design, status, ontology coverage, data attribution; `docs/assets/` holds the diagram sources, figures, screenshots, code listings, terminal captures and chart data used by the slides and report |
 | `slides/`, `report/`, `script/` | the Beamer project deck, the report, and the speaker and video scripts (build PDFs with `./bin/latex <file.tex>`) |
-| `bin/` | `uavlog` (pipeline), `snapshot`, `shot` and `deck-shots` (screenshots), `figures`, `latex` |
+| `bin/` | `uavlog` (pipeline), `snapshot`, `psql`, `shot` and `deck-shots` (screenshots), `figures`, `latex` |
+| `tools/` | helpers behind `bin/` (screenshot, diagram, listing and chart-data generators, the LaTeX image) |
 | `research/` | background notes on datasets, database technology and related work |
 
 ## Tests
@@ -109,4 +110,4 @@ HOST_DATA_DIR=/big/disk/data TIER=k10 nohup ./bin/uavlog stream > run.log 2>&1 &
 
 ## Data and licence
 
-PX4 logs come from [Flight Review](https://review.px4.io) (CC-BY); see `DATA_ATTRIBUTION.md`. Code: MIT, see `LICENSE`.
+PX4 logs come from [Flight Review](https://review.px4.io) (CC-BY); see `docs/data-attribution.md`. Code: MIT, see `LICENSE`.

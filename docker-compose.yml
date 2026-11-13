@@ -1,10 +1,12 @@
-# backend and api run the same code and dependencies: one image, so they can never drift apart
+# backend and api run the same code and dependencies: one image, so they can never drift apart.
+# The database is either a hosted TimescaleDB (set DATABASE_URL in .env) or the local `db` container (docker compose --profile local up -d).
 x-app-image: &app-image
   build: ./backend
   image: uavlog-app
 
 services:
   db:
+    profiles: ["local"]
     image: ${TIMESCALE_IMAGE:-timescale/timescaledb-ha:pg17.11-ts2.30.2}
     command: ["postgres", "-c", "shared_preload_libraries=timescaledb,pg_stat_statements"]
     environment:
@@ -27,11 +29,12 @@ services:
     env_file: .env
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}}
       NLSQL_DB_PASSWORD: ${NLSQL_DB_PASSWORD:-}
     depends_on:
       db:
         condition: service_healthy
+        required: false  # only when the local database profile is on
     volumes:
       - ./backend:/app
       - ./bench:/bench
@@ -43,12 +46,13 @@ services:
     env_file: .env
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}}
       # set NLSQL_DB_PASSWORD in .env (then run migrations) to make model-written SQL connect as the restricted login role uav_nlsql
       NLSQL_DATABASE_URL: ${NLSQL_DB_PASSWORD:+postgresql://uav_nlsql:${NLSQL_DB_PASSWORD}@db:5432/${POSTGRES_DB}}
     depends_on:
       db:
         condition: service_healthy
+        required: false  # only when the local database profile is on
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:

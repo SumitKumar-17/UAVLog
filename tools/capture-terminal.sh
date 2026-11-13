@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Capture real database and project output as text (docs/figures/text/*.txt); tools/code2png.cjs renders them as terminal-style screenshots.
+# Capture real database and project output as text (docs/assets/terminal/*.txt); tools/code2png.cjs renders them as terminal-style screenshots.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 set -a; . ./.env; set +a
-out=docs/figures/text; mkdir -p "$out"
-psqlq() { docker compose exec -T db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" "$@"; }
+out=docs/assets/terminal; mkdir -p "$out"
+psqlq() { ./bin/psql "$@"; }
 
 { echo "uavlog=# \\d+ telemetry"; psqlq -c '\d+ telemetry'; } > $out/term-telemetry.txt 2>&1
 { echo "uavlog=# \\d+ event"; psqlq -c '\d+ event' | head -34; } > $out/term-event.txt 2>&1

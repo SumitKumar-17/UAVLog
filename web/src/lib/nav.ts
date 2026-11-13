@@ -1,4 +1,4 @@
-export type IconName = "overview" | "flights" | "map" | "fleet" | "search" | "compare" | "ask" | "workbench" | "ontology" | "data" | "database" | "benchmarks" | "incidents" | "patterns";
+export type IconName = "overview" | "flights" | "map" | "fleet" | "search" | "compare" | "ask" | "workbench" | "ontology" | "data" | "database" | "benchmarks" | "incidents" | "patterns" | "performance";
 export type NavItem = { href: string; label: string; hint: string; icon: IconName };
 export const NAV: { label: string; items: NavItem[] }[] = [
   { label: "Explore", items: [
@@ -16,6 +16,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
   { label: "Platform", items: [
     { href: "/ontology", label: "Ontology", hint: "concepts and vendor mappings", icon: "ontology" },
     { href: "/data", label: "Data explorer", hint: "tables, structure, relations", icon: "data" },
+    { href: "/performance", label: "Performance", hint: "cache, scans and the costliest statements", icon: "performance" },
     { href: "/database", label: "Database", hint: "storage, plans, pipeline", icon: "database" },
     { href: "/benchmarks", label: "Benchmarks", hint: "every experiment", icon: "benchmarks" } ] },
 ];

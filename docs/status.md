@@ -14,7 +14,7 @@ Last updated 2026-10-18 (benchmarks, injection, signatures and deliverables fini
 | Search | embeddings, HNSW, hybrid, planner-estimate router; vector index, difficulty and filtered-search experiments | D11 to D13, D18, D19, `bench/results/ann_*`, `filter_*`, `eval_search_*` |
 | Signatures | similar flights by signal shape | D22, `bench/results/signature_eval.*` |
 | NL-to-SQL | four defences, 46 hostile queries refused, three-condition accuracy experiment | D16, `bench/results/nlsql_eval_*` |
-| Web app | Overview, Flights, Flight (charts, track, notes, similar), Search, Compare, Ask, Ontology, Database, Benchmarks | `docs/design.md`, `docs/screens/` |
+| Web app | Overview, Flights, Flight (charts, track, notes, similar), Search, Compare, Ask, Ontology, Database, Benchmarks | `docs/design.md`, `docs/assets/screens/` |
 | Deliverables | Beamer project deck (83 slides), report (33 pages), speaker script, 10-minute video script | `slides/`, `report/`, `script/` |
 | Snapshots | `bin/snapshot` create / restore / push-db / pull-db | D17 |
 | Platform features | similar moments, cited incident reports, map, fleet galaxy, incidents, SQL workbench, data explorer, replay, command palette | D23, `bench/results/moments_eval.*` |

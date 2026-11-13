@@ -1,4 +1,4 @@
-// Render Mermaid sources (.mmd) to crisp PNGs with headless Chromium: node mermaid2png.cjs docs/diagrams/*.mmd  ->  docs/figures/diagram-<name>.png
+// Render Mermaid sources (.mmd) to crisp PNGs with headless Chromium: node mermaid2png.cjs docs/assets/diagrams/*.mmd  ->  docs/assets/figures/diagram-<name>.png
 const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright");
@@ -6,7 +6,7 @@ const { chromium } = require("playwright");
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 }, deviceScaleFactor: 4, locale: "en-US" });
-  fs.mkdirSync("docs/figures", { recursive: true });
+  fs.mkdirSync("docs/assets/figures", { recursive: true });
   for (const f of process.argv.slice(2)) {
     const src = fs.readFileSync(f, "utf8");
     const page = await ctx.newPage();
@@ -17,7 +17,7 @@ const { chromium } = require("playwright");
         themeVariables: { fontFamily: "Arial, sans-serif", fontSize: "15px" } });
       await window.mermaid.run({ querySelector: ".mermaid" });
     });
-    const out = path.join("docs/figures", `diagram-${path.basename(f, ".mmd")}.png`);
+    const out = path.join("docs/assets/figures", `diagram-${path.basename(f, ".mmd")}.png`);
     await page.locator("#w").screenshot({ path: out });
     const err = await page.locator(".mermaid[data-processed] svg text:has-text('Syntax error')").count();
     console.log(out + (err ? "  !! syntax error in diagram" : ""));
