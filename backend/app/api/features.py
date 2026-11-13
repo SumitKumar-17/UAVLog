@@ -452,3 +452,29 @@ def rules_evaluate(rule: str = Query(..., pattern=r"^[a-z_]+$"), threshold: floa
         n, steps = 14, [r["lo"] + (r["hi"] - r["lo"]) * i / 13 for i in range(14)]
         _lab_cache[key] = [_lab_eval(p, r, round(v, 3), min_s) for v in steps]
     return {"rule": r, "current": _lab_eval(p, r, threshold, min_s), "default": _lab_eval(p, r, r["threshold"], r["min_s"]), "sweep": _lab_cache[key]}
+
+
+@router.get("/flights/{flight_id}/behaviour/why")
+def behaviour_why(flight_id: str, t0: float = Query(..., ge=0, le=86400), p=Depends(pool)):
+    """Which signal statistics make a 10 second window unusual: each statistic of the window is compared with the corpus' typical value (the median of the
+    window model's training windows) in units of the robust spread (IQR); the largest deviations are returned."""
+    import numpy as np
+    from app import windows
+    fid = flight_uuid(flight_id)
+    m = rows(p, "SELECT model FROM window_model WHERE id = 1")
+    if not m:
+        raise HTTPException(404, "no window model yet; run scripts/build_windows.py")
+    model = m[0]["model"]
+    with p.connection() as c:
+        series = windows.load_series(c, fid, model["signals"])
+    x = windows.window_features(series, model["signals"], t0)
+    z = (x - np.array(model["median"])) / np.array(model["scale"])
+    meta = {r["key"]: r for r in rows(p, "SELECT key, label, unit FROM concept WHERE kind = 'signal'")}
+    out = []
+    for i in np.argsort(-np.nan_to_num(np.abs(z), nan=0.0))[:6]:
+        if not np.isfinite(z[i]):
+            continue
+        sig, stat = model["signals"][i // len(model["stats"])], model["stats"][i % len(model["stats"])]
+        out.append({"signal": sig, "label": meta.get(sig, {}).get("label", sig), "unit": meta.get(sig, {}).get("unit"), "stat": stat,
+                    "value": float(x[i]), "typical": float(model["median"][i]), "z": float(np.clip(z[i], -50, 50))})
+    return {"t0": t0, "features": out}

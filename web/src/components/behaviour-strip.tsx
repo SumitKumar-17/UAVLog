@@ -9,9 +9,35 @@ import { AXIS_W } from "./signal-chart";
 type B = { windows: { t0: number; t1: number; score: number; pct: number }[]; top: { t0: number; t1: number; score: number; pct: number }[]; reference: { n: number; p50: number; p90: number; p99: number } };
 
 /** Each 10 second window of the flight coloured by how unlike every other flight's behaviour it was (blue typical, red unusual), found with a vector search per window. */
+type Why = { t0: number; features: { signal: string; label: string; unit: string | null; stat: string; value: number; typical: number; z: number }[] };
+const STAT: Record<string, string> = { mean: "average", std: "variation", min: "lowest", max: "highest", slope: "trend" };
+const num = (v: number) => Number(v.toPrecision(3)).toString();
+
+/** The statistics of one window that differ most from the corpus' typical flight, in units of the typical spread. */
+function WhyPanel({ flightId, t0 }: { flightId: string; t0: number }) {
+  const { data, isPending, error } = useQuery({ queryKey: ["why", flightId, t0], retry: false, queryFn: () => api<Why>(`/flights/${flightId}/behaviour/why`, { t0 }) });
+  if (error) return null;
+  if (isPending) return <p className="mt-2 text-xs text-muted" aria-busy>Working out what is unusual</p>;
+  const max = Math.max(...data.features.map((f) => Math.abs(f.z)), 1);
+  return (
+    <div className="mt-2 rounded border border-route bg-panel px-3 py-2.5">
+      <div className="mb-1.5 text-sm"><b>Why {clock(t0)} to {clock(t0 + 10)} is unusual</b> <span className="text-ink-2">(statistics furthest from the typical flight)</span></div>
+      <ul className="space-y-1">
+        {data.features.map((f) => (
+          <li key={f.signal + f.stat} className="grid grid-cols-[13rem_minmax(0,1fr)_11rem] items-center gap-3 text-xs">
+            <span className="truncate" title={`${f.label} ${STAT[f.stat]}`}>{f.label}, {STAT[f.stat]}</span>
+            <span className="relative h-2.5 rounded-sm bg-rule-soft"><span className="absolute inset-y-0 rounded-sm" style={{ left: f.z < 0 ? `${50 - (Math.abs(f.z) / max) * 50}%` : "50%", width: `${(Math.abs(f.z) / max) * 50}%`, background: "var(--critical)" }} /><span className="absolute inset-y-0 left-1/2 w-px bg-ink-2" /></span>
+            <span className="tabular-nums text-ink-2">{num(f.value)} {f.unit ?? ""} <span className="text-muted">(typical {num(f.typical)})</span></span>
+          </li>))}
+      </ul>
+    </div>
+  );
+}
+
 export function BehaviourStrip({ flightId, duration }: { flightId: string; duration: number }) {
   const { data, error, isPending } = useQuery({ queryKey: ["behaviour", flightId], queryFn: () => api<B>(`/flights/${flightId}/behaviour`), retry: false });
   const [tip, setTip] = useState<{ x: number; text: string } | null>(null);
+  const [why, setWhy] = useState<number | null>(null);
   if (error) return null;
   if (isPending) return <div className="mt-3 h-12 text-sm text-muted" style={{ paddingLeft: AXIS_W }} aria-busy>Comparing every window with the other flights</div>;
   const jump = (t: number) => { const { setFocus, setRange } = useView.getState(); setFocus({ t0: t, t1: t }); setRange([Math.max(0, t - 15), Math.min(duration, t + 25)]); };
@@ -26,14 +52,15 @@ export function BehaviourStrip({ flightId, duration }: { flightId: string; durat
         {data.windows.map((w) => (
           <button key={w.t0} aria-label={`${clock(w.t0)} to ${clock(w.t1)}: more unusual than ${w.pct}% of windows`}
             onPointerEnter={() => setTip({ x: ((w.t0 + 5) / duration) * 100, text: `${clock(w.t0)} to ${clock(w.t1)}: more unusual than ${w.pct.toFixed(0)}% of all windows` })}
-            onClick={() => jump(w.t0 + 5)} className="absolute top-0 h-5 cursor-pointer border-0 p-0"
+            onClick={() => { jump(w.t0 + 5); setWhy(w.t0); }} className="absolute top-0 h-5 cursor-pointer border-0 p-0"
             style={{ left: `${(w.t0 / duration) * 100}%`, width: `${Math.max(0.4, (10 / duration) * 100)}%`, background: color(w.pct) }} />))}
         {tip && <div className="pointer-events-none absolute -top-9 z-10 whitespace-nowrap rounded border border-rule bg-panel px-2 py-1 text-xs shadow-sm" style={{ left: `${Math.min(tip.x, 80)}%` }}>{tip.text}</div>}
       </div>
       <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
         <span>Most unusual moments:</span>
-        {data.top.map((w) => <button key={w.t0} onClick={() => jump(w.t0 + 5)} className="underline decoration-rule underline-offset-2 hover:text-ink hover:decoration-route">{clock(w.t0)} (top {Math.max(1, Math.round(100 - w.pct))}%)</button>)}
+        {data.top.map((w) => <button key={w.t0} onClick={() => { jump(w.t0 + 5); setWhy(w.t0); }} className="underline decoration-rule underline-offset-2 hover:text-ink hover:decoration-route">{clock(w.t0)} (top {Math.max(1, Math.round(100 - w.pct))}%)</button>)}
       </div>
+      {why != null && <WhyPanel flightId={flightId} t0={why} />}
     </div>
   );
 }
