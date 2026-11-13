@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { tourSteps, type Action, type Step } from "@/lib/tour-steps";
 
-const STORE = "uavlog.tour.step", HIDE = "uavlog.tour.hidden", POS = "uavlog.tour.pos";
+const STORE = "uavlog.tour.step", HIDE = "uavlog.tour.hidden", POS = "uavlog.tour.pos", MODE = "uavlog.tour.mode";
 const visible = (e: Element) => { const r = e.getBoundingClientRect(); return r.width > 2 && r.height > 2; };
 
 /** Resolve `css`, `css@N` (Nth match) or `text:phrase` (smallest visible element whose text contains it). */
@@ -92,7 +92,9 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
     }).catch(() => {});
   }, [open, ids.flight]);
 
-  const list: Step[] = useMemo(() => tourSteps({ flight: ids.flight || "unknown", flight2: ids.flight2 || "unknown" }), [ids]);
+  const [full, setFull] = useState(false);   // false: the 7-minute path; true: every step
+  const all: Step[] = useMemo(() => tourSteps({ flight: ids.flight || "unknown", flight2: ids.flight2 || "unknown" }), [ids]);
+  const list: Step[] = useMemo(() => (full ? all : all.filter((x) => x.quick)), [all, full]);
   const s = list[Math.min(i, list.length - 1)];
   const last = i === list.length - 1;
   const sections = useMemo(() => list.reduce<{ name: string; first: number }[]>((acc, st, k) => (acc.at(-1)?.name === st.section ? acc : [...acc, { name: st.section, first: k }]), []), [list]);
@@ -100,10 +102,11 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
   useEffect(() => {
     if (!open) return;
     setI(0); setMenu(false); setNotes(false);
-    try { setHidden(!!localStorage.getItem(HIDE)); const p = JSON.parse(localStorage.getItem(POS) || "null"); if (p && typeof p.x === "number") setPos(p); } catch {}
+    try { setHidden(!!localStorage.getItem(HIDE)); const p = JSON.parse(localStorage.getItem(POS) || "null"); if (p && typeof p.x === "number") setPos(p); setFull(localStorage.getItem(MODE) === "full"); } catch {}
     try { const n = Number(localStorage.getItem(STORE)); if (n > 0) setI(n); } catch {}
   }, [open]);
 
+  const toggleFull = () => { setFull((v) => { const nv = !v; try { localStorage.setItem(MODE, nv ? "full" : "quick"); } catch {} return nv; }); setI(0); try { localStorage.setItem(STORE, "0"); } catch {} };
   const go = useCallback((n: number) => {
     const k = Math.min(Math.max(n, 0), list.length - 1);
     setI(k); setMenu(false);
@@ -163,6 +166,7 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
       else if (e.key === "n" || e.key === "N") setNotes((v) => !v);
       else if (e.key === "h" || e.key === "H") setHidden((v) => { const nv = !v; try { localStorage.setItem(HIDE, nv ? "1" : ""); } catch {} return nv; });
       else if (e.key === "m" || e.key === "M") setMenu((v) => !v);
+      else if (e.key === "f" || e.key === "F") toggleFull();
       else if (e.key === "Escape" && !document.querySelector('[role="dialog"][aria-label="Jump to"]')) onClose();
     };
     window.addEventListener("keydown", key);
@@ -215,6 +219,7 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
           </div>
           {menu ? (
             <ul className="mt-2 max-h-64 overflow-auto text-sm" aria-label="Tour sections">
+              <li><button onClick={toggleFull} className="mb-1 w-full rounded border border-rule px-2 py-1 text-left hover:border-route">{full ? "Switch to the quick tour (about 7 minutes)" : `Switch to the full tour (${all.length} steps)`}</button></li>
               {sections.map((x) => (
                 <li key={x.name}><button onClick={() => go(x.first)} className={`w-full rounded px-2 py-1 text-left hover:bg-rule/60 ${x.name === s.section ? "font-semibold text-route" : ""}`}>{x.name}</button></li>
               ))}
@@ -238,7 +243,7 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
             </span>
           </div>
           <div className="mt-3 h-1.5 rounded bg-rule"><div className="h-1.5 rounded bg-route" style={{ width: `${((i + 1) / list.length) * 100}%` }} /></div>
-          <div className="mt-2 text-[11px] text-muted">Enter: do it, then next · ← ↑ back · → ↓ next · drag the top to move · H hide · N notes · Esc end</div>
+          <div className="mt-2 text-[11px] text-muted">Enter: do it, then next · ← ↑ back · → ↓ next · drag the top to move · H hide · N notes · F full tour · Esc end</div>
         </div>
       ) : (
         <button data-tour-card onClick={() => setHidden(false)} className="fixed bottom-4 right-4 z-[60] rounded-full border border-route bg-panel px-3 py-1.5 text-xs font-semibold text-route opacity-0 shadow-lg hover:opacity-100 focus:opacity-100">Tour ({i + 1}/{list.length})</button>

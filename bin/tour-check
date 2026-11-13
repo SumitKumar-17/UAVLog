@@ -3,5 +3,5 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p "${2:-/tmp/tour}"
-docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=/tmp -e SHOTS="${SHOTS:-}" -e NOACT="${NOACT:-}" -e DEBUG="${DEBUG:-}" -e BYPASS="${BYPASS:-}" -e NODE_PATH=/tmp/pw/node_modules -v "$PWD":/work -v "${2:-/tmp/tour}":"${2:-/tmp/tour}" -w /work mcr.microsoft.com/playwright:v1.55.0-noble \
+docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=/tmp -e SHOTS="${SHOTS:-}" -e NOACT="${NOACT:-}" -e DEBUG="${DEBUG:-}" -e BYPASS="${BYPASS:-}" -e TOURMODE="${TOURMODE:-}" -e NODE_PATH=/tmp/pw/node_modules -v "$PWD":/work -v "${2:-/tmp/tour}":"${2:-/tmp/tour}" -w /work mcr.microsoft.com/playwright:v1.55.0-noble \
   sh -c "[ -d /tmp/pw/node_modules/playwright ] || npm i playwright@1.55.0 --no-save --silent --prefix /tmp/pw >/dev/null 2>&1; node tools/tour-check.cjs '$1' '${2:-/tmp/tour}'"
