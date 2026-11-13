@@ -1,5 +1,6 @@
 SEMANTIC LOG ANALYTICS [UAV LOG]: 10-MINUTE VIDEO SCRIPT
-Presenter: Sumit Kumar (22CS30056), Advanced Database Management Systems
+Presenter: Sumit Kumar (22CS30056), Advanced Database Management Systems (CS60113) Term Project
+To record by driving the app with its built-in guided tour instead, use script/Tour_Script.txt (every step with what to show and what to say).
 
 The video should show the working platform, explain how it is built, and state the outcomes. This script is timed for about 10 minutes (about 1,300 spoken words
 at a normal pace). Left column in each segment: what is on screen. SAY: the words to speak. Read it once or twice aloud before recording; it works better in your own words.
