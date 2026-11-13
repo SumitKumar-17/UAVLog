@@ -15,7 +15,7 @@ Last updated 2026-10-18 (benchmarks, injection, signatures and deliverables fini
 | Signatures | similar flights by signal shape | D22, `bench/results/signature_eval.*` |
 | NL-to-SQL | four defences, 46 hostile queries refused, three-condition accuracy experiment | D16, `bench/results/nlsql_eval_*` |
 | Web app | Overview, Flights, Flight (charts, track, notes, similar), Search, Compare, Ask, Ontology, Database, Benchmarks | `docs/design.md`, `docs/assets/screens/` |
-| Deliverables | Beamer project deck, speaker script, 10-minute video script, in-app guided tour (91 steps) | `slides/`, `script/`, `web/src/lib/tour-steps.ts` |
+| Deliverables | Beamer project deck, speaker script, 10-minute video script, in-app guided tour (90 steps) | `slides/`, `script/`, `web/src/lib/tour-steps.ts` |
 | Snapshots | `bin/snapshot` create / restore / push-db / pull-db | D17 |
 | Platform features | similar moments, cited incident reports, map, fleet galaxy, incidents, SQL workbench, data explorer, replay, command palette | D23, `bench/results/moments_eval.*` |
 | Tests | 38 unit tests pass (`python -m unittest discover -s tests`) | `backend/tests/` |
