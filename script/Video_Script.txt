@@ -1,146 +1,526 @@
-SEMANTIC LOG ANALYTICS [UAV LOG]: 10-MINUTE VIDEO SCRIPT
-Presenter: Sumit Kumar (22CS30056), Advanced Database Management Systems (CS60113) Term Project
-To record by driving the app with its built-in guided tour instead, use script/Tour_Script.txt (every step with what to show and what to say).
+SEMANTIC LOG ANALYTICS [UAV LOG]: VIDEO SCRIPT
+Sumit Kumar (22CS30056), Advanced Database Management Systems (CS60113) Term Project
 
-The video should show the working platform, explain how it is built, and state the outcomes. This script is timed for about 10 minutes (about 1,300 spoken words
-at a normal pace). Left column in each segment: what is on screen. SAY: the words to speak. Read it once or twice aloud before recording; it works better in your own words.
+This is the only script. You record the video by driving the app with its built-in Tour; the project PPT is submitted separately as its own file.
 
-======================================================================================================================
-BEFORE YOU RECORD (15 minutes)
-======================================================================================================================
-1. Start the app and make sure every page loads: http://localhost:3000 (flights, map, fleet, incidents, ask, workbench, data explorer, database, benchmarks).
-2. Open one browser window at about 1600 x 900, browser zoom 110%, light theme (the default). Close other tabs and notifications. Use a clean browser profile if you can.
-3. Open these tabs in this order, so you only switch tabs while recording:
-   a. the project deck (slides/UAVLog_Project_PPT.pdf), on the architecture slide
-   b. http://localhost:3000/data               (Data explorer)
-   c. http://localhost:3000/database           (Database page)
-   d. the flight with the parachute events: open Flights, pick the top row (Flight 968d313d, board CZI_CZ100, 12:54)
-   e. http://localhost:3000/search
-   f. http://localhost:3000/ask
-   g. http://localhost:3000/workbench
-   h. http://localhost:3000/map   then   /fleet   then   /incidents
-   i. http://localhost:3000/benchmarks
-4. Warm the pages once (open each and wait until it finishes loading) so nothing spins on camera. Open the flight page and click "Write an incident report" once so the report is cached
-   and appears instantly. Click "Find similar moments" once as a warm-up.
-5. Record with OBS Studio (or the Windows/Mac screen recorder): 1920 x 1080, 30 fps, microphone only (no webcam needed). Do a 10-second test and listen to it.
-6. Turn on Do Not Disturb so no notification appears. Hide the bookmarks bar. Move the mouse slowly; pause 1 second after each click.
+HOW TO RECORD
+  1. Open the site (the hosted address, or the local one), wait for the Overview to load, and click Tour in the top bar.
+  2. Press Enter to do each step's action (it types or clicks for you) and move on; the arrow keys go back and forward.
+  3. Press H to hide the card so only the spotlight shows. N shows the narration under the card. M jumps between sections. Esc ends the tour.
+  4. Read the SAY lines in your own words. Each step names what to show and what to click; <angle brackets> say what the action is.
+  The hosted site is read-only: the Upload step (89) only shows the drop zone.
 
-======================================================================================================================
-TIMELINE
-======================================================================================================================
- 0:00  1  The problem and the idea                       (deck, title and architecture slides)        0:50
- 0:50  2  How it is built                                 (deck: architecture slide)                   0:50
- 1:40  3  The database: schema and storage                (Data explorer, Database page)               1:10
- 2:50  4  One flight: replay and charts                   (flight page)                                0:50
- 3:40  5  Incident report with citations                  (flight page)                                0:55
- 4:35  6  Similar moments and semantic search             (flight page, Search)                        0:55
- 5:30  7  Ask, the workbench and the four defences        (Ask, Workbench)                             1:15
- 6:45  8  Fleet views: map, galaxy, incidents             (Map, Fleet, Incidents)                      0:45
- 7:30  9  The experiments                                 (Benchmarks page and deck charts)            1:30
- 9:00 10  What was hard, outcomes and limits              (deck: key results, conclusions)             1:00
-                                                                                                    ------
-                                                                                                     10:00
 
-======================================================================================================================
-SEGMENT 1. THE PROBLEM AND THE IDEA (0:00 to 0:50)
-======================================================================================================================
-ON SCREEN: the deck title slide for 5 seconds, then the "Motivation" slide.
-SAY: "Hello, I am Sumit Kumar. My project is Semantic Log Analytics for UAV flight logs. A drone writes a log on every flight. In my data set, 300 real PX4 flights hold seventy
-point seven million telemetry samples and over three thousand text events such as warnings and failures. Existing tools show one log at a time, but the questions people ask
-span many flights and are asked in words, like 'which flights lost a motor?' So I treated the whole collection as a database problem. Everything you will see runs on one PostgreSQL
-instance, and every design choice is backed by a measurement."
+======================================================================
+OVERVIEW
+======================================================================
 
-======================================================================================================================
-SEGMENT 2. HOW IT IS BUILT (0:50 to 1:40)
-======================================================================================================================
-ON SCREEN: the deck's "The gap and the architecture" slide. Point at the diagram with the mouse in the order you speak.
-SAY: "This is the architecture. Raw logs are parsed into a Parquet lake and into a telemetry table in TimescaleDB, which stores old data column by column, compressed. Rules and the
-failure detector turn telemetry into events. Events are embedded and indexed with pgvector. An ontology, stored in ordinary relational tables, maps PX4 and ArduPilot field names
-onto shared concepts like battery voltage. A FastAPI service and a Next.js application sit on top. The language model never touches the raw tables; it sees only curated, documented,
-read-only views. Every batch stage runs from job tables in Postgres, claimed with SKIP LOCKED, so work is concurrent, resumable and survives failure."
+[1] A database problem
+Show: UAV flight logs: 300 real PX4 flights, 70.7 million telemetry samples and over three thousand
+      text events, all in one PostgreSQL.
+SAY:  A drone writes a log on every flight. I treated the whole collection as a database problem:
+      seventy million samples, three thousand events and two autopilots' vocabularies, in one
+      PostgreSQL.
 
-======================================================================================================================
-SEGMENT 3. THE DATABASE: SCHEMA AND STORAGE (1:40 to 2:50)
-======================================================================================================================
-ON SCREEN: tab "Data explorer", Schema map. Hover the flight table so its links highlight. Click telemetry, then click the Structure tab. Then the Database page: the space bar and the plan.
-SAY: "This is the data explorer, built into the app and read live from the database catalog. Flight is the center. Telemetry, events, signatures and signal windows all point to it. Telemetry is a
-narrow table: one row per time, flight and signal, so a new signal or even a new autopilot never changes the schema. It is a TimescaleDB hypertable with seven-day chunks, compressed into the
-columnstore, segmented by flight and signal. On the Database page you can see the result: seventy million rows take twelve point five gigabytes as a normal table, and three hundred eighty-five
-megabytes in the columnstore, thirty-two times smaller. Below it is a real EXPLAIN ANALYZE of the query the charts use, reading only the compressed segments it needs. The Performance page shows the live cache hit ratio and the costliest statements."
+[2] Every page is here
+Show: The vertical bar lists every page in three groups: Explore, Analyze and Platform. It collapses
+      with the button in the top bar.
+SAY:  Navigation is a vertical bar: Explore the flights, Analyze them, and Platform for the database
+      itself.
 
-======================================================================================================================
-SEGMENT 4. ONE FLIGHT: REPLAY AND CHARTS (2:50 to 3:40)
-======================================================================================================================
-ON SCREEN: the flight page (Flight 968d313d). Point at the behaviour strip. Click Replay at 16x and let it run about 15 seconds. Then pause, drag across the battery chart to zoom, then double-click to reset.
-SAY: "Here is one flight. The ribbon shows the flight modes, and the red marks are critical events. I will replay it. The time cursor sweeps every chart and the ground track together, and events
-surface as the replay passes them. Around six minutes forty the parachute fires. Above the replay is the behaviour strip: every ten seconds are compared with the same moments in all other flights, and the red windows are the ones unlike anything else; it lights up right after the failure. Clicking a red window lists the signal statistics that make it unusual. The charts are synchronized: I drag across one and all of them zoom. Server-side downsampling keeps minimum
-and maximum envelopes, so a short spike can never be averaged away."
+[3] Search by meaning   <Type this>
+Show: Type what happened in your own words. This searches the text of the events by meaning, not by
+      exact words.
+SAY:  I type what happened in plain words. Search works on the meaning of the event text, using
+      vector embeddings.
 
-======================================================================================================================
-SEGMENT 5. INCIDENT REPORT WITH CITATIONS (3:40 to 4:35)
-======================================================================================================================
-ON SCREEN: click the "Incident report" chip. Show the headline and findings. Click one citation chip (for example E6) so the charts jump to that moment. Expand "Evidence". Type a question under "Ask about this flight" (for example: did the low battery cause the parachute to open?).
-SAY: "This section writes an incident report. The important design point is that the numbers do not come from the model. The database gathers numbered evidence with SQL: the events, the
-signals that are unusual compared with the whole corpus, and what similar flights did. The model only writes prose, and it must cite evidence items. Every citation is checked against the
-evidence, and a statement with no valid citation is dropped. If I click a citation, the charts jump to that moment. Here the evidence shows a low battery, a failsafe, and the parachute
-sequence."
+[4] Entry points
+Show: Six shortcuts to the main features, each with a one-line description.
+SAY:  These tiles lead to the map, the fleet views, incidents, Ask, the SQL workbench and the data
+      explorer.
 
-======================================================================================================================
-SEGMENT 6. SIMILAR MOMENTS AND SEMANTIC SEARCH (4:35 to 5:30)
-======================================================================================================================
-ON SCREEN: "Similar moments": press Find similar moments, then Overlay on the first result. Then open Search and type "motor failure during takeoff".
-SAY: "Each flight is also cut into overlapping ten-second windows, and each window is embedded by how every signal behaved. Here I pick a moment and search all flights for moments that behaved the
-same way, with an HNSW index. Overlay draws the two matching windows on top of each other so you can see the match. I measured it: for events such as landing and takeoff, precision at ten is up to forty times higher than random. Semantic search works on the event text. It fuses
-vector similarity, full text and filters. One finding surprised me: plain rank fusion was worse than vector search alone, so I report that as found. Filters were the real problem: with a
-selective filter, pgvector can return no rows at all, so the search asks the planner how many rows the filter keeps and picks exact search or HNSW accordingly."
+[5] Fleet pulse   <Click a chart for the full view>
+Show: Four live charts from SQL: flights per year, critical events per flight by board, the
+      commonest events and flight length.
+SAY:  The fleet pulse is four small queries over the whole corpus, so you see its shape in one
+      glance.
 
-======================================================================================================================
-SEGMENT 7. ASK, THE WORKBENCH AND THE FOUR DEFENCES (5:30 to 6:45)
-======================================================================================================================
-ON SCREEN: Ask page: click the example "Which three boards had the most critical events?", open "How this was answered". Then the SQL workbench: run the prepared query, click Explain on it (show the plan tree), then type
-SELECT pg_read_file('/etc/passwd') and run it to show the refusal. Then type DROP TABLE flight to show the second refusal.
-SAY: "On the Ask page I write a question in English. The model writes SQL, but four independent layers stand between that SQL and the data. A parser-based guard allows one SELECT on allow-listed views and
-rebuilds the statement from the parse tree. The query runs as a restricted role, in a read-only transaction with a timeout, and the planner's cost estimate is checked first. The page shows
-the SQL, the cost and the guard actions. The SQL workbench lets me type my own queries under the same checks. Explain shows the planner's plan as a tree with its cost against the limit. A normal query runs. Reading a server file is refused by name. A DROP is refused.
-I tested forty-six hostile queries, and each was refused for the intended reason."
+[6] Flights ranked by critical events
+Show: Each strip is a flight: colour is the flight mode over time, red triangles are critical
+      events, yellow ticks are warnings.
+SAY:  Each strip is one flight. Colour is the flight mode through time and the red marks are
+      critical events.
 
-======================================================================================================================
-SEGMENT 8. FLEET VIEWS: MAP, GALAXY, INCIDENTS (6:45 to 7:30)
-======================================================================================================================
-ON SCREEN: Map (hover over the dots; click a red one and show the card), then Fleet: click "Critical events" and "How unusual" under Flight galaxy, then Incidents: filter Kind to Failsafe activated and
-click Open at on the first row. Then open Patterns (Failsafe activated, 1 min) for 5 seconds.
-SAY: "These views use the whole corpus. The map places every flight that has a GPS fix, coloured by critical events. The flight galaxy places each flight by how it behaved, using a thirty-two dimension
-behavioural signature projected to two dimensions, so I can colour it by board, firmware, or how unusual the flight is. The incidents feed lists every warning and failure across flights; I filter to failsafes
-and open one at the exact moment. Patterns shows what usually happens before and after an event, computed live with a windowed self-join. The Rule lab lets me move a detector's threshold and see precision and recall against the autopilot's own warnings change immediately."
+[7] Ctrl+K   <Click here>
+Show: The command palette jumps to any page, and turns what you type into a search or a question.
+SAY:  Control K opens a palette. It jumps to any page, and it also searches the events as you type.
 
-======================================================================================================================
-SEGMENT 9. THE EXPERIMENTS (7:30 to 9:00)
-======================================================================================================================
-ON SCREEN: Benchmarks page, scrolling slowly through: Vector indexes, Filtered search, Natural-language SQL, Columnstore, TimescaleDB against DuckDB. Pause on each chart for about 10 seconds.
-SAY: "Every claim is an experiment, and they all live on the Benchmarks page, drawn from saved result files. For vector indexes at a hundred thousand vectors, HNSW reaches ninety-five percent recall in
-two point four milliseconds, over a hundred times faster than exact search at three hundred sixty-two. For filtered search, the default post-filter returns zero of ten requested rows when the filter keeps one
-tenth of a percent, which is why the router exists. For natural-language SQL, on twenty-seven held-out questions accuracy is point eight nine with the semantic views, point seven with documentation alone, and
-point two six without it; the documentation is the big effect, and the extra benefit of the views is not statistically significant, which I say plainly. The columnstore design experiment and the comparison with
-DuckDB show where each wins: DuckDB wins full scans, the columnstore wins pruned access, and Postgres keeps writers, roles and vectors in one engine."
+[8] Type into the palette   <Type this>
+Show: Type a few words, for example battery low.
+SAY:  I type battery low.
 
-======================================================================================================================
-SEGMENT 10. WHAT WAS HARD, OUTCOMES AND LIMITS (9:00 to 10:00)
-======================================================================================================================
-ON SCREEN: the deck's "Key results" slide, then "Conclusions and limits".
-SAY: "Three things were hard. First, correctness under concurrency: SKIP LOCKED once claimed fifty-two rows when I asked for twenty-five, until I used a materialized subquery. Second, honest evaluation: my first
-language-model run overstated the benefit because of my own comparison bug, so I fixed it, froze the prompts and re-ran. Third, filtered vector search, which silently under-returns. The outcomes: storage thirty-two
-times smaller, cross-flight queries up to ninety-five times faster, retrieval that routes itself, and a language interface that is safe by construction. The limits are real: three hundred flights, one machine, one
-model, questions I wrote myself, and a battery-low detector with twenty-three percent false alarms. Next steps are a ten-thousand-flight run and a concurrency benchmark. Thank you."
+[9] Result: matching events
+Show: The palette ran the hybrid search while you typed. Each row is a real event with its flight
+      and time; Enter opens the flight at that moment. The first two rows turn the words into a full
+      search or a question.
+SAY:  As I type, the matching events appear, each linking to the exact moment in a flight.
 
-======================================================================================================================
-IF SOMETHING GOES WRONG WHILE RECORDING
-======================================================================================================================
-- A page spins: stop, wait for it to finish, reload, and re-record only that segment; you can cut segments together afterwards.
-- The incident report is missing: click "Write an incident report" and talk about the evidence while it loads (a few seconds).
-- Similar moments returns nothing: pick another moment with the slider, near an event.
-- Keep a second take of segments 7 and 9; they have the most to say.
-- Trim breathing and long pauses in any editor (DaVinci Resolve, iMovie, Clipchamp). Add no music; keep the voice clear.
+[10] Close the palette   <Press Esc>
+Show: Press Escape to close it.
+SAY:  Escape closes it.
 
-AFTER RECORDING
-- Watch it once at normal speed: check that the text on screen is readable at 1080p, the cursor is visible, and the total length is between 9:30 and 10:30.
-- Export as MP4 (H.264, 1080p, 30 fps).
+[11] Light by default
+Show: Light is the default on every system. Dark is a toggle in the top bar and is remembered; the
+      charts, map and diagrams switch with it.
+SAY:  Light is the default whatever the system setting; dark is one click, and everything redraws.
+
+======================================================================
+FLIGHTS
+======================================================================
+
+[12] All flights
+Show: Every flight in the corpus as a strip of flight modes with its events.
+SAY:  The flights page lists every flight as a strip.
+
+[13] Order and filter   <Try an order>
+Show: Order by critical events, most recent or longest; the filters narrow by board and firmware.
+SAY:  I can order by critical events, recency or length.
+
+======================================================================
+ONE FLIGHT
+======================================================================
+
+[14] One flight
+Show: Board, firmware, duration and the pilot's notes from the original log, then everything the
+      database knows about this flight.
+SAY:  This is one flight: a CZI board, twelve minutes fifty-four, and the parachute was used.
+
+[15] Jump within the page
+Show: Chips jump to the signals, the incident report, similar moments, relationships, notes and
+      similar flights.
+SAY:  The chips jump to each section of the page.
+
+[16] Flight modes and events   <Hover the marks>
+Show: The ribbon is the flight mode through time. Red triangles are critical events and yellow ticks
+      are warnings. Drag across any chart to zoom this window.
+SAY:  The ribbon is the mode through time and the marks are events; the outlined window shows what
+      the charts are zoomed to.
+
+[17] Behaviour strip
+Show: Each 10 seconds of this flight compared with the same moments in every other flight: blue is
+      typical, red is unusual. One vector search per window.
+SAY:  Every ten seconds are compared with their five nearest windows in all other flights, one
+      vector search each, and shown as a percentile. Red means unlike anything else.
+
+[18] Click the most unusual moment   <Click here>
+Show: The most unusual windows are listed under the strip. Clicking one jumps every chart to it and
+      explains it.
+SAY:  I click the most unusual moment and the charts jump to it.
+
+[19] Why it is unusual
+Show: The signal statistics furthest from the typical flight, in units of the typical spread: here
+      the pitch and the position are changing in a way no normal flight does.
+SAY:  The panel says why: these statistics are far from the corpus' typical value, for example a
+      pitch of minus twenty-nine degrees.
+
+[20] Replay the flight   <Click Replay>
+Show: Press Replay: the time cursor sweeps every chart and the track, and events surface as it
+      passes them. Space plays and pauses; the arrows step 5 seconds.
+SAY:  Replay plays the flight back at sixteen times speed; every chart and the track follow the
+      cursor.
+
+[21] Synchronized charts   <Drag across a chart>
+Show: Charts share one time axis. Server-side downsampling keeps minimum and maximum envelopes, so a
+      short spike can never be averaged away. Drag across a chart to zoom all of them; double-click
+      to reset.
+SAY:  Charts are synchronized and use min and max envelopes, so spikes survive zooming out.
+
+[22] Pause the replay   <Click Pause>
+Show: Pause where the failure begins.
+SAY:  I pause at the failure.
+
+[23] Ground track   <Click the track>
+Show: The path coloured by flight mode, with critical events as triangles. Click the track to jump
+      the charts to that point.
+SAY:  The ground track is coloured by mode; clicking it jumps the charts to that spot.
+
+[24] Events   <Click an event>
+Show: Every warning and failure in the flight, with its time. Click one to focus the charts on it.
+SAY:  The event list; clicking one focuses all the charts there.
+
+[25] Incident report
+Show: A report written from numbered evidence. The database computes the evidence with SQL; the
+      model only writes prose and must cite it; citations that do not exist are removed.
+SAY:  The numbers never come from the model: SQL gathers numbered evidence, the model writes prose
+      and must cite it, and every citation is checked.
+
+[26] Write the report   <Click here>
+Show: One click gathers the evidence with SQL and asks the model to write from it. It takes a few
+      seconds the first time and is saved afterwards.
+SAY:  I ask for the incident report. The database gathers the evidence first.
+
+[27] Click a citation   <Click here>
+Show: A citation chip jumps the charts to the cited moment.
+SAY:  Clicking E-six takes the charts to the failsafe moment.
+
+[28] The evidence behind it   <Click here>
+Show: Open the evidence: every fact the report may cite, with its time.
+SAY:  These are the facts, computed by SQL, that the report can cite.
+
+[29] Ask this flight a question   <Type this>
+Show: Questions are answered only from the numbered evidence, with citations.
+SAY:  I can ask this flight a question, and the answer cites the evidence it used.
+
+[30] Result: the answer   <Click a chip>
+Show: The answer is written only from the numbered evidence, and every claim carries a citation
+      chip. Click a chip to jump the charts to the fact it relies on.
+SAY:  The answer cites its evidence, so I can check it by clicking.
+
+[31] Similar moments
+Show: Each flight is cut into overlapping 10-second windows, each embedded by how every signal
+      behaved. Pick a moment, find where other flights behaved the same way.
+SAY:  A second use of vectors: ten-second windows, embedded by signal behaviour, searched with an
+      HNSW index.
+
+[32] Find them   <Click here>
+Show: Use the slider or press the button to search all flights.
+SAY:  I search for moments like this one.
+
+[33] Result: the matching moments
+Show: One best window per other flight, closest first. Lower distance means more alike; the events
+      inside each window are listed so you can see whether the match is meaningful.
+SAY:  The nearest windows from other flights, with the events that happened in them.
+
+[34] Overlay the match   <Click here>
+Show: Overlay draws the same signal over the two matching windows so the similarity can be seen, not
+      just a distance.
+SAY:  Overlay draws the two matching windows on top of each other.
+
+[35] Signal relationships   <Hover a cell>
+Show: A correlation matrix of this flight's signals on a one-second grid: orange moved together,
+      blue moved oppositely. Hover a cell for the value.
+SAY:  Which signals moved together in this flight; orange together, blue opposite.
+
+[36] Notes
+Show: Investigation notes pinned to a moment of the flight; they are stored in the database and
+      shared.
+SAY:  Notes can be pinned to a moment and are shared.
+
+[37] Similar flights
+Show: Flights that behaved like this one, by a 32-dimension behavioural signature (signal
+      statistics, event rates, mode shares), not by text.
+SAY:  Similar flights come from a thirty-two dimension behavioural signature.
+
+======================================================================
+SEARCH
+======================================================================
+
+[38] Semantic search
+Show: Search over the text of every event by meaning. This query uses none of the words in many of
+      the matching events.
+SAY:  Semantic search: I asked for motor failure during takeoff.
+
+[39] A result   <Click a result>
+Show: Each result shows the event, its flight and time, severity and score. Click to open the flight
+      at that moment.
+SAY:  Each result links to the flight at the exact time.
+
+[40] How it was ranked   <Click here>
+Show: Vector similarity and full text fused by reciprocal rank fusion; the filter strategy the
+      router chose (exact sort or HNSW with iterative scan) is shown too.
+SAY:  The ranking details show the vector and full-text ranks and which strategy the router chose
+      for the filter.
+
+======================================================================
+COMPARE
+======================================================================
+
+[41] Compare two flights
+Show: The same canonical signal from two flights, even on different boards, aligned at takeoff.
+SAY:  Compare overlays the same signal from two flights.
+
+[42] Pick a signal   <Choose a signal>
+Show: Any canonical signal both flights have. This works because the ontology gives both boards'
+      fields the same name.
+SAY:  It works across boards because the ontology maps their fields to one name.
+
+======================================================================
+ASK
+======================================================================
+
+[43] Ask in English   <Type this>
+Show: A question becomes a database query, checked, run read-only; you see the answer and the query.
+SAY:  I ask which board had the most failsafes.
+
+[44] Result: the answer
+Show: A short answer and a table. The numbers come from the database; the model only wrote the
+      query.
+SAY:  The table is the real query result.
+
+[45] How it was answered   <Click here>
+Show: The SQL that ran (rebuilt from the parse tree), the planner's cost estimate and every action
+      the guard took: one SELECT, allow-listed views, a restricted role, a timeout.
+SAY:  The evidence panel shows the SQL, the cost and the guard's actions, so a wrong answer can be
+      caught by reading it.
+
+======================================================================
+MAP
+======================================================================
+
+[46] Where the flights happened   <Click a dot>
+Show: Every flight with a GPS fix at its mean position. Blue none, yellow one or two, red three or
+      more critical events; larger dots are longer flights. Click a dot for its card.
+SAY:  Every flight with a GPS fix, coloured by critical events.
+
+[47] Filter   <Click here>
+Show: Show only flights with critical events, or pick a board.
+SAY:  I can filter to flights with critical events.
+
+======================================================================
+FLEET
+======================================================================
+
+[48] Flight galaxy   <Hover a point>
+Show: Every flight is a point placed by its 32-dimension behavioural signature, projected to two
+      dimensions. Nearby flights behaved alike. Click a point to open the flight.
+SAY:  Every flight placed by how it behaved; close points behaved alike.
+
+[49] Colour by   <Click here>
+Show: Board, firmware, critical events or how unusual: the mean distance to the five nearest
+      flights.
+SAY:  I colour by how unusual each flight is.
+
+[50] A year of flying   <Hover a square>
+Show: One square per day for the last 12 months: flights or critical events.
+SAY:  A calendar of the last twelve months.
+
+[51] Boards and firmware
+Show: Critical events per flight by board and by firmware family, from SQL aggregates over the event
+      table.
+SAY:  Critical events per flight by board and firmware.
+
+======================================================================
+INCIDENTS
+======================================================================
+
+[52] Incidents   <Click Warnings>
+Show: Every warning and failure across all flights. Filter by severity, kind, board and wording.
+SAY:  Every warning and failure across flights.
+
+[53] Open at the moment   <Click Open at>
+Show: Each incident links to its flight at that exact second.
+SAY:  Each row opens the flight at that second.
+
+======================================================================
+PATTERNS
+======================================================================
+
+[54] What happens around an event   <Choose an event>
+Show: Pick an event kind and a window: for every other kind, the share of flights in which it
+      occurred shortly before or after, against how common it is overall (the lift).
+SAY:  Patterns shows what usually happens before and after an event.
+
+[55] The window   <Click 2 min>
+Show: From 15 seconds to 5 minutes. A windowed self-join of the event table, computed live.
+SAY:  I widen the window to two minutes.
+
+[56] Result: what happens before
+Show: Each bar is the share of flights where that kind occurred within the window before the chosen
+      event; the tick is how common it is overall. A bar far past its tick is a real pattern.
+SAY:  Bars far beyond the tick are not chance.
+
+[57] Result: what happens after
+Show: The same for the window after the event, the likely consequences.
+SAY:  And what follows it.
+
+======================================================================
+SIGNALS
+======================================================================
+
+[58] Signals   <Click here>
+Show: Every canonical signal with the distribution of its per-flight mean, computed in SQL with
+      width_bucket. Click one.
+SAY:  Every canonical signal and its distribution across flights.
+
+[59] One signal
+Show: The distribution with the median marked, and the flights with the highest and lowest values.
+SAY:  The distribution, and the flights at either extreme.
+
+======================================================================
+RULE LAB
+======================================================================
+
+[60] Rule lab   <Click a rule>
+Show: The detectors are plain threshold rules. Pick one, move its threshold, and it is re-run over
+      every flight and scored against the autopilot's own warnings.
+SAY:  The event detectors are threshold rules; this lab tunes them live.
+
+[61] Move the threshold   <Drag the slider>
+Show: Drag the slider: events, precision and recall update immediately.
+SAY:  As I drag, the rule re-runs over every flight and the scores change.
+
+[62] The trade-off
+Show: Precision, recall and F1 across the whole range; the pink line is your setting and the dashed
+      line the shipped threshold. Warnings are a proxy, not ground truth.
+SAY:  The curve shows the trade-off, with the shipped threshold marked; the warnings are a proxy,
+      not ground truth.
+
+======================================================================
+WORKBENCH
+======================================================================
+
+[63] SQL workbench
+Show: The documented views and their columns; click a column to insert it.
+SAY:  The workbench lets me write my own SQL over the documented views.
+
+[64] Write a query   <Type or pick an example>
+Show: Ctrl+Enter runs it. Same four checks as Ask: one SELECT on allow-listed views, a restricted
+      role, a read-only transaction with a timeout, and planner cost admission.
+SAY:  It goes through the same four checks as Ask.
+
+[65] Explain   <Click here>
+Show: Explain draws the planner's plan as a tree with each node's share of the cost and the limit
+      used for admission. Nothing is executed.
+SAY:  Explain draws the planner's plan and the cost against the limit.
+
+[66] Result: the plan
+Show: Each node is a planner step with its share of the cost; the total is compared with the
+      admission limit. Look for Seq Scan against Index Scan to see how the table is read.
+SAY:  The plan as a tree with each step's share of the cost.
+
+[67] Run it   <Click Run>
+Show: Rows, run time, planner cost and the SQL as rebuilt from the parse tree.
+SAY:  Run shows the rows, the time and the SQL as the guard rebuilt it.
+
+[68] Result: rows and cost
+Show: Row count, run time, planner cost against the limit, which views were read, and the guard's
+      notes. The table scrolls and its header stays.
+SAY:  The rows, the time, and what the guard did.
+
+[69] A hostile query   <Type this>
+Show: Reading a server file is refused by name, whatever the role could do.
+SAY:  Now a hostile query: reading a server file.
+
+[70] Refused   <Click Run>
+Show: The guard refuses it before the database sees it. 46 hostile queries are tested, each refused
+      for the intended reason.
+SAY:  It is refused by the guard, by name.
+
+[71] Result: the refusal
+Show: The reason is shown in plain words and nothing reached the database. Try a second one: a query
+      on a table that is not in the allow-list.
+SAY:  It names the reason it refused.
+
+======================================================================
+DATA EXPLORER
+======================================================================
+
+[72] Schema map   <Hover a table>
+Show: The relations diagram is read live from the catalog: tables, keys and foreign keys. Hover a
+      table to follow its links; click it to browse.
+SAY:  The schema as a diagram, drawn from the catalog. Flight is the hub.
+
+[73] Browse tables   <Click here>
+Show: Every table and view with row counts and sizes, and its rows.
+SAY:  Browsing shows sizes and rows for every table.
+
+[74] Structure   <Click here>
+Show: Columns, keys and descriptions, the indexes with method and size, and for the hypertable the
+      chunk and columnstore settings.
+SAY:  Structure shows columns, indexes and the columnstore settings.
+
+======================================================================
+DATABASE
+======================================================================
+
+[75] Where the space goes
+Show: 70.7 million samples: 12.5 GB as row storage, about 385 MB in the columnstore, 32 times
+      smaller, all chunks compressed.
+SAY:  The telemetry is thirty-two times smaller in the columnstore.
+
+[76] A query and its plan   <Pick a query>
+Show: Pick a query to see its real EXPLAIN ANALYZE with buffer counts, run live.
+SAY:  These are real EXPLAIN ANALYZE plans, run live.
+
+[77] Indexes and tables
+Show: Index methods and sizes, row counts and table sizes, read live.
+SAY:  Index methods, sizes and row counts.
+
+======================================================================
+PERFORMANCE
+======================================================================
+
+[78] Costliest statements
+Show: From pg_stat_statements: total time, calls, mean and maximum time, cache hit. It refreshes
+      every few seconds.
+SAY:  The costliest statements from pg_stat_statements, live.
+
+[79] How tables are read
+Show: The share of scans that used an index; small lookup tables are read sequentially on purpose.
+SAY:  The share of scans that used an index, per table.
+
+======================================================================
+ONTOLOGY
+======================================================================
+
+[80] The ontology
+Show: Signals, subsystems, failure modes and event kinds and how they relate; stored in ordinary
+      tables and walked with recursive queries. Both autopilots' fields map to these names.
+SAY:  The semantic layer: sixty-three concepts, fifty-five relations, and a mapping from both
+      autopilots' fields.
+
+======================================================================
+BENCHMARKS
+======================================================================
+
+[81] Columnstore design
+Show: Size and four query shapes for each physical design; segmenting by flight and signal ordered
+      by time is smallest and fastest for cross-flight queries.
+SAY:  Experiment one: the columnstore design.
+
+[82] TimescaleDB against DuckDB
+Show: Storage, the six queries and load throughput for the same data in both engines.
+SAY:  Experiment four: against DuckDB, with an honest mixed result.
+
+[83] Vector indexes
+Show: Recall against latency for HNSW, IVFFlat and DiskANN with build time and size; HNSW m=32
+      reaches 0.95 recall in 2.4 ms against 362 ms exact.
+SAY:  HNSW reaches ninety-five percent recall in two point four milliseconds.
+
+[84] Filtered search
+Show: Post-filtering returns 0 of 10 rows when a filter keeps 0.1 percent; the router uses the
+      planner's estimate to choose exact search or HNSW.
+SAY:  Filtered search under-returns, which is why the search routes itself.
+
+[85] Search quality
+Show: Plain rank fusion is worse than vector alone; a light full-text weight ties it.
+SAY:  Plain fusion hurt; I report it as found.
+
+[86] Natural-language SQL
+Show: Accuracy on 27 held-out questions: 0.89 with the semantic views, 0.70 with documentation
+      alone, 0.26 without.
+SAY:  Documentation is the big effect; the views' extra gain is not significant.
+
+[87] Fault injection
+Show: Detection rate by fault duration: faults shorter than a rule's minimum are missed by design;
+      from 5 s, 90 to 100 percent are found.
+SAY:  Injected faults are found from five seconds; battery low has the most false alarms.
+
+[88] Similar moments
+Show: Precision at 10 per event kind against the random base rate: up to 43 times higher.
+SAY:  Similar moments beat random by up to forty-three times.
+
+======================================================================
+UPLOAD
+======================================================================
+
+[89] Upload a log   <Drop a file>
+Show: A PX4 log is validated, queued like any other log and run through ingest, events, embeddings
+      and summaries with live stage progress.
+SAY:  Dropping a log runs the real pipeline, and each stage is shown as it finishes.
+
+[90] That is the whole system
+Show: One PostgreSQL with TimescaleDB and pgvector holds the time series, the ontology, the events
+      and the embeddings; the application, the search and the guarded SQL sit on top. Press Finish
+      to end the tour.
+SAY:  One database, measured at every step. Thank you.

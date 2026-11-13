@@ -64,7 +64,7 @@ Methodology: report hardware and versions, repeat runs, p50/p95, index size and 
 
 ## Conventions
 
-- Layout: `backend/` (FastAPI, ingest, semantic layer, migrations, scripts, tests), `web/` (Next.js), `bench/` (results and evaluation sets), `docs/` (decision log, architecture, status, `assets/` for generated figures, screenshots and listings), `slides/` `script/` (LaTeX deck, speaker and video scripts), `tools/` and `bin/` (helpers and entry scripts), `research/`.
+- Layout: `backend/` (FastAPI, ingest, semantic layer, migrations, scripts, tests), `web/` (Next.js), `bench/` (results and evaluation sets), `docs/` (decision log, architecture, status, `assets/` for generated figures, screenshots and listings), `slides/` `script/` (LaTeX deck, the single video script), `tools/` and `bin/` (helpers and entry scripts), `research/`.
 - All schema changes go through Alembic migrations; never hand-edit the DB.
 - Secrets in `.env` (git-ignored); commit `.env.example`. Keys: `OPENAI_API_KEY`, `OPENAI_API_BASE`.
 - Everything runs from `docker compose up` plus documented seed/ingest commands; benchmarks must be reproducible by script, and results saved as files under `bench/results/`.

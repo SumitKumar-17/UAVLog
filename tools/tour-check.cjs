@@ -8,6 +8,7 @@ const doActions = process.env.NOACT ? false : true;
   const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 810 }, colorScheme: "light", locale: "en-US" });
   await ctx.addInitScript(() => { try { localStorage.setItem("theme", "light"); localStorage.removeItem("uavlog.tour.step"); } catch {} });
+  if (process.env.BYPASS) await ctx.route(/\.vercel\.app\//, (route) => route.continue({ headers: { ...route.request().headers(), "x-vercel-protection-bypass": process.env.BYPASS } }));  // protected preview: only our own host gets the header
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));

@@ -79,7 +79,7 @@ Signal windows for "similar moments": `docker compose exec backend python script
 | `web/` | Next.js 16 application (pages in `src/app`, components in `src/components`) |
 | `bench/` | benchmark results (`results/`) and the evaluation question sets (`eval/`) |
 | `docs/` | decision log, architecture, design, status, ontology coverage, data attribution; `docs/assets/` holds the diagram sources, figures, screenshots, code listings, terminal captures and chart data used by the slides and report |
-| `slides/`, `script/` | the Beamer project deck and the speaker and video scripts (build the PDF with `./bin/latex slides/UAVLog_Project_PPT.tex`) |
+| `slides/`, `script/` | the Beamer project deck and the single video script (generated from the in-app tour by `tools/tour-script.py`) (build the PDF with `./bin/latex slides/UAVLog_Project_PPT.tex`) |
 | `bin/` | `uavlog` (pipeline), `snapshot`, `psql`, `shot` and `deck-shots` (screenshots), `figures`, `latex` |
 | `tools/` | helpers behind `bin/` (screenshot, diagram, listing and chart-data generators, the LaTeX image) |
 | `research/` | background notes on datasets, database technology and related work |
