@@ -38,7 +38,7 @@
 \title{Semantic Log Analytics [UAV Log]}
 \subtitle{UAV flight logs as a database problem: time series, semantics, search and guarded SQL}
 \author{Sumit Kumar (22CS30056)}
-\institute{Advanced Database Management Systems, term project}
+\institute{Advanced Database Management Systems (CS60113), term project}
 \date{\footnotesize github.com/SumitKumar-17/UAVLog}
 
 \newcommand{\pgfaxis}[1]{\begin{axis}[width=\linewidth,height=0.5\textheight,#1,grid=major,grid style={black!12},tick label style={font=\scriptsize},label style={font=\footnotesize},legend style={font=\tiny,at={(0.5,-0.28)},anchor=north,legend columns=3},cycle list={{blue!70!black,mark=*},{red!75!black,mark=square*},{green!45!black,mark=triangle*},{orange!85!black,mark=diamond*},{violet,mark=pentagon*}},every axis plot/.append style={thick,mark size=1.6pt}]}
@@ -351,7 +351,7 @@
 \begin{frame}{Signals: distributions across the corpus}
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{docs/assets/screens/deck-signals-light-1440.png}\par\vspace{0.15em}
-{\footnotesize Every canonical signal with the distribution of its per-flight mean (SQL width_bucket over the signal summary); click one for the flights with the highest and lowest values.}
+{\footnotesize Every canonical signal with the distribution of its per-flight mean (SQL width\_bucket over the signal summary); click one for the flights with the highest and lowest values.}
 \end{frame}
 
 \begin{frame}{Rule lab: tune a detector}
@@ -393,7 +393,7 @@
 \begin{frame}{Performance: live database statistics}
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{docs/assets/screens/deck-performance-light-1440.png}\par\vspace{0.15em}
-{\footnotesize Buffer cache hit ratio, connections, the costliest statements from pg_stat_statements, how tables are scanned and the settings that matter, refreshed every few seconds.}
+{\footnotesize Buffer cache hit ratio, connections, the costliest statements from pg\_stat\_statements, how tables are scanned and the settings that matter, refreshed every few seconds.}
 \end{frame}
 
 \begin{frame}[shrink=5]{Contents}
