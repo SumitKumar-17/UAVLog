@@ -192,3 +192,5 @@ export type Performance = {
 export type LabRule = { id: string; label: string; signal: string; op: string; threshold: number; min_s: number; lo: number; hi: number; step: number; unit: string; ref: string[]; about: string };
 export type LabScore = { threshold: number; events: number; flights: number; matched_events: number; ref_messages: number; matched_ref: number; precision: number | null; recall: number | null; f1: number };
 export type LabResult = { rule: LabRule; current: LabScore; default: LabScore; sweep: LabScore[] };
+
+export type UploadJob = { id: string; log_id: string; name: string; bytes: number; status: "running" | "done" | "failed"; flight_id: string | null; error: string | null; stages: { name: string; status: "pending" | "running" | "done" | "failed"; seconds: number | null }[] };

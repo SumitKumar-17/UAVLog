@@ -13,6 +13,7 @@ from app.api.common import client_ip, flight_uuid, rows, with_strips
 from app.api.extras import router as extras_router
 from app.api.features import router as features_router
 from app.api.dbexplorer import router as dbexplorer_router
+from app.api.uploads import router as uploads_router
 from app.api.limits import RateLimit
 from app.api.internals import router as internals_router
 from app.nlsql.generate import ask as ask_question
@@ -24,6 +25,7 @@ app.include_router(bench_router)
 app.include_router(extras_router)
 app.include_router(features_router)
 app.include_router(dbexplorer_router)
+app.include_router(uploads_router)
 app.add_middleware(RateLimit)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["GET", "POST"], allow_headers=["*"])
 

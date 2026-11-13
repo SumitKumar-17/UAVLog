@@ -1,10 +1,11 @@
-export type IconName = "overview" | "flights" | "map" | "fleet" | "search" | "compare" | "ask" | "workbench" | "ontology" | "data" | "database" | "benchmarks" | "incidents" | "patterns" | "performance" | "rules";
+export type IconName = "overview" | "flights" | "map" | "fleet" | "search" | "compare" | "ask" | "workbench" | "ontology" | "data" | "database" | "benchmarks" | "incidents" | "patterns" | "performance" | "rules" | "upload";
 export type NavItem = { href: string; label: string; hint: string; icon: IconName };
 export const NAV: { label: string; items: NavItem[] }[] = [
   { label: "Explore", items: [
     { href: "/", label: "Overview", hint: "flights ranked by critical events", icon: "overview" },
     { href: "/flights", label: "Flights", hint: "browse and filter every flight", icon: "flights" },
     { href: "/incidents", label: "Incidents", hint: "warnings and failures across every flight", icon: "incidents" },
+    { href: "/upload", label: "Upload a log", hint: "add a PX4 log and watch it processed", icon: "upload" },
     { href: "/map", label: "Map", hint: "where the flights happened", icon: "map" },
     { href: "/fleet", label: "Fleet", hint: "boards, firmware, the flight galaxy", icon: "fleet" } ] },
   { label: "Analyze", items: [

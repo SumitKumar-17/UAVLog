@@ -79,6 +79,7 @@
   --color-warning: var(--warning);
   --color-serious: var(--serious);
   --color-critical: var(--critical);
+  --color-good: var(--good);
   --font-sans: var(--font-barlow), system-ui, sans-serif;
   --font-dense: var(--font-barlow-sc), var(--font-barlow), system-ui, sans-serif;
 }
