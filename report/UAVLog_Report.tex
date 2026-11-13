@@ -476,24 +476,60 @@ The sanity check is the share of a flight's 5 nearest neighbours that run on the
 
 % =====================================================================
 \section{The Application}
-\shot[0.95]{ui-home.png}{Flight explorer: flights ranked by critical events with a mode ribbon per flight.}
-\shot[0.95]{ui-flight-1.png}{One flight: mode ribbon with event marks, altitude chart, ground track, event list.}
-\shot[0.95]{ui-flight-2.png}{Attitude, battery voltage and battery remaining; charts zoom by dragging and all share the mode ribbon.}
-\shot[0.95]{ui-flight-3.png}{Vibration, estimator innovation test ratios and GPS accuracy. Min/max envelopes keep spikes visible when zoomed out.}
-\shot[0.95]{ui-ask.png}{Ask: a plain-English question becomes a checked, read-only query.}
-\shot[0.95]{ui-compare-2.png}{Compare: event counts and metadata side by side.}
+The interface is a Next.js application with a vertical navigation bar (Explore, Analyze, Platform), a slim top bar with a command palette (Ctrl+K), and light as the default theme.
+Every page below reads live from the API; none of the numbers are typed in.
 
-\subsection{The Database page}
-\emph{The page is read live from the database that serves the application.}
-\shot[0.95]{ui-db-1.png}{Space used (row storage against columnar) and a selectable query with its \code{EXPLAIN ANALYZE}.}
-\shot[0.95]{ui-db-3.png}{Index methods and sizes, row counts and table sizes.}
-\shot[0.95]{ui-db-4.png}{Pipeline status, derived-data counts and LLM call statistics.}
+\subsection{Exploring flights}
+\shot[0.95]{deck-overview-light-1440.png}{Overview: search by meaning, entry points to every feature, and flights ranked by critical events.}
+\shot[0.95]{deck-flight-light-1440.png}{One flight: mode ribbon with event marks, replay bar, synchronized charts, ground track and event list.}
+\shot[0.95]{deck-flight-replay-light-1440.png}{Flight replay: the time cursor sweeps every chart and the track at 1x to 64x; events surface as it passes them.}
 
-\subsection{The Benchmarks page}
-\shot[0.95]{ui-bench-overview.png}{Every experiment in this report is a section of this page, drawn from the saved result files.}
-\shot[0.9]{ui-bench-columnstore.png}{Columnstore design.}
-\shot[0.9]{ui-bench-engines.png}{TimescaleDB against DuckDB.}
-\shot[0.9]{ui-bench-injection.png}{Fault injection.}
+\subsection{Incident reports with citations}
+\emph{Plain English:} the database gathers numbered facts about the flight; a language model turns them into a report; every sentence must cite the facts it used, and a sentence with no valid citation is deleted.
+The evidence (events, signals unusual against the whole corpus, similar flights) is computed by SQL (\code{gather\_evidence}); the report is cached in the \code{investigation} table.
+\shot[0.95]{deck-flight-report-light-1440.png}{Incident report: findings with citation chips (E3, E6, ...) that jump the charts to the cited moment; the full evidence list is expandable.}
+
+\subsection{Similar moments}
+Each flight is cut into overlapping 10-second windows (hop 5 s). A window is described by the mean, standard deviation, minimum, maximum and slope of 30 canonical signals, robust-scaled, reduced by PCA to 32 dimensions (84\% of the variance) and stored in \code{signal\_window} with an HNSW index (18,238 windows). Searching a moment returns the best window in each other flight.
+\shot[0.95]{deck-flight-moments-light-1440.png}{Similar moments: pick a moment, find where other flights behaved the same way.}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Event kind & Queries & Random base rate & Precision at 10 & Lift\\
+\midrule
+landing & 60 & 0.012 & 0.500 & 43.4$\times$\\
+disarm & 60 & 0.007 & 0.233 & 33.1$\times$\\
+takeoff & 60 & 0.022 & 0.705 & 32.6$\times$\\
+arm & 35 & 0.005 & 0.123 & 22.5$\times$\\
+vibration high & 15 & 0.022 & 0.247 & 11.2$\times$\\
+ekf innovation reject & 32 & 0.016 & 0.166 & 10.5$\times$\\
+attitude limit exceeded & 26 & 0.009 & 0.069 & 7.5$\times$\\
+mode change & 60 & 0.064 & 0.170 & 2.7$\times$\\
+failsafe activated & 60 & 0.013 & 0.023 & 1.7$\times$\\
+log error & 60 & 0.089 & 0.147 & 1.6$\times$\\
+battery low & 41 & 0.051 & 0.078 & 1.5$\times$\\
+log warning & 60 & 0.347 & 0.377 & 1.1$\times$\\
+\bottomrule
+\end{tabular}
+\caption{A result counts when it overlaps an event of the same kind as the query window. HNSW with iterative scan returns the same results as exact search (recall 0.99, p50 0.3 ms). Without iterative scan 7\% of queries returned fewer than 10 rows, because the nearest windows are the query flight's own neighbours and the filter removes them after the index scan: the filtered-search pitfall, on real data.}
+\end{table}
+
+\subsection{Fleet views}
+\shot[0.95]{deck-map-light-1440.png}{Map: every flight with a GPS fix at its mean position, coloured by critical events (from the signal summary view).}
+\shot[0.95]{deck-fleet-galaxy-light-1440.png}{Flight galaxy: the 32-dimension behavioural signature projected onto its two main directions (23\% of the variation); colour by board, firmware, critical events or unusualness (mean distance to the 5 nearest flights).}
+\shot[0.95]{deck-incidents-light-1440.png}{Incidents: every warning and failure across flights, filterable by severity, kind, board and wording, with a link to the exact moment.}
+
+\subsection{Asking questions}
+\shot[0.95]{deck-ask-light-1440.png}{Ask: natural language to guarded SQL; the SQL, the planner's cost and each guard action are shown.}
+\shot[0.95]{deck-workbench-light-1440.png}{SQL workbench: hand-written SQL under the same four checks (guard, restricted role, read-only transaction with a timeout, planner cost admission); a schema browser and saved queries.}
+
+\subsection{Looking inside the database}
+\shot[0.95]{deck-data-map-light-1440.png}{Data explorer, schema map: tables, keys and foreign keys drawn live from the catalog.}
+\shot[0.95]{deck-data-structure-light-1440.png}{Data explorer, structure: columns, keys, indexes with sizes, and the hypertable's chunk and columnstore settings.}
+\shot[0.95]{deck-database-light-1440.png}{Database page: space used (row storage against columnar) and a selectable query with its \code{EXPLAIN ANALYZE}.}
+\shot[0.95]{deck-bench-ann-light-1440.png}{Benchmarks page: every experiment in this report is a section drawn from the saved result files.}
 
 % =====================================================================
 \section{Results Summary}

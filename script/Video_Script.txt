@@ -22,7 +22,7 @@ BEFORE YOU RECORD (15 minutes)
 4. Warm the pages once (open each and wait until it finishes loading) so nothing spins on camera. Open the flight page and click "Write an incident report" once so the report is cached
    and appears instantly. Click "Find similar moments" once as a warm-up.
 5. Record with OBS Studio (or the Windows/Mac screen recorder): 1920 x 1080, 30 fps, microphone only (no webcam needed). Do a 10-second test and listen to it.
-6. Turn off the OS "do not disturb" off-state: enable Do Not Disturb. Hide the bookmarks bar. Move the mouse slowly; pause 1 second after each click.
+6. Turn on Do Not Disturb so no notification appears. Hide the bookmarks bar. Move the mouse slowly; pause 1 second after each click.
 
 ======================================================================================================================
 TIMELINE
