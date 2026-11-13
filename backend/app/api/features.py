@@ -391,3 +391,64 @@ def patterns(p=Depends(pool), kind: str = Query("failsafe_activated", max_length
             r["lift"] = r["share"] / max(r["base"], 1e-9)
         out[name] = res
     return {"kind": kind, "seconds": seconds, **base, **out}
+
+
+# --------------------------------------------------------------------------------------------------------------------------- rule lab
+LAB = [
+    {"id": "battery_low", "label": "Battery low", "signal": "battery.remaining", "op": "<", "threshold": 20, "min_s": 5, "lo": 2, "hi": 60, "step": 1, "unit": "%",
+     "ref": ["%battery%"], "about": "Fires while the remaining battery stays below the threshold. Compared with the autopilot's own battery warnings."},
+    {"id": "battery_critical", "label": "Battery critically low", "signal": "battery.remaining", "op": "<", "threshold": 10, "min_s": 3, "lo": 2, "hi": 40, "step": 1, "unit": "%",
+     "ref": ["%battery%"], "about": "The stricter battery rule (severity critical). The weakest detector in the fault-injection experiment."},
+    {"id": "gps_fix", "label": "GPS lost 3D fix", "signal": "gps.fix_type", "op": "<", "threshold": 3, "min_s": 2, "lo": 1, "hi": 4, "step": 1, "unit": "fix type",
+     "ref": ["%gps%"], "about": "Fires while the GPS fix type is below 3 (no 3D fix)."},
+    {"id": "gps_accuracy", "label": "GPS accuracy degraded", "signal": "gps.eph", "op": ">", "threshold": 5, "min_s": 3, "lo": 1, "hi": 20, "step": 0.5, "unit": "m",
+     "ref": ["%gps%"], "about": "Fires while the horizontal accuracy estimate is worse than the threshold."},
+    {"id": "vibration", "label": "High vibration", "signal": "vibration.accel", "op": ">", "threshold": 30, "min_s": 3, "lo": 5, "hi": 60, "step": 1, "unit": "m/s²",
+     "ref": ["%vibration%", "%clipping%"], "about": "Fires while the accelerometer vibration metric stays above the threshold."},
+    {"id": "ekf_position", "label": "Estimator rejecting position", "signal": "ekf.pos_test_ratio", "op": ">", "threshold": 1, "min_s": 2, "lo": 0.2, "hi": 3, "step": 0.1, "unit": "ratio",
+     "ref": ["%innovation%", "%ekf%", "%estimator%"], "about": "Fires while the position innovation test ratio is above the threshold (the estimator is rejecting measurements)."},
+]
+_lab_cache: dict = {}
+LAB_SQL = """
+WITH s AS (SELECT flight_id, sec, CASE WHEN %(lt)s THEN lo ELSE hi END AS v FROM rule_signal_1s WHERE signal = %(sig)s),
+f AS (SELECT flight_id, sec, (v {op} %(thr)s) AS flag FROM s),
+base AS (SELECT DISTINCT flight_id FROM f WHERE NOT flag),
+g AS (SELECT flight_id, sec, flag, row_number() OVER (PARTITION BY flight_id ORDER BY sec) - row_number() OVER (PARTITION BY flight_id, flag ORDER BY sec) AS grp
+      FROM f WHERE flight_id IN (SELECT flight_id FROM base)),
+isl AS (SELECT flight_id, min(sec) AS s0, max(sec) AS s1 FROM g WHERE flag GROUP BY flight_id, grp HAVING max(sec) - min(sec) >= %(min_s)s),
+ref AS (SELECT e.flight_id, extract(epoch FROM e.ts_start - fl.started_at) AS t FROM event e JOIN flight fl ON fl.id = e.flight_id
+        WHERE e.source <> 'rule' AND e.description ILIKE ANY(%(pats)s))
+SELECT (SELECT count(*) FROM isl) AS events, (SELECT count(DISTINCT flight_id) FROM isl) AS flights,
+       (SELECT count(*) FROM isl i WHERE EXISTS (SELECT 1 FROM ref r WHERE r.flight_id = i.flight_id AND r.t BETWEEN i.s0 - 60 AND i.s1 + 60)) AS matched_events,
+       (SELECT count(*) FROM ref) AS ref_messages,
+       (SELECT count(*) FROM ref r WHERE EXISTS (SELECT 1 FROM isl i WHERE i.flight_id = r.flight_id AND r.t BETWEEN i.s0 - 60 AND i.s1 + 60)) AS matched_ref"""
+
+
+def _lab_eval(p, rule: dict, thr: float, min_s: float) -> dict:
+    r = rows(p, LAB_SQL.format(op=rule["op"]), {"lt": rule["op"] == "<", "sig": rule["signal"], "thr": thr, "min_s": min_s, "pats": rule["ref"]})[0]
+    prec = r["matched_events"] / r["events"] if r["events"] else None
+    rec = r["matched_ref"] / r["ref_messages"] if r["ref_messages"] else None
+    f1 = 2 * prec * rec / (prec + rec) if prec and rec else 0.0
+    return {**r, "threshold": thr, "precision": prec, "recall": rec, "f1": f1}
+
+
+@router.get("/rules/config")
+def rules_config():
+    return LAB
+
+
+@router.get("/rules/evaluate")
+def rules_evaluate(rule: str = Query(..., pattern=r"^[a-z_]+$"), threshold: float = Query(...), min_s: float = Query(..., ge=0, le=120), p=Depends(pool)):
+    """Run one rule over every flight's one-second data with the given threshold and minimum duration, and score it against the autopilot's own warnings
+    (a proxy, not ground truth): precision is the share of rule events with a matching warning within 60 s, recall the share of warnings with a rule event within 60 s.
+    Also sweeps the threshold across the slider's range so the trade-off can be drawn."""
+    r = next((x for x in LAB if x["id"] == rule), None)
+    if not r:
+        raise HTTPException(404, "unknown rule")
+    if not rows(p, "SELECT 1 FROM rule_signal_1s LIMIT 1"):
+        raise HTTPException(503, "the one-second table is empty; run scripts/refresh_semantic.py")
+    key = (rule, min_s)
+    if key not in _lab_cache:
+        n, steps = 14, [r["lo"] + (r["hi"] - r["lo"]) * i / 13 for i in range(14)]
+        _lab_cache[key] = [_lab_eval(p, r, round(v, 3), min_s) for v in steps]
+    return {"rule": r, "current": _lab_eval(p, r, threshold, min_s), "default": _lab_eval(p, r, r["threshold"], r["min_s"]), "sweep": _lab_cache[key]}

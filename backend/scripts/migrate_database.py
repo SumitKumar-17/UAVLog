@@ -64,8 +64,14 @@ def small_tables() -> None:
         tgt.execute(f'SELECT setval(%s, coalesce((SELECT max("{col}") FROM {table}), 1))', (seq,))
 
 
-def compress(lo, hi) -> None:
-    for (chunk,) in tgt.execute("SELECT show_chunks('telemetry', newer_than => %s, older_than => %s)::text", (lo, hi)).fetchall():
+def compress(lo=None, hi=None) -> None:
+    """Compress (or recompress) the chunks that overlap [lo, hi], or every chunk when no range is given."""
+    q = "SELECT format('%%I.%%I', chunk_schema, chunk_name) FROM timescaledb_information.chunks WHERE hypertable_name = 'telemetry'"
+    params: tuple = ()
+    if lo is not None:
+        q += " AND range_start <= %s AND range_end > %s"
+        params = (hi, lo)
+    for (chunk,) in tgt.execute(q + " ORDER BY range_start", params).fetchall():
         tgt.execute("SELECT compress_chunk(%s::regclass, if_not_compressed => true)", (chunk,))
 
 
@@ -93,6 +99,9 @@ def telemetry() -> None:
     done = {r[0] for r in tgt.execute("SELECT flight_id FROM migration_progress").fetchall()}
     flights = [r[0] for r in src.execute("SELECT flight_id, count(*) FROM telemetry GROUP BY 1 ORDER BY 1").fetchall()]
     todo = [f for f in flights if f not in done]
+    if done:
+        compress()  # earlier runs may have left uncompressed or partial chunks
+        print(f"  compressed what was already copied: target {mb():.0f} MB", flush=True)
     print(f"telemetry: {len(flights)} flights, {len(done)} already copied, {len(todo)} to go", flush=True)
     t0, rows = time.time(), 0
     with ThreadPoolExecutor(a.workers) as pool:

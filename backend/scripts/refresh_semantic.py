@@ -18,6 +18,11 @@ with psycopg.connect(settings.dsn, autocommit=True) as c:
     c.execute(f"REFRESH MATERIALIZED VIEW {'CONCURRENTLY ' if populated else ''}semantic.signal_summary")
     n = c.execute("SELECT count(*) FROM semantic.signal_summary").fetchone()[0]
     print(f"signal_summary refreshed: {n} rows in {time.time() - t0:.1f}s")
+    t0 = time.time()
+    rs = c.execute("SELECT ispopulated FROM pg_matviews WHERE matviewname = 'rule_signal_1s'").fetchone()
+    if rs:  # the rule lab's one-second table (absent before migration 0010)
+        c.execute(f"REFRESH MATERIALIZED VIEW {'CONCURRENTLY ' if rs[0] else ''}rule_signal_1s")
+        print(f"rule_signal_1s refreshed: {c.execute('SELECT count(*) FROM rule_signal_1s').fetchone()[0]:,} rows in {time.time() - t0:.1f}s")
     if not a.cagg:
         raise SystemExit(0)
     t0 = time.time()

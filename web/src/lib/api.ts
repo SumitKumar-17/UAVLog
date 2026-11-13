@@ -188,3 +188,7 @@ export type Performance = {
   statements: { query: string; calls: number; total_ms: number; mean_ms: number; max_ms: number; rows: number; hit_pct: number | null }[];
   statements_available: boolean;
 };
+
+export type LabRule = { id: string; label: string; signal: string; op: string; threshold: number; min_s: number; lo: number; hi: number; step: number; unit: string; ref: string[]; about: string };
+export type LabScore = { threshold: number; events: number; flights: number; matched_events: number; ref_messages: number; matched_ref: number; precision: number | null; recall: number | null; f1: number };
+export type LabResult = { rule: LabRule; current: LabScore; default: LabScore; sweep: LabScore[] };

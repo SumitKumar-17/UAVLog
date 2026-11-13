@@ -1,4 +1,4 @@
-export type IconName = "overview" | "flights" | "map" | "fleet" | "search" | "compare" | "ask" | "workbench" | "ontology" | "data" | "database" | "benchmarks" | "incidents" | "patterns" | "performance";
+export type IconName = "overview" | "flights" | "map" | "fleet" | "search" | "compare" | "ask" | "workbench" | "ontology" | "data" | "database" | "benchmarks" | "incidents" | "patterns" | "performance" | "rules";
 export type NavItem = { href: string; label: string; hint: string; icon: IconName };
 export const NAV: { label: string; items: NavItem[] }[] = [
   { label: "Explore", items: [
@@ -10,6 +10,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
   { label: "Analyze", items: [
     { href: "/search", label: "Search", hint: "find events by meaning", icon: "search" },
     { href: "/patterns", label: "Patterns", hint: "what happens before and after an event", icon: "patterns" },
+    { href: "/rules", label: "Rule lab", hint: "tune the detectors and see the trade-off", icon: "rules" },
     { href: "/compare", label: "Compare", hint: "two flights on one axis", icon: "compare" },
     { href: "/ask", label: "Ask", hint: "questions in plain English", icon: "ask" },
     { href: "/workbench", label: "SQL workbench", hint: "guarded read-only SQL", icon: "workbench" } ] },
