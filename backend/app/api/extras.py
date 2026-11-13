@@ -89,3 +89,37 @@ def pipeline(p=Depends(pool)):
                                      (SELECT count(*) FROM event WHERE embedding IS NULL) AS events_without_embedding,
                                      (SELECT count(*) FROM note) AS notes""")[0],
     }
+
+
+@router.get("/flights/{flight_id}/moments")
+def similar_moments(flight_id: str, p=Depends(pool), t: float = Query(..., ge=0, le=86400), k: int = Query(8, ge=1, le=20)):
+    """Moments in other flights where the signals behaved like they did around second t of this flight (nearest 10 second windows,
+    best window per flight, cosine distance over the 32 dimension window embedding; see scripts/build_windows.py)."""
+    fid = flight_uuid(flight_id)
+    q = rows(p, "SELECT t0, t1 FROM signal_window WHERE flight_id = %s ORDER BY abs(t0 + 5 - %s) LIMIT 1", (fid, t))
+    if not q:
+        raise HTTPException(404, "no signal windows for this flight yet; run scripts/build_windows.py")
+    base = {"f": fid, "t0": q[0]["t0"], "k": k}
+    with p.connection() as c:  # the nearest windows are usually this flight's own neighbours, which the filter removes afterwards: iterative scan keeps looking
+        c.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")
+        c.execute("SET LOCAL hnsw.ef_search = 100")
+        found = _moments_query(c, base)
+    mine = rows(p, """SELECT coalesce(array_agg(DISTINCT c.key), '{}') AS events FROM event e JOIN concept c ON c.id = e.kind_id JOIN flight f ON f.id = e.flight_id
+                      WHERE e.flight_id = %(f)s AND extract(epoch FROM e.ts_start - f.started_at) < %(t0)s + 10
+                        AND extract(epoch FROM coalesce(e.ts_end, e.ts_start) - f.started_at) >= %(t0)s""", base)[0]["events"]
+    return {"query": {"t0": q[0]["t0"], "t1": q[0]["t1"], "events": mine}, "results": found}
+
+
+def _moments_query(c, base):
+    cur = c.execute("""
+        WITH q AS (SELECT embedding FROM signal_window WHERE flight_id = %(f)s AND t0 = %(t0)s),
+        cand AS (SELECT w.flight_id, w.t0, w.t1, w.embedding <=> q.embedding AS distance
+                 FROM signal_window w, q WHERE w.flight_id <> %(f)s ORDER BY w.embedding <=> q.embedding LIMIT 300),
+        best AS (SELECT DISTINCT ON (flight_id) flight_id, t0, t1, distance FROM cand ORDER BY flight_id, distance)
+        SELECT b.flight_id AS id, f.source_ref, f.firmware, f.metadata->>'sys_hw' AS hw, f.started_at, b.t0, b.t1, b.distance,
+               (SELECT coalesce(array_agg(DISTINCT c.key), '{}') FROM event e JOIN concept c ON c.id = e.kind_id
+                WHERE e.flight_id = b.flight_id AND extract(epoch FROM e.ts_start - f.started_at) < b.t1
+                  AND extract(epoch FROM coalesce(e.ts_end, e.ts_start) - f.started_at) >= b.t0) AS events
+        FROM best b JOIN flight f ON f.id = b.flight_id ORDER BY b.distance LIMIT %(k)s""", base)
+    cols = [d.name for d in cur.description]
+    return [dict(zip(cols, r)) for r in cur.fetchall()]

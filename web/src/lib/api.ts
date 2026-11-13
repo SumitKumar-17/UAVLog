@@ -128,3 +128,6 @@ export type PipelineState = {
   ingest_seconds: { avg_s: number | null; max_s: number | null; rows: number | null };
   derived: { signal_summary_rows: number; signatures: number; flights: number; events_without_embedding: number; notes: number };
 };
+
+export type MomentHit = { id: string; source_ref: string; firmware: string | null; hw: string | null; started_at: string; t0: number; t1: number; distance: number; events: string[] };
+export type Moments = { query: { t0: number; t1: number; events: string[] }; results: MomentHit[] };

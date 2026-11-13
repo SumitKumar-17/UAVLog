@@ -10,6 +10,7 @@ import Link from "next/link";
 import { EventList } from "./event-list";
 import { NotesPanel } from "./notes-panel";
 import { SimilarFlights } from "./similar-flights";
+import { SimilarMoments } from "./similar-moments";
 import { TrackPlot } from "./track-plot";
 import { FlightTimeline } from "./flight-timeline";
 import { SignalChart } from "./signal-chart";
@@ -70,6 +71,11 @@ export function FlightView({ id }: { id: string }) {
             {panels.map((p) => <SignalChart key={p.id} flightId={f.id} duration={f.duration_s} panel={p} modes={f.modes} />)}
             {panels.length === 0 && <p className="text-ink-2">This flight has none of the signals we chart.</p>}
           </div>
+          <section className="mt-12" aria-labelledby="moments">
+            <h2 id="moments" className="font-dense text-2xl font-semibold">Moments like this one</h2>
+            <p className="mb-3 mt-1 max-w-2xl text-ink-2">Pick a moment and find where, in other flights, the signals behaved the same way. Each flight is cut into overlapping 10 second windows described by the statistics of every signal.</p>
+            <SimilarMoments flightId={f.id} duration={f.duration_s} />
+          </section>
           <section className="mt-12" aria-labelledby="notes"><h2 id="notes" className="mb-3 font-dense text-2xl font-semibold">Notes</h2><NotesPanel flightId={f.id} duration={f.duration_s} /></section>
           <section className="mt-12" aria-labelledby="similar">
             <h2 id="similar" className="font-dense text-2xl font-semibold">Flights that behaved like this one</h2>
