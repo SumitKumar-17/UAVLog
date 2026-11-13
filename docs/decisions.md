@@ -283,3 +283,10 @@ saves it beside the downloaded logs, queues it in `ingest_job` and runs the same
 one upload at a time; the page polls the stage status. A real 17.6 MB public log went through in about 18 s. Tests that were wrong the first time: a file of zeros with a valid header was accepted as a
 flight of duration 0, so the pipeline now deletes a flight with under 5 s or under 100 telemetry rows and fails the upload; and the API's `--reload` killed an upload that overlapped a code sync
 (development only). Flight-level signatures are not rebuilt per upload (that refits the whole model), so similar flights is unavailable for an uploaded flight until the batch step is run.
+
+## D26. Signals explorer, correlations, tour, live palette and fleet pulse
+**Signals** (`/api/signals/overview`, `/signals/{signal}/top`): per-signal distribution of the per-flight mean with `width_bucket` between the 2nd and 98th percentile (20 bins), computed over `semantic.signal_summary`
+in one query; extremes come from the same view. **Correlations** (`/flights/{id}/correlations`): Pearson r on a one-second grid for up to 14 signals of one flight (pairs need 20 common seconds and non-constant series);
+a correlation of two trending signals is partly a shared trend, so the strongest pairs are descriptive, not causal. **Palette**: after four characters it runs the hybrid search (embedding cached on the server)
+and lists the top four events; **Tour**: a scripted list of 15 pages with a card; **Fleet pulse**: four small charts on the overview from `/api/fleet`. Overlays (tour, palette, shortcuts) are rendered outside the blurred
+header, because `backdrop-filter` makes a fixed child position itself relative to that element.

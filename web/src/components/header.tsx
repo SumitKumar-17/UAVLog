@@ -59,6 +59,7 @@ export function Header({ title, onMenu, onToggleNav, navCollapsed }: { title?: s
     return () => window.removeEventListener("keydown", key);
   }, []);
   return (
+    <>
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-rule bg-panel/95 px-4 backdrop-blur sm:px-8">
       <button onClick={onMenu} className="flex h-9 w-9 items-center justify-center rounded text-ink-2 hover:bg-rule-soft lg:hidden" aria-label="Open the navigation">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><path d="M4 7h16M4 12h16M4 17h16" /></svg>
@@ -74,9 +75,10 @@ export function Header({ title, onMenu, onToggleNav, navCollapsed }: { title?: s
         <button onClick={() => setTour(true)} className="mr-1 rounded border border-rule px-2.5 py-1 text-sm text-ink-2 hover:border-route" aria-label="Start the guided tour">Tour</button>
         <GitHubLink /><ThemeToggle />
       </div>
-      <CommandPalette open={palette} onClose={() => setPalette(false)} />
-      {help && <Shortcuts onClose={() => setHelp(false)} />}
-      <Tour open={tour} onClose={() => setTour(false)} />
     </header>
+    <CommandPalette open={palette} onClose={() => setPalette(false)} />
+    {help && <Shortcuts onClose={() => setHelp(false)} />}
+    <Tour open={tour} onClose={() => setTour(false)} />
+    </>
   );
 }
