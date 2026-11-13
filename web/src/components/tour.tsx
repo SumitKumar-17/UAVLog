@@ -190,8 +190,8 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
   }
 
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest("button")) return;
-    const r = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
+    if ((e.target as HTMLElement).closest("button, a, input, textarea, select")) return;
+    const r = e.currentTarget.getBoundingClientRect();
     drag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -212,8 +212,8 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
         </div>
       )}
       {!hidden ? (
-        <div data-tour-card style={{ ...placed, width: cw, position: "fixed" }} className="z-[60] rounded-lg border border-route bg-panel p-4 shadow-2xl" role="dialog" aria-label="Guided tour">
-          <div className="-mx-1 -mt-1 flex cursor-grab touch-none select-none items-baseline justify-between rounded px-1 pt-1 text-xs text-muted active:cursor-grabbing" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onDoubleClick={resetPos} title="Drag to move this card; double-click to put it back">
+        <div data-tour-card style={{ ...placed, width: cw, position: "fixed" }} className="z-[60] cursor-grab touch-none select-none rounded-lg border border-route bg-panel p-4 shadow-2xl active:cursor-grabbing" role="dialog" aria-label="Guided tour" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onDoubleClick={(e) => { if (!(e.target as HTMLElement).closest("button")) resetPos(); }} title="Drag to move this card; double-click to put it back">
+          <div className="flex items-baseline justify-between text-xs text-muted">
             <button onClick={() => setMenu((v) => !v)} className="underline hover:text-ink" aria-expanded={menu}>{s.section} · step {i + 1} of {list.length}</button>
             <button onClick={onClose} className="underline hover:text-ink">End tour</button>
           </div>
@@ -243,7 +243,7 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
             </span>
           </div>
           <div className="mt-3 h-1.5 rounded bg-rule"><div className="h-1.5 rounded bg-route" style={{ width: `${((i + 1) / list.length) * 100}%` }} /></div>
-          <div className="mt-2 text-[11px] text-muted">Enter: do it, then next · ← ↑ back · → ↓ next · drag the top to move · H hide · N notes · F full tour · Esc end</div>
+          <div className="mt-2 text-[11px] text-muted">Enter: do it, then next · ← ↑ back · → ↓ next · drag the card to move it · H hide · N notes · F full tour · Esc end</div>
         </div>
       ) : (
         <button data-tour-card onClick={() => setHidden(false)} className="fixed bottom-4 right-4 z-[60] rounded-full border border-route bg-panel px-3 py-1.5 text-xs font-semibold text-route opacity-0 shadow-lg hover:opacity-100 focus:opacity-100">Tour ({i + 1}/{list.length})</button>

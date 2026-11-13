@@ -30,7 +30,7 @@ const doActions = process.env.NOACT ? false : true;
     const needsTarget = await page.evaluate(() => !!document.querySelector("[data-tour-card]"));
     if (!info.spot) problems.push(`step ${n} "${info.title}" (${info.head}) on ${info.path}: no spotlight${info.looking ? " (target not found)" : ""}`);
     if (n === 3) {  // drag the card by its header and check that it moved, then double-click to put it back
-      const h = await page.locator("[data-tour-card] .cursor-grab").boundingBox(); const before = await page.locator("[data-tour-card]").boundingBox();
+      const h = await page.locator("[data-tour-card] .font-dense").boundingBox(); const before = await page.locator("[data-tour-card]").boundingBox();
       await page.mouse.move(h.x + 20, h.y + 8); await page.mouse.down(); await page.mouse.move(h.x - 300, h.y + 160, { steps: 8 }); await page.mouse.up();
       const after = await page.locator("[data-tour-card]").boundingBox();
       console.log(Math.abs(after.x - before.x) > 100 ? `drag ok (moved ${Math.round(after.x - before.x)}px, ${Math.round(after.y - before.y)}px)` : "DRAG FAILED");
