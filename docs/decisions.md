@@ -237,3 +237,19 @@ Sanity check: share of a flight's 5 nearest neighbours on the same board, 0.069 
 mapped because their meaning differs (`app/ontology/seed_data.py`). The 1-second continuous aggregate (`telemetry_1s`) was created `WITH NO DATA`; a full
 refresh over 70 M compressed rows is slow (14 of 300 flights in 45 minutes), so the refresh was cancelled and the charts fall back to the raw path,
 which `api/main.py` does automatically.
+
+## D23. Platform features that make the database visible
+**Similar moments.** Flights are cut into overlapping 10-second windows (hop 5 s); each window is described by mean, standard deviation, minimum, maximum and slope of 30
+canonical signals, robust-scaled and PCA-reduced to 32 dimensions (84% of the variance) and stored in `signal_window` with an HNSW index (18,238 windows, built in 29 s with 6 workers
+through the `flight_task` queue, stage `windows`). The scaler and PCA are fitted once on 80 flights and stored in `window_model`. Experiment (`bench/results/moments_eval.*`): precision at 10
+against event labels is up to 43x the random base rate (landing, takeoff, disarm); HNSW with iterative scan matches exact search (recall 0.99, 0.3 ms). Without iterative scan 7% of queries returned
+fewer than 10 rows because the nearest windows are the query flight's own neighbours and the flight filter removes them after the index scan, the filtered-search pitfall of D18 on real data.
+**Incident reports.** Evidence is computed by SQL and numbered (flight facts, critical and warning events, signals outside the corpus' 95th percentile, what similar flights did); the model writes
+JSON prose that must cite evidence ids; ids that do not exist are removed and a finding without a valid citation is dropped; reports are cached in `investigation`. Limit: a citation proves a source
+exists, not that the sentence is a faithful reading of it; the report is a draft for an engineer.
+**Data explorer and workbench.** The explorer exposes only the `public` and `semantic` schemas, validates every name against the catalog and quotes it as an identifier (nothing from the
+request reaches the SQL as text); rows are limited to 100 per page with a 4 s timeout and long values are shortened. The workbench runs exactly the Ask pipeline's guard, restricted role,
+read-only transaction and cost admission, and saves only queries the guard accepts. Fleet views (map, galaxy, incidents, fleet statistics) are plain SQL over `signal_summary`, `flight_signature` and `event`.
+**Interface.** Light is the default theme on every system; dark only when chosen. Navigation is a vertical bar plus a slim top bar and a command palette.
+**Continuous aggregate.** `refresh_semantic.py` no longer refreshes `telemetry_1s` by default (`--cagg` opts in): the refresh over compressed chunks ran for more than 45 minutes for 14 of 300 flights, and the
+flight page falls back to the raw path where the aggregate is empty.

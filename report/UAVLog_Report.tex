@@ -589,6 +589,12 @@ The decision log (\code{docs/decisions.md}) records what, why and the alternativ
   \item[D11--D13] Hybrid retrieval with RRF; measured result that vector wins and no absolute relevance cutoff exists.
   \item[D15] Robust flight duration after one corrupt timestamp.
   \item[D16] NL-to-SQL guarded, read-only and measured with and without the semantic layer.
+  \item[D18] Filtered vector search routed by the planner's row estimate (exact sort at or below about 1,500 rows, HNSW with iterative scan above).
+  \item[D19] HNSW m=32 for event embeddings; IVFFlat and DiskANN kept as comparators; controlled difficulty check.
+  \item[D20] Columnstore physical design and the TimescaleDB against DuckDB comparison.
+  \item[D21] Fault injection on the event detectors, with the battery-low rule as the weakest result.
+  \item[D22] Flight signatures, and the ArduPilot log loaded through the same ontology.
+  \item[D23] Signal windows for similar moments; cited incident reports (evidence by SQL, prose by a model); read-only data explorer and guarded workbench.
 \end{description}
 
 % =====================================================================
