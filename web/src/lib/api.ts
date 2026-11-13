@@ -170,3 +170,6 @@ export type DbStructure = DbTable & {
 };
 export type DbRows = { columns: string[]; rows: (string | number | boolean | null)[][]; offset: number; limit: number; total_estimate: number | null };
 export type DbGraph = { nodes: (DbTable & { columns: { name: string; type: string; pk: boolean }[] })[]; edges: { src: string; dst: string; column: string }[] };
+
+export type Incident = { id: number; flight_id: string; source_ref: string; hw: string | null; firmware: string | null; started_at: string; kind: string; label: string; severity: number; description: string; t: number };
+export type Incidents = { total: number; items: Incident[]; kinds: { kind: string; label: string; n: number }[]; boards: { hw: string | null; n: number }[] };

@@ -4,7 +4,9 @@ const [url, out, scheme = "light", width = "1280", height = "900"] = process.arg
 const waitFor = process.env.WAIT_SEL || "";
 (async () => {
   const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });  // software WebGL so map canvases are captured
-  const page = await (await browser.newContext({ viewport: { width: +width, height: +height }, colorScheme: scheme, locale: "en-US" })).newPage();
+  const ctx0 = await browser.newContext({ viewport: { width: +width, height: +height }, colorScheme: scheme, locale: "en-US" });
+  if (process.env.THEME) await ctx0.addInitScript((t) => { try { localStorage.setItem("theme", t); } catch {} }, process.env.THEME);  // the app follows this setting, not the OS
+  const page = await ctx0.newPage();
   const problems = [];
   page.on("console", (m) => m.type() === "error" && problems.push(`console: ${m.text()}`));
   page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
@@ -16,7 +18,10 @@ const waitFor = process.env.WAIT_SEL || "";
   if (waitFor) await page.waitForSelector(waitFor, { timeout: 30000 }).catch(() => problems.push(`selector not found: ${waitFor}`));
   await page.waitForFunction(() => !document.body.innerText.includes("updating") && !document.querySelector("[aria-busy]"), null, { timeout: 30000 }).catch(() => problems.push("page still busy"));
   await page.waitForTimeout(+(process.env.WAIT_MS || 800));
-  if (process.env.ELEMENT) await page.locator(process.env.ELEMENT).first().screenshot({ path: out });
+  if (process.env.SCROLLY) { await page.evaluate((y) => window.scrollTo(0, y), +process.env.SCROLLY); await page.waitForTimeout(600); }
+  if (process.env.SCROLL) { await page.evaluate((sel) => document.querySelector(sel)?.scrollIntoView({ block: "start" }), process.env.SCROLL); await page.waitForTimeout(600); }
+  if (process.env.VIEWPORT) await page.screenshot({ path: out });  // exactly one screen, slide-sized
+  else if (process.env.ELEMENT) await page.locator(process.env.ELEMENT).first().screenshot({ path: out });
   else await page.screenshot({ path: out, fullPage: true });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   if (overflow > 0) {

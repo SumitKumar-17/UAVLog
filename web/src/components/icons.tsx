@@ -13,6 +13,7 @@ const P: Record<IconName, string> = {
   data: "M3 4h18v16H3zM3 10h18M9 4v16",
   database: "M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6",
   benchmarks: "M4 20h16M7 20V10M12 20V4M17 20v-7",
+  incidents: "M12 3l10 18H2zM12 10v5M12 18v.5",
 };
 
 export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {

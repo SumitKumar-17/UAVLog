@@ -293,3 +293,21 @@ def pipeline_retry(body: RetryBody, p=Depends(pool)):
         a = c.execute("UPDATE ingest_job SET status = 'pending', attempts = 0 WHERE status = 'failed' AND (%(s)s::text IS NULL OR %(s)s = 'ingest')", {"s": body.stage}).rowcount
         b = c.execute("UPDATE flight_task SET status = 'pending', attempts = 0 WHERE status = 'failed' AND (%(s)s::text IS NULL OR stage = %(s)s)", {"s": body.stage}).rowcount
     return {"requeued": a + b}
+
+
+# ------------------------------------------------------------------------------------------------------------------------ incidents
+@router.get("/incidents")
+def incidents(p=Depends(pool), min_severity: int = Query(2, ge=1, le=2), kind: str | None = Query(None, max_length=60, pattern=r"^[a-z_]+$"),
+              hw: str | None = Query(None, max_length=60), q: str | None = Query(None, max_length=80), limit: int = Query(30, ge=1, le=100), offset: int = Query(0, ge=0, le=5000)):
+    """Warnings and critical events across every flight, newest flights first, with the filters' counts."""
+    prm = {"sev": min_severity, "kind": kind, "hw": hw, "q": f"%{q}%" if q else None}
+    where = """e.severity >= %(sev)s AND (%(kind)s::text IS NULL OR c.key = %(kind)s) AND (%(hw)s::text IS NULL OR f.metadata->>'sys_hw' = %(hw)s)
+               AND (%(q)s::text IS NULL OR e.description ILIKE %(q)s)"""
+    base = "FROM event e JOIN flight f ON f.id = e.flight_id JOIN concept c ON c.id = e.kind_id"
+    items = rows(p, f"""SELECT e.id, f.id AS flight_id, f.source_ref, f.metadata->>'sys_hw' AS hw, f.firmware, f.started_at, c.key AS kind, c.label, e.severity, e.description,
+                              greatest(extract(epoch FROM e.ts_start - f.started_at), 0)::float AS t
+                       {base} WHERE {where} ORDER BY f.started_at DESC, e.ts_start LIMIT %(limit)s OFFSET %(offset)s""", {**prm, "limit": limit, "offset": offset})
+    total = rows(p, f"SELECT count(*) AS n {base} WHERE {where}", prm)[0]["n"]
+    kinds = rows(p, f"SELECT c.key AS kind, c.label, count(*) AS n {base} WHERE e.severity >= %(sev)s AND (%(hw)s::text IS NULL OR f.metadata->>'sys_hw' = %(hw)s) GROUP BY 1, 2 ORDER BY n DESC", prm)
+    boards = rows(p, f"SELECT f.metadata->>'sys_hw' AS hw, count(*) AS n {base} WHERE e.severity >= %(sev)s AND (%(kind)s::text IS NULL OR c.key = %(kind)s) GROUP BY 1 ORDER BY n DESC LIMIT 15", prm)
+    return {"total": total, "items": items, "kinds": kinds, "boards": boards}

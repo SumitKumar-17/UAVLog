@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# ./bin/deck-shots  -> one-screen (1440x810) screenshots of every page and feature into docs/screens/deck-*.png, for the slides and the video.
+# Run it where the stack is up (the web app on WEB_PORT).
+set -uo pipefail
+cd "$(dirname "$0")/.."
+F=be4e03ae-3cf5-4785-bf22-b53815ad169c
+S() { VIEWPORT=1 ./bin/shot "$@" 2>&1 | grep -vE "^docs|no console errors|tile\." ; }
+S / deck-overview light 1440 810
+S /flights deck-flights light 1440 810
+S /flights/$F deck-flight light 1440 810
+SCROLL='#signals' S /flights/$F deck-flight-signals light 1440 810
+CLICK='[aria-label="Flight replay"] button' WAIT_MS=5000 S /flights/$F deck-flight-replay light 1440 810
+SCROLL='#investigate' S /flights/$F deck-flight-report light 1440 810
+CLICK='button:has-text("Find similar moments")' WAIT_MS=2500 SCROLL='#moments' S /flights/$F deck-flight-moments light 1440 810
+S "/search?q=motor%20failure%20during%20takeoff" deck-search light 1440 810
+FILL='input[aria-label="Your question"]|which board had the most failsafes?' CLICK='button:has-text("Ask")' CLICK2='summary:has-text("How this was answered")' S /ask deck-ask light 1440 810
+S "/compare?a=$F&b=ea4c8f07-0f5a-4b52-85e2-b0d7d890727d" deck-compare light 1440 810
+S /ontology deck-ontology light 1440 810
+NOIDLE=1 WAIT_MS=9000 S /map deck-map light 1440 810
+SCROLL='#galaxy' S /fleet deck-fleet-galaxy light 1440 810
+SCROLL='#boards' S /fleet deck-fleet-boards light 1440 810
+S /incidents deck-incidents light 1440 810
+FILL='textarea|SELECT kind, count(*) AS events, count(DISTINCT flight_id) AS flights FROM semantic.events GROUP BY kind ORDER BY events DESC LIMIT 8' CLICK='button:has-text("Run")' WAIT_MS=2500 S /workbench deck-workbench light 1440 810
+S /data deck-data-map light 1440 810
+CLICK='role=tab[name="Browse tables"]' WAIT_MS=2000 S /data deck-data-browse light 1440 810
+CLICK='role=tab[name="Browse tables"]' CLICK2='role=tab[name="Structure"]' S /data deck-data-structure light 1440 810
+S /database deck-database light 1440 810
+SCROLLY=620 S /database deck-database-plan light 1440 810
+for s in ann filter search nlsql injection moments columnstore engines; do SCROLL="#$s" WAIT_MS=2500 S /benchmarks deck-bench-$s light 1440 810; done
+THEME=dark S / deck-overview-dark light 1440 810
+THEME=dark SCROLL='#galaxy' S /fleet deck-fleet-dark light 1440 810

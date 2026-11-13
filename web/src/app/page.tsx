@@ -1,6 +1,7 @@
 import { SearchBox } from "@/components/search-box";
 import { FlightBoard } from "@/components/flight-board";
 import { Corpus } from "@/components/corpus";
+import { FeatureTiles } from "@/components/feature-tiles";
 
 export default function Home() {
   return (
@@ -9,8 +10,9 @@ export default function Home() {
         <h1 className="mb-4 font-dense text-4xl font-semibold tracking-tight">Ask about any flight</h1>
         <SearchBox />
       </section>
+      <FeatureTiles />
 
-      <div className="mt-14 grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div className="mt-12 grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
         <section aria-labelledby="board">
           <h2 id="board" className="font-dense text-2xl font-semibold">Flights with the most critical events</h2>
           <p className="mb-4 mt-1 max-w-2xl text-ink-2">Each strip is one flight. Colour shows the flight mode over time; marks show warnings and failures the autopilot or our rules flagged.</p>

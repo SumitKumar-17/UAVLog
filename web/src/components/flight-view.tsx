@@ -66,27 +66,31 @@ export function FlightView({ id }: { id: string }) {
         )}
       </header>
 
+      <nav aria-label="Sections of this flight" className="sticky top-14 z-20 -mx-1 mb-5 flex flex-wrap gap-1.5 bg-paper/95 px-1 py-2 backdrop-blur">
+        {[["signals", "Signals"], ["investigate", "Incident report"], ["moments", "Similar moments"], ["notes", "Notes"], ["similar", "Similar flights"]].map(([id, label]) => (
+          <a key={id} href={`#${id}`} className="rounded-full border border-rule bg-panel px-3.5 py-1 text-sm text-ink-2 hover:border-route hover:text-ink">{label}</a>))}
+      </nav>
       <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="min-w-0">
           <FlightTimeline f={f} />
           <ReplayBar f={f} />
-          <div className="mt-6 space-y-3">
+          <div id="signals" className="mt-6 scroll-mt-28 space-y-3">
             {panels.map((p) => <SignalChart key={p.id} flightId={f.id} duration={f.duration_s} panel={p} modes={f.modes} />)}
             {panels.length === 0 && <p className="text-ink-2">This flight has none of the signals we chart.</p>}
           </div>
-          <section className="mt-12" aria-labelledby="investigate">
-            <h2 id="investigate" className="font-dense text-2xl font-semibold">Incident report</h2>
+          <section className="mt-12 scroll-mt-28" aria-labelledby="investigate">
+            <h2 id="investigate" className="scroll-mt-28 font-dense text-2xl font-semibold">Incident report</h2>
             <p className="mb-3 mt-1 max-w-2xl text-ink-2">What happened in this flight, written from numbered evidence. Click a citation to jump the charts to that moment.</p>
             <InvestigatePanel flightId={f.id} duration={f.duration_s} />
           </section>
-          <section className="mt-12" aria-labelledby="moments">
-            <h2 id="moments" className="font-dense text-2xl font-semibold">Moments like this one</h2>
+          <section className="mt-12 scroll-mt-28" aria-labelledby="moments">
+            <h2 id="moments" className="scroll-mt-28 font-dense text-2xl font-semibold">Moments like this one</h2>
             <p className="mb-3 mt-1 max-w-2xl text-ink-2">Pick a moment and find where, in other flights, the signals behaved the same way. Each flight is cut into overlapping 10 second windows described by the statistics of every signal.</p>
             <SimilarMoments flightId={f.id} duration={f.duration_s} />
           </section>
-          <section className="mt-12" aria-labelledby="notes"><h2 id="notes" className="mb-3 font-dense text-2xl font-semibold">Notes</h2><NotesPanel flightId={f.id} duration={f.duration_s} /></section>
-          <section className="mt-12" aria-labelledby="similar">
-            <h2 id="similar" className="font-dense text-2xl font-semibold">Flights that behaved like this one</h2>
+          <section className="mt-12 scroll-mt-28" aria-labelledby="notes"><h2 id="notes" className="scroll-mt-28 mb-3 font-dense text-2xl font-semibold">Notes</h2><NotesPanel flightId={f.id} duration={f.duration_s} /></section>
+          <section className="mt-12 scroll-mt-28" aria-labelledby="similar">
+            <h2 id="similar" className="scroll-mt-28 font-dense text-2xl font-semibold">Flights that behaved like this one</h2>
             <p className="mb-3 mt-1 max-w-2xl text-ink-2">Matched on how the flights behaved (signal statistics, event rates, time in each mode), not on what their text says.</p>
             <SimilarFlights flightId={f.id} />
           </section>

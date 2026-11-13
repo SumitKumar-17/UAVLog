@@ -35,8 +35,8 @@
 \newcommand{\listingr}[3]{\lstinputlisting[style=code,firstline=#2,lastline=#3,firstnumber=#2]{docs/listings/#1.txt}}
 \newcommand{\terminalr}[3]{\lstinputlisting[style=term,firstline=#2,lastline=#3]{docs/listings/#1.txt}}
 
-\title{Semantic Log Analytics for UAV Flight Logs}
-\subtitle{Treating flight logs as a database problem}
+\title{Semantic Log Analytics [UAV Log]}
+\subtitle{UAV flight logs as a database problem: time series, semantics, search and guarded SQL}
 \author{Sumit Kumar (22CS30056)}
 \institute{Advanced Database Management Systems, term project}
 \date{\footnotesize github.com/SumitKumar-17/UAVLog}
@@ -179,6 +179,183 @@
   \item An ArduPilot MAVLink log is ingested through the same ontology
   \item It shows the vendor mapping at work: one canonical signal name for both autopilots
   \item Gaps are documented, not guessed (see the semantic layer)
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+% =============================================================== platform tour
+\begin{frame}[shrink=5]{The platform: what was built}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Data and database}
+\begin{itemize}
+  \item One PostgreSQL with TimescaleDB (columnstore) and pgvector
+  \item Ontology and canonical mapping for PX4 and ArduPilot
+  \item 3,401 events, embeddings, flight signatures, signal windows
+\end{itemize}
+\end{block}
+\begin{block}{Search and language}
+\begin{itemize}
+  \item Hybrid search with a self-routing filtered query
+  \item Guarded natural-language SQL and cited incident reports
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Application (Next.js and FastAPI)}
+\begin{itemize}
+  \item Flights, replay, similar moments, incident reports
+  \item Map, fleet galaxy, incidents feed
+  \item Ask, SQL workbench, data explorer, command palette
+  \item Database and Benchmarks pages drawn from live data
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Overview: entry points to every feature}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-overview-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Search by meaning, shortcuts to every feature, and flights ranked by critical events with a strip of flight modes for each.}
+\end{frame}
+
+\begin{frame}{Flights: every flight as a strip}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flights-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Colour is the flight mode over time; marks are warnings and failures. Sort by critical events, recency or length.}
+\end{frame}
+
+\begin{frame}{One flight: modes, charts, track and events}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-light-1440.png}\par\vspace{0.15em}
+{\footnotesize The mode ribbon with event marks, a replay bar, synchronized charts, the ground track and the event list.}
+\end{frame}
+
+\begin{frame}{Synchronized charts with min/max envelopes}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-signals-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Drag across any chart to zoom every chart together; envelopes keep short spikes visible when zoomed out.}
+\end{frame}
+
+\begin{frame}{Flight replay}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-replay-light-1440.png}\par\vspace{0.15em}
+{\footnotesize The time cursor sweeps the charts and the track at 1x to 64x, shows the current mode, and surfaces events as it passes them.}
+\end{frame}
+
+\begin{frame}{Incident report with citations}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-report-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Numbered evidence is computed by SQL; the model writes prose and may only cite it; a citation jumps the charts to that moment.}
+\end{frame}
+
+\begin{frame}{Similar moments}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-moments-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Pick a moment and find where, in other flights, the signals behaved the same way: 10-second window embeddings searched with HNSW.}
+\end{frame}
+
+\begin{frame}{Semantic search}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-search-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Vector, full text and filters fused by reciprocal rank fusion, with the ranking details and the chosen filter strategy shown.}
+\end{frame}
+
+\begin{frame}{Ask: natural language to guarded SQL}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-ask-light-1440.png}\par\vspace{0.15em}
+{\footnotesize The SQL that ran, the planner's cost estimate and every guard action are shown next to the answer.}
+\end{frame}
+
+\begin{frame}{Compare two flights}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-compare-light-1440.png}\par\vspace{0.15em}
+{\footnotesize The same canonical signal from flights on different boards, aligned at takeoff, with event counts side by side.}
+\end{frame}
+
+\begin{frame}{Ontology}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-ontology-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Concepts, relations and the vendor fields mapped to them for both autopilots.}
+\end{frame}
+
+\begin{frame}{Map}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-map-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Every flight with a GPS fix, coloured by critical events and sized by length; filter by board; click to open.}
+\end{frame}
+
+\begin{frame}{Fleet galaxy}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-fleet-galaxy-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Each flight placed by how it behaved (signature PCA); colour by board, firmware, critical events or unusualness.}
+\end{frame}
+
+\begin{frame}{Fleet statistics}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-fleet-boards-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Critical events per flight by board and firmware, event kinds, flights per year and flight length.}
+\end{frame}
+
+\begin{frame}{Incidents}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-incidents-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Every warning and failure across flights; filter by severity, kind, board and wording; open at the exact moment.}
+\end{frame}
+
+\begin{frame}{SQL workbench}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-workbench-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Write your own SQL under the same four checks as Ask; schema browser, saved queries, planner cost and the rebuilt SQL.}
+\end{frame}
+
+\begin{frame}{Data explorer: schema map}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-data-map-light-1440.png}\par\vspace{0.15em}
+{\footnotesize The relations diagram, read live from the catalog; hover to follow foreign keys, click to browse a table.}
+\end{frame}
+
+\begin{frame}{Data explorer: browse rows}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-data-browse-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Every table and view with row counts and sizes; page through the rows, read-only.}
+\end{frame}
+
+\begin{frame}{Data explorer: structure}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-data-structure-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Columns, types, keys, indexes with sizes and, for the hypertable, the chunk and columnstore settings.}
+\end{frame}
+
+\begin{frame}[shrink=5]{Contents}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{block}{Part 1: the platform}
+\begin{itemize}
+  \item What was built, and a tour of every feature
+\end{itemize}
+\end{block}
+\begin{block}{Part 2: database design}
+\begin{itemize}
+  \item Schema, hypertable and columnstore design
+  \item Storage results; TimescaleDB against DuckDB
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{block}{Part 3: semantics and retrieval}
+\begin{itemize}
+  \item Ontology, events, fault injection
+  \item Hybrid search, vector indexes, filtered search
+\end{itemize}
+\end{block}
+\begin{block}{Part 4: language and evidence}
+\begin{itemize}
+  \item Guarded NL-to-SQL and its evaluation
+  \item Database and benchmark pages; conclusions
 \end{itemize}
 \end{block}
 \end{column}
@@ -874,138 +1051,59 @@ Each stage claims items with \code{FOR UPDATE SKIP LOCKED}; status, attempts and
 \end{columns}
 \end{frame}
 
-% =============================================================== 8. interface
-\begin{frame}{Interface: the flight explorer}
+% =============================================================== 8. database and benchmark pages
+\begin{frame}{Database page: where the space goes}
 \centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-home.png}\par
-\vspace{0.2em}{\footnotesize Flights ranked by critical events, with the mode ribbon per flight; filters, free-text search and corpus summary.}
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-database-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Row storage against the columnstore, and a selectable query with its plan, read live from the database.}
 \end{frame}
 
-\begin{frame}{Interface: one flight, overview}
+\begin{frame}{Database page: EXPLAIN ANALYZE}
 \centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-flight-1.png}\par
-\vspace{0.2em}{\footnotesize Mode ribbon with event marks, altitude chart, ground track and the event list for the flight.}
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-database-plan-light-1440.png}\par\vspace{0.15em}
+{\footnotesize A real plan with buffer counts and actual times for the signal envelope query.}
 \end{frame}
 
-\begin{frame}{Interface: one flight, signals}
+\begin{frame}{Benchmarks: vector indexes}
 \centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-flight-2.png}\par
-\vspace{0.2em}{\footnotesize Attitude, battery voltage and battery remaining. Every chart is shaded by the same flight-mode ribbon and zooms by dragging.}
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-bench-ann-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Recall against median latency for every index and setting, with build time and size.}
 \end{frame}
 
-\begin{frame}{Interface: one flight, diagnostics}
+\begin{frame}{Benchmarks: filtered search}
 \centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-flight-3.png}\par
-\vspace{0.2em}{\footnotesize Vibration, estimator innovation test ratios and GPS accuracy; min/max envelopes keep spikes visible when zoomed out.}
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-bench-filter-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Rows returned, recall or latency by strategy and filter selectivity.}
 \end{frame}
 
-\begin{frame}{Interface: notes and similar flights}
+\begin{frame}{Benchmarks: similar moments}
 \centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-flight-4.png}\par
-\vspace{0.2em}{\footnotesize Investigation notes pinned to a moment, and flights found by signal-shape signature (not by text).}
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-bench-moments-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Precision at 10 per event kind against the random base rate.}
 \end{frame}
 
-\begin{frame}{Interface: semantic search}
+\begin{frame}{Benchmarks: fault injection}
 \centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-search.png}\par
-\vspace{0.2em}{\footnotesize Hybrid search over event meaning, with the ranking details shown.}
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-bench-injection-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Detection rate by fault duration, and false alarms on unmodified flights.}
 \end{frame}
 
-\begin{frame}{Interface: Ask, question and answer}
+\begin{frame}{Benchmarks: columnstore design}
 \centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-ask.png}\par
-\vspace{0.2em}{\footnotesize A plain-English question becomes a checked, read-only query; the answer is a sentence and a table.}
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-bench-columnstore-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Size and query latency for each physical design.}
 \end{frame}
 
-\begin{frame}{Interface: Ask, how this was answered}
+\begin{frame}{Benchmarks: TimescaleDB against DuckDB}
 \centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-ask-evidence.png}\par
-\vspace{0.2em}{\footnotesize The generated SQL, its planner cost and each guard action are shown beside the answer.}
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-bench-engines-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Storage, the six queries and the load throughput.}
 \end{frame}
 
-\begin{frame}{Interface: compare two flights}
+\begin{frame}{Dark theme}
 \centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-compare-1.png}\par
-\vspace{0.2em}{\footnotesize The same canonical signal from two flights on different boards, aligned at takeoff.}
-\end{frame}
-
-\begin{frame}{Interface: compare, event counts}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-compare-2.png}\par
-\vspace{0.2em}{\footnotesize Board, firmware, flight time and event counts side by side.}
-\end{frame}
-
-\begin{frame}{Interface: the ontology}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-ontology.png}\par
-\vspace{0.2em}{\footnotesize Concepts, relations and vendor field mappings for both autopilots.}
-\end{frame}
-
-\begin{frame}{Interface: the Database page, space and plans}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-db-1.png}\par
-\vspace{0.2em}{\footnotesize Live from the database: 12.46 GB rowstore against 385 MB columnstore, and a selectable query with its EXPLAIN ANALYZE plan.}
-\end{frame}
-
-\begin{frame}{Interface: the Database page, the plan}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-db-2.png}\par
-\vspace{0.2em}{\footnotesize The plan, node by node, with buffer counts and actual times.}
-\end{frame}
-
-\begin{frame}{Interface: the Database page, indexes and tables}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-db-3.png}\par
-\vspace{0.2em}{\footnotesize Index method and size, row counts and table sizes.}
-\end{frame}
-
-\begin{frame}{Interface: the Database page, pipeline}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-db-4.png}\par
-\vspace{0.2em}{\footnotesize Stage status counts, ingest rate, derived-data counts and LLM call statistics.}
-\end{frame}
-
-\begin{frame}{Interface: the Benchmarks page}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-overview.png}\par
-\vspace{0.2em}{\footnotesize Every experiment in this talk is a section of this page, drawn from the saved result files.}
-\end{frame}
-
-\begin{frame}{Benchmarks page: vector indexes}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-ann.png}\par
-\vspace{0.2em}{\footnotesize Recall against median latency for each index and setting, with build time and size.}
-\end{frame}
-
-\begin{frame}{Benchmarks page: filtered search}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-filter-1.png}\par
-\vspace{0.2em}{\footnotesize Rows returned, recall or latency by strategy and filter selectivity.}
-\end{frame}
-
-\begin{frame}{Benchmarks page: filtered search, tables}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-filter-2.png}\par
-\end{frame}
-
-\begin{frame}{Benchmarks page: search quality, NL-to-SQL and signatures}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-three.png}\par
-\end{frame}
-
-\begin{frame}{Benchmarks page: fault injection}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-injection.png}\par
-\end{frame}
-
-\begin{frame}{Benchmarks page: columnstore design}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-columnstore.png}\par
-\end{frame}
-
-\begin{frame}{Benchmarks page: TimescaleDB against DuckDB}
-\centering
-\fig{width=0.96\textwidth,height=0.74\textheight,keepaspectratio}{ui-bench-engines.png}\par
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-overview-dark-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Light is the default on every system; dark is a toggle in the top bar.}
 \end{frame}
 
 % =============================================================== 9. wrap up
