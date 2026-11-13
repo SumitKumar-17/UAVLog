@@ -1,4 +1,5 @@
 """HTTP API: flights, events, telemetry (server-side min/max envelopes), ontology, hybrid search."""
+import os
 import time
 from collections import defaultdict, deque
 from dataclasses import asdict
@@ -27,7 +28,10 @@ app.include_router(features_router)
 app.include_router(dbexplorer_router)
 app.include_router(uploads_router)
 app.add_middleware(RateLimit)
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["GET", "POST"], allow_headers=["*"])
+# The web app proxies /api/* so the browser never calls this service directly; CORS only matters for another origin.
+# CORS_ORIGINS is a comma-separated list of allowed origins (use * to allow any); the default is the local web app.
+ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_methods=["GET", "POST", "DELETE", "OPTIONS"], allow_headers=["*"])
 
 
 @app.get("/health")

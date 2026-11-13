@@ -17,6 +17,7 @@ The web app proxies `/api/*` to the API, so deploy the API first and give its ad
 | `LLM_MODEL` | `gpt-4o-mini` |
 | `EMBED_MODEL` | `text-embedding-3-small` |
 | `EMBED_DIMS` | `1536` |
+| `CORS_ORIGINS` | optional: your web site address(es), comma separated, only if something other than the web project calls the API directly |
 
 - Check after deploy: `https://<api-project>.vercel.app/api/stats` returns the flight, event and sample counts.
 
