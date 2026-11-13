@@ -31,7 +31,7 @@ function FlightQuestion({ flightId, jump }: { flightId: string; jump: (e: Eviden
         <button disabled={m.isPending} className="h-10 rounded border border-rule px-4 text-[15px] hover:border-route disabled:opacity-60">{m.isPending ? "Reading the evidence" : "Ask"}</button>
       </form>
       {m.error && <p className="mt-2 text-sm text-critical">{(m.error as Error).message}</p>}
-      {m.data && <p className="mt-3 text-[15px]">{m.data.answer}<Cites ids={m.data.cites} byId={byId} open={null} jump={jump} /></p>}
+      {m.data && <p data-tour="flight-answer" className="mt-3 text-[15px]">{m.data.answer}<Cites ids={m.data.cites} byId={byId} open={null} jump={jump} /></p>}
     </div>
   );
 }

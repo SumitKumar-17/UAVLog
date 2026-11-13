@@ -41,7 +41,7 @@ export function SimilarMoments({ flightId, duration }: { flightId: string; durat
             Windows most like {clock(data.query.t0)} to {clock(data.query.t1)} of this flight
             {data.query.events.length > 0 && <> (events there: {data.query.events.map(label).join(", ")})</>}. Lower distance means more alike; one best window per flight.
           </p>
-          <ul className="mt-2 divide-y divide-rule border-y border-rule">
+          <ul data-tour="moment-results" className="mt-2 divide-y divide-rule border-y border-rule">
             {data.results.map((r) => (
               <li key={r.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-2.5">
                 <div className="min-w-0">

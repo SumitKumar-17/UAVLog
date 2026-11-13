@@ -87,14 +87,14 @@ export function WorkbenchView() {
           {save.error && <p className="mt-2 text-sm text-critical">{(save.error as Error).message}</p>}
           {plan.error && <p className="mt-3 text-sm text-critical" role="alert">{(plan.error as Error).message}</p>}
           {plan.data && (
-            <div className="mt-4 rounded border border-rule bg-panel p-3">
+            <div data-tour="plan" className="mt-4 rounded border border-rule bg-panel p-3">
               <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2"><span className="font-semibold">Query plan</span>
                 <span className="text-sm text-ink-2">total cost <b className="text-ink">{Math.round(plan.data.plan["Total Cost"]).toLocaleString("en-US")}</b> of {plan.data.limit.toLocaleString("en-US")} allowed (the planner's estimate; nothing was run)</span></div>
               <PlanTree n={plan.data.plan} total={plan.data.plan["Total Cost"] || 1} />
             </div>)}
-          {run.error && <div className="mt-4 rounded border border-critical bg-panel px-4 py-3" role="alert"><div className="font-semibold text-critical">The query was refused or failed</div><p className="mt-1 text-sm">{(run.error as Error).message}</p></div>}
+          {run.error && <div data-tour="refused" className="mt-4 rounded border border-critical bg-panel px-4 py-3" role="alert"><div className="font-semibold text-critical">The query was refused or failed</div><p className="mt-1 text-sm">{(run.error as Error).message}</p></div>}
           {r && (
-            <div className="mt-4">
+            <div data-tour="result" className="mt-4">
               <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink-2">
                 <span><b className="text-ink">{r.rows.length}</b> row{r.rows.length === 1 ? "" : "s"}{r.truncated ? " (limit reached)" : ""}</span>
                 <span><b className="text-ink">{r.run_ms.toFixed(1)}</b> ms</span>

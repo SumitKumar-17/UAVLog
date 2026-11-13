@@ -101,3 +101,8 @@ body { background: var(--paper); color: var(--ink); font-family: var(--font-sans
 .u-cursor-x { border-right: 1px solid var(--route) !important; }
 .u-legend .u-series:first-child { display: none; } /* the time entry; values appear per series on hover */
 .u-legend .u-series:has(.u-value:empty) .u-value { display: none; }
+
+/* the guided tour: a pulsing ring around the element it asks you to click */
+@keyframes tour-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--route) 55%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+.tour-pulse { animation: tour-pulse 1.4s ease-out infinite; border: 2px solid var(--route); }
+@media (prefers-reduced-motion: reduce) { .tour-pulse { animation: none; } }

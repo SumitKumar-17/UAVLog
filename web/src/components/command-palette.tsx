@@ -38,7 +38,7 @@ function Palette({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 pt-[14vh]" onClick={onClose} role="dialog" aria-modal="true" aria-label="Jump to">
       <div className="w-full max-w-xl overflow-hidden rounded-lg border border-rule bg-panel shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <input autoFocus value={q} onChange={(e) => { setQ(e.target.value); setI(0); }} placeholder="Jump to a page, or type a question" aria-label="Jump to"
+        <input data-tour="palette-input" autoFocus value={q} onChange={(e) => { setQ(e.target.value); setI(0); }} placeholder="Jump to a page, or type a question" aria-label="Jump to"
           onKeyDown={(e) => {
             if (e.key === "Escape") onClose();
             else if (e.key === "ArrowDown") { e.preventDefault(); setI((x) => Math.min(items.length - 1, x + 1)); }
