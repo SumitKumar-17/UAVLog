@@ -11,6 +11,7 @@ from app.api.deps import lifespan, llm, pool
 from app.api.bench import router as bench_router
 from app.api.common import client_ip, flight_uuid, rows, with_strips
 from app.api.extras import router as extras_router
+from app.api.features import router as features_router
 from app.api.limits import RateLimit
 from app.api.internals import router as internals_router
 from app.nlsql.generate import ask as ask_question
@@ -20,6 +21,7 @@ app = FastAPI(title="Semantic Log Analytics [UAV Log]", version="0.1.0", lifespa
 app.include_router(internals_router)
 app.include_router(bench_router)
 app.include_router(extras_router)
+app.include_router(features_router)
 app.add_middleware(RateLimit)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["GET", "POST"], allow_headers=["*"])
 
