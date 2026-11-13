@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Barlow, Barlow_Semi_Condensed } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-import { Header } from "@/components/header";
+import { AppShell } from "@/components/app-shell";
 
 const barlow = Barlow({ variable: "--font-barlow", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 const barlowSC = Barlow_Semi_Condensed({ variable: "--font-barlow-sc", subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -24,8 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col">
         <Providers>
-          <Suspense fallback={<div className="h-14 border-b border-rule bg-panel" />}><Header /></Suspense>
-          <main className="mx-auto w-full max-w-[1280px] flex-1 px-5 pb-16 sm:px-8">{children}</main>
+          <Suspense fallback={<div className="h-14 border-b border-rule bg-panel" />}><AppShell>{children}</AppShell></Suspense>
         </Providers>
       </body>
     </html>

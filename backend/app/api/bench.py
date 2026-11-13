@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/api/bench")
 RESULTS = Path("/bench/results")
-PREFIXES = ("ann_", "filter_", "columnstore_", "engines_", "nlsql_eval_", "eval_search_", "injection_", "signature_")
+PREFIXES = ("ann_", "filter_", "columnstore_", "engines_", "nlsql_eval_", "eval_search_", "injection_", "signature_", "moments_")
 NAME = re.compile(r"^[A-Za-z0-9_.\-]+\.json$")
 
 

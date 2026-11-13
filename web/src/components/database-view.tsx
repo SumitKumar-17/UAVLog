@@ -1,7 +1,7 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { api, type Explain, type Internals, type PipelineState } from "@/lib/api";
+import { api, post, type Explain, type Internals, type PipelineState } from "@/lib/api";
 import { bytes, compact } from "@/lib/format";
 
 function Bar({ label, value, max, color, note }: { label: string; value: number; max: number; color: string; note: string }) {
@@ -51,8 +51,8 @@ function PipelineSection({ llm }: { llm: Internals["llm"] }) {
         {llm.length > 0 && <li>{llm.map((l) => `${l.calls} ${l.kind} calls, ${compact(l.prompt_tokens)} tokens, ${l.avg_latency_ms} ms on average`).join("; ")}.</li>}
       </ul>
       <h3 className="mb-1 mt-5 font-semibold">Recent failures</h3>
-      {p.failures.length === 0 ? <p className="text-ink-2">None. A failed item is retried up to three times; after that it waits here with its error until someone retries it from the command line.</p> : (
-        <div className="overflow-x-auto"><table className="text-[15px]"><thead><tr><th className={th}>Stage</th><th className={th}>Item</th><th className={th}>Status</th><th className={th}>Error</th></tr></thead>
+      {p.failures.length === 0 ? <p className="text-ink-2">None. A failed item is retried up to three times; after that it waits here with its error until you retry it.</p> : (
+        <div className="overflow-x-auto"><RetryButton /><table className="text-[15px]"><thead><tr><th className={th}>Stage</th><th className={th}>Item</th><th className={th}>Status</th><th className={th}>Error</th></tr></thead>
           <tbody>{p.failures.map((f, i) => <tr key={i} className="border-t border-rule"><td className="py-1.5 pr-6">{f.stage.replaceAll("_", " ")}</td><td className="pr-6">{f.item.slice(0, 8)}</td><td className="pr-6">{f.status}</td><td className="max-w-xl text-ink-2">{f.error ?? ""}</td></tr>)}</tbody></table></div>
       )}
     </div>
@@ -60,6 +60,18 @@ function PipelineSection({ llm }: { llm: Internals["llm"] }) {
 }
 
 const th = "pb-1.5 pr-6 text-left font-normal text-muted";
+
+function RetryButton() {
+  const qc = useQueryClient();
+  const m = useMutation({ mutationFn: () => post<{ requeued: number }>("/pipeline/retry", {}), onSuccess: () => qc.invalidateQueries() });
+  return (
+    <div className="mb-2 flex items-center gap-3 text-sm">
+      <button onClick={() => m.mutate()} disabled={m.isPending} className="rounded border border-rule px-3 py-1.5 font-semibold hover:border-route disabled:opacity-60">{m.isPending ? "Requeuing" : "Retry all failed items"}</button>
+      {m.data && <span className="text-ink-2">{m.data.requeued} item(s) put back in the queue; the workers pick them up on their next run.</span>}
+      {m.error && <span className="text-critical">{(m.error as Error).message}</span>}
+    </div>
+  );
+}
 
 export function DatabaseView() {
   const { data: d, error } = useQuery({ queryKey: ["internals"], queryFn: () => api<Internals>("/internals"), staleTime: 10_000, refetchInterval: 10_000 });

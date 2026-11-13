@@ -197,6 +197,30 @@ function Signature({ files }: { files: string[] }) {
   );
 }
 
+function Moments({ files }: { files: string[] }) {
+  const { data: d } = useQuery({ queryKey: ["bench", files[0]], queryFn: () => file(files[0]), enabled: files.length > 0 });
+  if (!files.length) return <Missing what="similar moments" />;
+  if (!d) return <p className="text-ink-2" aria-busy>Loading</p>;
+  const rows = [...d.kinds].sort((a: any, b: any) => b.precision_exact / Math.max(b.base_rate, 1e-9) - a.precision_exact / Math.max(a.base_rate, 1e-9));
+  return (
+    <div>
+      <p className="mb-3 text-sm text-ink-2">{d.windows.toLocaleString("en-US")} ten-second windows of {d.flights} flights. For each event kind, query windows that overlap an event of that kind; a result counts when it overlaps one too. The grey bar is what random results would score.</p>
+      <ul className="space-y-2">
+        {rows.map((r: any) => (
+          <li key={r.kind} className="grid grid-cols-[11rem_minmax(0,1fr)_6rem] items-center gap-3 text-sm">
+            <span className="truncate text-ink-2">{r.kind.replaceAll("_", " ")}</span>
+            <span className="relative h-4 rounded-sm bg-rule-soft">
+              <span className="absolute inset-y-0 left-0 rounded-sm" style={{ width: `${Math.max(1, r.precision_exact * 100)}%`, background: "var(--data)" }} />
+              <span className="absolute inset-y-0 w-0.5" style={{ left: `${r.base_rate * 100}%`, background: "var(--ink-2)" }} title={`random: ${(r.base_rate * 100).toFixed(1)}%`} />
+            </span>
+            <span className="tabular-nums"><b>{(r.precision_exact * 100).toFixed(0)}%</b> <span className="text-xs text-muted">{(r.precision_exact / Math.max(r.base_rate, 1e-9)).toFixed(1)}x</span></span>
+          </li>))}
+      </ul>
+      <p className="mt-3 text-sm text-ink-2">Precision at 10 against the random base rate (the dark tick). HNSW with iterative scan returns the same results as exact search (recall {d.mean_hnsw_recall.toFixed(2)}) in {d.mean_hnsw_p50_ms.toFixed(1)} ms; without iterative scan {Math.round(d.mean_short_without_iterative_scan * 100)}% of queries returned fewer than 10 rows.</p>
+    </div>
+  );
+}
+
 export function BenchmarksView() {
   const { data, error } = useQuery({ queryKey: ["bench-list"], queryFn: () => api<{ files: string[] }>("/bench") });
   if (error) return <p className="pt-10 text-critical">Could not load benchmark results: {(error as Error).message}</p>;
@@ -222,6 +246,9 @@ export function BenchmarksView() {
       </Section>
       <Section id="signature" title="Similar flights by behaviour" intro="A sanity check that flights found by signal shape, event rates and mode shares are more alike than chance.">
         <Signature files={pick(files, "signature_")} />
+      </Section>
+      <Section id="moments" title="Similar moments" intro="Windows of 10 seconds embedded by how every signal behaved: do the nearest windows share events with the query window?">
+        <Moments files={pick(files, "moments_")} />
       </Section>
       <Section id="columnstore" title="Columnstore physical design" intro="How chunk size and the segment and sort columns change storage and query speed for the telemetry table.">
         <Columnstore files={pick(files, "columnstore_")} />

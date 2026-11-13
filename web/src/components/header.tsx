@@ -1,25 +1,10 @@
 "use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-
-const NAV = [
-  { href: "/", label: "Overview" },
-  { href: "/flights", label: "Flights" },
-  { href: "/search", label: "Search" },
-  { href: "/compare", label: "Compare" },
-  { href: "/ask", label: "Ask" },
-  { href: "/ontology", label: "Ontology" },
-  { href: "/database", label: "Database" },
-  { href: "/benchmarks", label: "Benchmarks" },
-];
+import { CommandPalette } from "./command-palette";
 
 function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark" | null>(null);
-  useEffect(() => {
-    const saved = document.documentElement.dataset.theme as "light" | "dark" | undefined;
-    setTheme(saved ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
-  }, []);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  useEffect(() => { setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light"); }, []);
   const flip = () => {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
@@ -44,28 +29,30 @@ function GitHubLink() {
   );
 }
 
-export function Header() {
-  const path = usePathname();
+/** The slim horizontal bar: menu and collapse buttons, the current page, Ctrl+K, source link and theme. */
+export function Header({ title, onMenu, onToggleNav, navCollapsed }: { title?: string; onMenu: () => void; onToggleNav: () => void; navCollapsed: boolean }) {
+  const [palette, setPalette] = useState(false);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((o) => !o); } };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, []);
   return (
-    <header className="border-b border-rule bg-panel">
-      <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-6 gap-y-1 px-5 py-2 sm:h-14 sm:flex-nowrap sm:gap-x-8 sm:px-8 sm:py-0">
-        <Link href="/" className="order-1 flex items-center gap-2 whitespace-nowrap font-dense text-lg font-semibold tracking-tight text-ink">
-          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden><path d="M2 14 L16 9 L2 4 L5 9 Z" fill="var(--route)" /></svg>
-          UAV Log
-        </Link>
-        <nav className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto sm:order-2 sm:mx-0 sm:w-auto" aria-label="Main">
-          {NAV.map((n) => {
-            const active = n.href === "/" ? path === "/" : path.startsWith(n.href);
-            return (
-              <Link key={n.href} href={n.href} aria-current={active ? "page" : undefined}
-                className={`rounded px-3 py-1.5 text-[15px] ${active ? "bg-rule-soft font-semibold text-ink" : "text-ink-2 hover:bg-rule-soft"}`}>
-                {n.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="order-2 ml-auto flex items-center gap-1 sm:order-3"><GitHubLink /><ThemeToggle /></div>
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-rule bg-panel/95 px-4 backdrop-blur sm:px-8">
+      <button onClick={onMenu} className="flex h-9 w-9 items-center justify-center rounded text-ink-2 hover:bg-rule-soft lg:hidden" aria-label="Open the navigation">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+      </button>
+      <button onClick={onToggleNav} className="hidden h-9 w-9 items-center justify-center rounded text-ink-2 hover:bg-rule-soft lg:flex" aria-label={navCollapsed ? "Expand the navigation" : "Collapse the navigation"}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 5h16v14H4zM9 5v14" /></svg>
+      </button>
+      <div className="min-w-0 truncate font-dense text-lg font-semibold tracking-tight">{title ?? "UAV Log"}</div>
+      <div className="ml-auto flex items-center gap-1">
+        <button onClick={() => setPalette(true)} className="mr-1 flex items-center gap-2 whitespace-nowrap rounded border border-rule px-2.5 py-1 text-sm text-ink-2 hover:border-route" aria-label="Jump to a page or ask a question">
+          <span className="hidden sm:inline">Jump to</span><kbd className="rounded bg-rule-soft px-1.5 text-xs">Ctrl K</kbd>
+        </button>
+        <GitHubLink /><ThemeToggle />
       </div>
+      <CommandPalette open={palette} onClose={() => setPalette(false)} />
     </header>
   );
 }

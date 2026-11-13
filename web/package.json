@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.3",
+    "maplibre-gl": "^6.18.0",
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",

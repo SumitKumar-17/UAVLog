@@ -11,6 +11,8 @@ import { EventList } from "./event-list";
 import { NotesPanel } from "./notes-panel";
 import { SimilarFlights } from "./similar-flights";
 import { SimilarMoments } from "./similar-moments";
+import { InvestigatePanel } from "./investigate-panel";
+import { ReplayBar } from "./replay-bar";
 import { TrackPlot } from "./track-plot";
 import { FlightTimeline } from "./flight-timeline";
 import { SignalChart } from "./signal-chart";
@@ -58,7 +60,7 @@ export function FlightView({ id }: { id: string }) {
         {(labels.length > 0 || m.rating || note) && (
           <div className="mt-3 max-w-3xl border-l-2 border-route pl-3 text-[15px]">
             <div className="font-semibold">Notes from the pilot</div>
-            {(labels.length > 0 || (m.rating && m.rating !== "none")) && <p className="text-ink-2">{[...labels, m.rating && m.rating !== "none" ? `Rated ${String(m.rating).replaceAll("_", " ")}` : ""].filter(Boolean).join(", ")}</p>}
+            {(labels.length > 0 || Boolean(m.rating && m.rating !== "none")) && <p className="text-ink-2">{[...labels, m.rating && m.rating !== "none" ? `Rated ${String(m.rating).replaceAll("_", " ")}` : ""].filter(Boolean).join(", ")}</p>}
             {note && <p className="text-ink-2">{note}</p>}
           </div>
         )}
@@ -67,10 +69,16 @@ export function FlightView({ id }: { id: string }) {
       <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="min-w-0">
           <FlightTimeline f={f} />
+          <ReplayBar f={f} />
           <div className="mt-6 space-y-3">
             {panels.map((p) => <SignalChart key={p.id} flightId={f.id} duration={f.duration_s} panel={p} modes={f.modes} />)}
             {panels.length === 0 && <p className="text-ink-2">This flight has none of the signals we chart.</p>}
           </div>
+          <section className="mt-12" aria-labelledby="investigate">
+            <h2 id="investigate" className="font-dense text-2xl font-semibold">Incident report</h2>
+            <p className="mb-3 mt-1 max-w-2xl text-ink-2">What happened in this flight, written from numbered evidence. Click a citation to jump the charts to that moment.</p>
+            <InvestigatePanel flightId={f.id} duration={f.duration_s} />
+          </section>
           <section className="mt-12" aria-labelledby="moments">
             <h2 id="moments" className="font-dense text-2xl font-semibold">Moments like this one</h2>
             <p className="mb-3 mt-1 max-w-2xl text-ink-2">Pick a moment and find where, in other flights, the signals behaved the same way. Each flight is cut into overlapping 10 second windows described by the statistics of every signal.</p>

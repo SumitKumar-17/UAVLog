@@ -4,6 +4,7 @@ import type { NextConfig } from "next";
 const API_URL = process.env.API_URL ?? "http://api:8000";
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   cacheComponents: true,
   partialPrefetching: true,
   async rewrites() {

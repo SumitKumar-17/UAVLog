@@ -3,13 +3,13 @@ const { chromium } = require("playwright");
 const [url, out, scheme = "light", width = "1280", height = "900"] = process.argv.slice(2);
 const waitFor = process.env.WAIT_SEL || "";
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });  // software WebGL so map canvases are captured
   const page = await (await browser.newContext({ viewport: { width: +width, height: +height }, colorScheme: scheme, locale: "en-US" })).newPage();
   const problems = [];
   page.on("console", (m) => m.type() === "error" && problems.push(`console: ${m.text()}`));
   page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
   page.on("requestfailed", (r) => problems.push(`request failed: ${r.url()}`));
-  await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
+  await page.goto(url, { waitUntil: process.env.NOIDLE ? "load" : "networkidle", timeout: 60000 });
   if (process.env.FILL) { const [sel, text] = process.env.FILL.split("|"); await page.fill(sel, text); }
   if (process.env.CLICK) await page.click(process.env.CLICK);
   if (process.env.CLICK2) { await page.waitForTimeout(6000); await page.click(process.env.CLICK2); }

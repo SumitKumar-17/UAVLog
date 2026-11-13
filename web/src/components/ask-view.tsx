@@ -1,6 +1,7 @@
 "use client";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { ask, type AskAnswer } from "@/lib/api";
 
 const EXAMPLES = [
@@ -85,9 +86,12 @@ function Result({ a }: { a: AskAnswer }) {
 }
 
 export function AskView() {
-  const [q, setQ] = useState("");
+  const fromLink = useSearchParams().get("q") ?? "";
+  const [q, setQ] = useState(fromLink);
   const m = useMutation({ mutationFn: ask });
   const go = (text: string) => text.trim().length >= 3 && m.mutate(text.trim());
+  const started = useRef(false);
+  useEffect(() => { if (fromLink && !started.current) { started.current = true; go(fromLink); } }); // a question passed in the address (from the Jump to palette) runs once
   return (
     <div className="pt-10">
       <h1 className="font-dense text-3xl font-semibold tracking-tight">Ask the data</h1>

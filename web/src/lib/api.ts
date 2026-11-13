@@ -131,3 +131,42 @@ export type PipelineState = {
 
 export type MomentHit = { id: string; source_ref: string; firmware: string | null; hw: string | null; started_at: string; t0: number; t1: number; distance: number; events: string[] };
 export type Moments = { query: { t0: number; t1: number; events: string[] }; results: MomentHit[] };
+
+export type MapFlight = { id: string; source_ref: string; firmware: string | null; hw: string | null; started_at: string; duration_s: number; lat: number; lon: number; events: number; critical_events: number };
+export type FleetStats = {
+  boards: { hw: string; flights: number; minutes: number; events_per_flight: number; critical_per_flight: number }[];
+  firmware: { family: string; flights: number; critical_per_flight: number; warnings_per_flight: number }[];
+  kinds: { kind: string; label: string; events: number; flights: number; critical: number }[];
+  years: { year: number; flights: number }[];
+  durations: { bucket: string; flights: number }[];
+  totals: { flights: number; events: number; critical: number; boards: number; hours: number };
+};
+export type GalaxyPoint = { id: string; x: number; y: number; unusual: number; source_ref: string; firmware: string | null; hw: string | null; duration_s: number; critical_events: number };
+export type Galaxy = { points: GalaxyPoint[]; explained: number };
+export type Evidence = { id: string; kind: string; text: string; t: number | null };
+export type Investigation = {
+  model: string; created_at: string; evidence: Evidence[];
+  report: { headline: string; findings: { text: string; cites: string[] }[]; probable_cause: { text: string; cites: string[]; confidence: string }; next_checks: string[]; dropped_citations?: number };
+};
+export type SchemaView = { view: string; doc: string | null; columns: { name: string; type: string; doc: string | null }[] };
+export type WorkbenchResult = { sql: string; columns: string[]; rows: (string | number | boolean | null)[][]; truncated: boolean; cost: number; run_ms: number; notes: string[]; tables: string[]; functions: string[] };
+export type SavedQuery = { id: number; title: string; sql: string; created_at: string };
+
+export async function post<T>(path: string, body: unknown): Promise<T> {
+  const r = await fetch(`/api${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(typeof data.detail === "string" ? data.detail : `HTTP ${r.status}`);
+  return data as T;
+}
+
+export type DbTable = { schema: string; name: string; kind: "table" | "hypertable" | "view" | "materialized view"; rows: number | null; bytes: number | null; doc: string | null };
+export type DbColumn = { name: string; type: string; nullable: boolean; default: string | null; doc: string | null; pk: boolean };
+export type DbStructure = DbTable & {
+  columns: DbColumn[];
+  foreign_keys: { name: string; columns: string[]; ref_schema: string; ref_table: string; ref_columns: string[] }[];
+  indexes: { name: string; method: string; definition: string; bytes: number; unique: boolean; pk: boolean }[];
+  hypertable: { chunks: number; compressed_chunks: number; chunk_interval: string | null; segmentby: string | null; orderby: string | null } | null;
+  definition: string | null;
+};
+export type DbRows = { columns: string[]; rows: (string | number | boolean | null)[][]; offset: number; limit: number; total_estimate: number | null };
+export type DbGraph = { nodes: (DbTable & { columns: { name: string; type: string; pk: boolean }[] })[]; edges: { src: string; dst: string; column: string }[] };
