@@ -5,7 +5,7 @@ x-app-image: &app-image
 
 services:
   db:
-    image: timescale/timescaledb-ha:pg17
+    image: ${TIMESCALE_IMAGE:-timescale/timescaledb-ha:pg17.11-ts2.30.2}
     command: ["postgres", "-c", "shared_preload_libraries=timescaledb,pg_stat_statements"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
