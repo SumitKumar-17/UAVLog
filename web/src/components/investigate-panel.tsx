@@ -18,6 +18,24 @@ function Cites({ ids, byId, open, jump }: { ids: string[]; byId: Map<string, Evi
 const CONF: Record<string, string> = { low: "Low confidence", medium: "Medium confidence", high: "High confidence" };
 
 /** A cited incident report. The evidence is computed by SQL and numbered; the model writes prose around it and every citation is checked. */
+/** Questions about this flight, answered only from the numbered evidence. */
+function FlightQuestion({ flightId, jump }: { flightId: string; jump: (e: Evidence) => void }) {
+  const [q, setQ] = useState("");
+  const m = useMutation({ mutationFn: (question: string) => post<{ answer: string; cites: string[]; evidence: Evidence[] }>(`/flights/${flightId}/ask`, { question }) });
+  const byId = new Map<string, Evidence>((m.data?.evidence ?? []).map((e) => [e.id, e]));
+  return (
+    <div className="mt-6 max-w-3xl border-t border-rule pt-4">
+      <div className="font-semibold">Ask about this flight</div>
+      <form onSubmit={(e) => { e.preventDefault(); if (q.trim().length >= 3) m.mutate(q.trim()); }} className="mt-2 flex gap-2" role="search">
+        <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="Question about this flight" placeholder="Did the battery trigger the failsafe?" className="h-10 min-w-0 flex-1 rounded border border-rule bg-panel px-3 text-[15px]" />
+        <button disabled={m.isPending} className="h-10 rounded border border-rule px-4 text-[15px] hover:border-route disabled:opacity-60">{m.isPending ? "Reading the evidence" : "Ask"}</button>
+      </form>
+      {m.error && <p className="mt-2 text-sm text-critical">{(m.error as Error).message}</p>}
+      {m.data && <p className="mt-3 text-[15px]">{m.data.answer}<Cites ids={m.data.cites} byId={byId} open={null} jump={jump} /></p>}
+    </div>
+  );
+}
+
 export function InvestigatePanel({ flightId, duration }: { flightId: string; duration: number }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState<string | null>(null);
@@ -76,6 +94,7 @@ export function InvestigatePanel({ flightId, duration }: { flightId: string; dur
                 </li>))}
             </ul>
           </details>
+          <FlightQuestion flightId={flightId} jump={jump} />
           <p className="mt-3 text-xs text-muted">Written by {data.model} from the evidence above; numbers and times come from SQL, not the model.{data.report.dropped_citations ? ` ${data.report.dropped_citations} citation(s) that did not match any evidence were removed.` : ""}{" "}
             <button onClick={() => make.mutate(true)} disabled={make.isPending} className="underline hover:text-ink">{make.isPending ? "Rewriting" : "Rewrite"}</button>{" "}
             <button onClick={download} className="underline hover:text-ink">Download as Markdown</button></p>

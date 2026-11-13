@@ -478,3 +478,38 @@ def behaviour_why(flight_id: str, t0: float = Query(..., ge=0, le=86400), p=Depe
         out.append({"signal": sig, "label": meta.get(sig, {}).get("label", sig), "unit": meta.get(sig, {}).get("unit"), "stat": stat,
                     "value": float(x[i]), "typical": float(model["median"][i]), "z": float(np.clip(z[i], -50, 50))})
     return {"t0": t0, "features": out}
+
+
+# --------------------------------------------------------------------------------------------------------------------- ask one flight
+class FlightQuestion(BaseModel):
+    question: str = Field(min_length=3, max_length=300)
+
+
+_fq_recent: dict[str, list] = {}
+
+
+@router.post("/flights/{flight_id}/ask")
+def ask_flight(flight_id: str, body: FlightQuestion, request: Request, p=Depends(pool), client=Depends(llm)):
+    """Questions about one flight answered only from its numbered evidence (the same facts the incident report uses); the answer must cite them."""
+    import time
+    fid = flight_uuid(flight_id)
+    if not rows(p, "SELECT 1 FROM flight WHERE id = %s", (fid,)):
+        raise HTTPException(404, "unknown flight")
+    now, q = time.time(), _fq_recent.setdefault(client_ip(request), [])
+    q[:] = [t for t in q if now - t < 60]
+    if len(q) >= 10:
+        raise HTTPException(429, "Too many questions; wait a minute.")
+    q.append(now)
+    cached = rows(p, "SELECT evidence FROM investigation WHERE flight_id = %s", (fid,))
+    evidence = cached[0]["evidence"] if cached else gather_evidence(p, fid)
+    text = "\n".join(f"{e['id']} [{e['kind']}] {e['text']}" for e in evidence)
+    reply = client.chat([
+        {"role": "system", "content": "You answer questions about one drone flight using ONLY the numbered evidence items given. Cite the ids you used like E3. If the evidence cannot answer, say so plainly "
+         "and do not guess. Reply with JSON only: {\"answer\": \"one to four sentences\", \"cites\": [\"E1\"]}"},
+        {"role": "user", "content": f"Evidence:\n{text}\n\nQuestion: {body.question.strip()}"}], temperature=0, response_format={"type": "json_object"})
+    try:
+        out = json.loads(reply)
+        answer, cites = str(out["answer"]), [c for c in out.get("cites", []) if c in {e["id"] for e in evidence}]
+    except Exception as e:
+        raise HTTPException(502, f"the model did not return a usable answer ({e})")
+    return {"answer": answer, "cites": cites, "evidence": evidence}
