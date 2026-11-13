@@ -73,3 +73,4 @@ If something fails: `./bin/uavlog failed` lists failed/missing logs with errors;
 ## Report, slides and speaker script
 
 LaTeX sources in the repo root: `UAVLog_Presentation.tex` (Beamer, 76 slides), `UAVLog_Concept_Explainer.tex` (report), `UAVLog_Speaker_Script.txt`. Build a PDF with `./bin/latex UAVLog_Presentation.tex` (Docker image from `tools/latex/Dockerfile`). Figures: `./bin/figures` (diagrams, code images), `./bin/shots-all` (page screenshots), `tools/capture-terminal.sh` (database output), `tools/extract-listings.cjs` and `tools/bench-to-dat.cjs` (code listings and chart data).
+
