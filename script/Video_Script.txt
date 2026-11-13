@@ -1,0 +1,145 @@
+SEMANTIC LOG ANALYTICS [UAV LOG]: 10-MINUTE VIDEO SCRIPT
+Presenter: Sumit Kumar (22CS30056), Advanced Database Management Systems
+
+The video should show the working platform, explain how it is built, and state the outcomes. This script is timed for about 10 minutes (about 1,300 spoken words
+at a normal pace). Left column in each segment: what is on screen. SAY: the words to speak. Read it once or twice aloud before recording; it works better in your own words.
+
+======================================================================================================================
+BEFORE YOU RECORD (15 minutes)
+======================================================================================================================
+1. Start the app and make sure every page loads: http://localhost:3000 (flights, map, fleet, incidents, ask, workbench, data explorer, database, benchmarks).
+2. Open one browser window at about 1600 x 900, browser zoom 110%, light theme (the default). Close other tabs and notifications. Use a clean browser profile if you can.
+3. Open these tabs in this order, so you only switch tabs while recording:
+   a. the project deck (slides/UAVLog_Project_PPT.pdf), on the architecture slide
+   b. http://localhost:3000/data               (Data explorer)
+   c. http://localhost:3000/database           (Database page)
+   d. the flight with the parachute events: open Flights, pick the top row (Flight 968d313d, board CZI_CZ100, 12:54)
+   e. http://localhost:3000/search
+   f. http://localhost:3000/ask
+   g. http://localhost:3000/workbench
+   h. http://localhost:3000/map   then   /fleet   then   /incidents
+   i. http://localhost:3000/benchmarks
+4. Warm the pages once (open each and wait until it finishes loading) so nothing spins on camera. Open the flight page and click "Write an incident report" once so the report is cached
+   and appears instantly. Click "Find similar moments" once as a warm-up.
+5. Record with OBS Studio (or the Windows/Mac screen recorder): 1920 x 1080, 30 fps, microphone only (no webcam needed). Do a 10-second test and listen to it.
+6. Turn off the OS "do not disturb" off-state: enable Do Not Disturb. Hide the bookmarks bar. Move the mouse slowly; pause 1 second after each click.
+
+======================================================================================================================
+TIMELINE
+======================================================================================================================
+ 0:00  1  The problem and the idea                       (deck, title and architecture slides)        0:50
+ 0:50  2  How it is built                                 (deck: architecture slide)                   0:50
+ 1:40  3  The database: schema and storage                (Data explorer, Database page)               1:10
+ 2:50  4  One flight: replay and charts                   (flight page)                                0:50
+ 3:40  5  Incident report with citations                  (flight page)                                0:55
+ 4:35  6  Similar moments and semantic search             (flight page, Search)                        0:55
+ 5:30  7  Ask, the workbench and the four defences        (Ask, Workbench)                             1:15
+ 6:45  8  Fleet views: map, galaxy, incidents             (Map, Fleet, Incidents)                      0:45
+ 7:30  9  The experiments                                 (Benchmarks page and deck charts)            1:30
+ 9:00 10  What was hard, outcomes and limits              (deck: key results, conclusions)             1:00
+                                                                                                    ------
+                                                                                                     10:00
+
+======================================================================================================================
+SEGMENT 1. THE PROBLEM AND THE IDEA (0:00 to 0:50)
+======================================================================================================================
+ON SCREEN: the deck title slide for 5 seconds, then the "Motivation" slide.
+SAY: "Hello, I am Sumit Kumar. My project is Semantic Log Analytics for UAV flight logs. A drone writes a log on every flight. In my data set, 300 real PX4 flights hold seventy
+point seven million telemetry samples and over three thousand text events such as warnings and failures. Existing tools show one log at a time, but the questions people ask
+span many flights and are asked in words, like 'which flights lost a motor?' So I treated the whole collection as a database problem. Everything you will see runs on one PostgreSQL
+instance, and every design choice is backed by a measurement."
+
+======================================================================================================================
+SEGMENT 2. HOW IT IS BUILT (0:50 to 1:40)
+======================================================================================================================
+ON SCREEN: the deck's "The gap and the architecture" slide. Point at the diagram with the mouse in the order you speak.
+SAY: "This is the architecture. Raw logs are parsed into a Parquet lake and into a telemetry table in TimescaleDB, which stores old data column by column, compressed. Rules and the
+failure detector turn telemetry into events. Events are embedded and indexed with pgvector. An ontology, stored in ordinary relational tables, maps PX4 and ArduPilot field names
+onto shared concepts like battery voltage. A FastAPI service and a Next.js application sit on top. The language model never touches the raw tables; it sees only curated, documented,
+read-only views. Every batch stage runs from job tables in Postgres, claimed with SKIP LOCKED, so work is concurrent, resumable and survives failure."
+
+======================================================================================================================
+SEGMENT 3. THE DATABASE: SCHEMA AND STORAGE (1:40 to 2:50)
+======================================================================================================================
+ON SCREEN: tab "Data explorer", Schema map. Hover the flight table so its links highlight. Click telemetry, then click the Structure tab. Then the Database page: the space bar and the plan.
+SAY: "This is the data explorer, built into the app and read live from the database catalog. Flight is the center. Telemetry, events, signatures and signal windows all point to it. Telemetry is a
+narrow table: one row per time, flight and signal, so a new signal or even a new autopilot never changes the schema. It is a TimescaleDB hypertable with seven-day chunks, compressed into the
+columnstore, segmented by flight and signal. On the Database page you can see the result: seventy million rows take twelve point five gigabytes as a normal table, and three hundred eighty-five
+megabytes in the columnstore, thirty-two times smaller. Below it is a real EXPLAIN ANALYZE of the query the charts use, reading only the compressed segments it needs."
+
+======================================================================================================================
+SEGMENT 4. ONE FLIGHT: REPLAY AND CHARTS (2:50 to 3:40)
+======================================================================================================================
+ON SCREEN: the flight page (Flight 968d313d). Click Replay at 16x and let it run about 15 seconds. Then pause, drag across the battery chart to zoom, then double-click to reset.
+SAY: "Here is one flight. The ribbon shows the flight modes, and the red marks are critical events. I will replay it. The time cursor sweeps every chart and the ground track together, and events
+surface as the replay passes them. Around six minutes forty the parachute fires. The charts are synchronized: I drag across one and all of them zoom. Server-side downsampling keeps minimum
+and maximum envelopes, so a short spike can never be averaged away."
+
+======================================================================================================================
+SEGMENT 5. INCIDENT REPORT WITH CITATIONS (3:40 to 4:35)
+======================================================================================================================
+ON SCREEN: click the "Incident report" chip. Show the headline and findings. Click one citation chip (for example E6) so the charts jump to that moment. Expand "Evidence".
+SAY: "This section writes an incident report. The important design point is that the numbers do not come from the model. The database gathers numbered evidence with SQL: the events, the
+signals that are unusual compared with the whole corpus, and what similar flights did. The model only writes prose, and it must cite evidence items. Every citation is checked against the
+evidence, and a statement with no valid citation is dropped. If I click a citation, the charts jump to that moment. Here the evidence shows a low battery, a failsafe, and the parachute
+sequence."
+
+======================================================================================================================
+SEGMENT 6. SIMILAR MOMENTS AND SEMANTIC SEARCH (4:35 to 5:30)
+======================================================================================================================
+ON SCREEN: "Similar moments": press Find similar moments. Then open Search and type "motor failure during takeoff".
+SAY: "Each flight is also cut into overlapping ten-second windows, and each window is embedded by how every signal behaved. Here I pick a moment and search all flights for moments that behaved the
+same way, with an HNSW index. I measured it: for events such as landing and takeoff, precision at ten is up to forty times higher than random. Semantic search works on the event text. It fuses
+vector similarity, full text and filters. One finding surprised me: plain rank fusion was worse than vector search alone, so I report that as found. Filters were the real problem: with a
+selective filter, pgvector can return no rows at all, so the search asks the planner how many rows the filter keeps and picks exact search or HNSW accordingly."
+
+======================================================================================================================
+SEGMENT 7. ASK, THE WORKBENCH AND THE FOUR DEFENCES (5:30 to 6:45)
+======================================================================================================================
+ON SCREEN: Ask page: click the example "Which three boards had the most critical events?", open "How this was answered". Then the SQL workbench: run the prepared query, then type
+SELECT pg_read_file('/etc/passwd') and run it to show the refusal. Then type DROP TABLE flight to show the second refusal.
+SAY: "On the Ask page I write a question in English. The model writes SQL, but four independent layers stand between that SQL and the data. A parser-based guard allows one SELECT on allow-listed views and
+rebuilds the statement from the parse tree. The query runs as a restricted role, in a read-only transaction with a timeout, and the planner's cost estimate is checked first. The page shows
+the SQL, the cost and the guard actions. The SQL workbench lets me type my own queries under the same checks. A normal query runs. Reading a server file is refused by name. A DROP is refused.
+I tested forty-six hostile queries, and each was refused for the intended reason."
+
+======================================================================================================================
+SEGMENT 8. FLEET VIEWS: MAP, GALAXY, INCIDENTS (6:45 to 7:30)
+======================================================================================================================
+ON SCREEN: Map (hover over the dots; click a red one and show the card), then Fleet: click "Critical events" and "How unusual" under Flight galaxy, then Incidents: filter Kind to Failsafe activated and
+click Open at on the first row.
+SAY: "These views use the whole corpus. The map places every flight that has a GPS fix, coloured by critical events. The flight galaxy places each flight by how it behaved, using a thirty-two dimension
+behavioural signature projected to two dimensions, so I can colour it by board, firmware, or how unusual the flight is. The incidents feed lists every warning and failure across flights; I filter to failsafes
+and open one at the exact moment."
+
+======================================================================================================================
+SEGMENT 9. THE EXPERIMENTS (7:30 to 9:00)
+======================================================================================================================
+ON SCREEN: Benchmarks page, scrolling slowly through: Vector indexes, Filtered search, Natural-language SQL, Columnstore, TimescaleDB against DuckDB. Pause on each chart for about 10 seconds.
+SAY: "Every claim is an experiment, and they all live on the Benchmarks page, drawn from saved result files. For vector indexes at a hundred thousand vectors, HNSW reaches ninety-five percent recall in
+two point four milliseconds, over a hundred times faster than exact search at three hundred sixty-two. For filtered search, the default post-filter returns zero of ten requested rows when the filter keeps one
+tenth of a percent, which is why the router exists. For natural-language SQL, on twenty-seven held-out questions accuracy is point eight nine with the semantic views, point seven with documentation alone, and
+point two six without it; the documentation is the big effect, and the extra benefit of the views is not statistically significant, which I say plainly. The columnstore design experiment and the comparison with
+DuckDB show where each wins: DuckDB wins full scans, the columnstore wins pruned access, and Postgres keeps writers, roles and vectors in one engine."
+
+======================================================================================================================
+SEGMENT 10. WHAT WAS HARD, OUTCOMES AND LIMITS (9:00 to 10:00)
+======================================================================================================================
+ON SCREEN: the deck's "Key results" slide, then "Conclusions and limits".
+SAY: "Three things were hard. First, correctness under concurrency: SKIP LOCKED once claimed fifty-two rows when I asked for twenty-five, until I used a materialized subquery. Second, honest evaluation: my first
+language-model run overstated the benefit because of my own comparison bug, so I fixed it, froze the prompts and re-ran. Third, filtered vector search, which silently under-returns. The outcomes: storage thirty-two
+times smaller, cross-flight queries up to ninety-five times faster, retrieval that routes itself, and a language interface that is safe by construction. The limits are real: three hundred flights, one machine, one
+model, questions I wrote myself, and a battery-low detector with twenty-three percent false alarms. Next steps are a ten-thousand-flight run and a concurrency benchmark. Thank you."
+
+======================================================================================================================
+IF SOMETHING GOES WRONG WHILE RECORDING
+======================================================================================================================
+- A page spins: stop, wait for it to finish, reload, and re-record only that segment; you can cut segments together afterwards.
+- The incident report is missing: click "Write an incident report" and talk about the evidence while it loads (a few seconds).
+- Similar moments returns nothing: pick another moment with the slider, near an event.
+- Keep a second take of segments 7 and 9; they have the most to say.
+- Trim breathing and long pauses in any editor (DaVinci Resolve, iMovie, Clipchamp). Add no music; keep the voice clear.
+
+AFTER RECORDING
+- Watch it once at normal speed: check that the text on screen is readable at 1080p, the cursor is visible, and the total length is between 9:30 and 10:30.
+- Export as MP4 (H.264, 1080p, 30 fps).
