@@ -1,6 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { api, type SearchResponse } from "@/lib/api";
+import { clock } from "@/lib/format";
 
 import { ALL_PAGES } from "@/lib/nav";
 
@@ -13,6 +15,15 @@ function Palette({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [i, setI] = useState(0);
+  const [events, setEvents] = useState<{ label: string; hint: string; go: string }[]>([]);
+  useEffect(() => {  // live event results for what is typed (debounced; the query embedding is cached on the server)
+    const text = q.trim();
+    if (text.length < 4) { setEvents([]); return; }
+    const id = setTimeout(() => {
+      api<SearchResponse>("/search", { q: text, k: 4 }).then((r) => setEvents(r.results.map((x) => ({ label: x.description.slice(0, 90), hint: `Flight ${x.source_ref.slice(0, 8)} at ${clock(x.t)}`, go: `/flights/${x.flight_id}?t=${Math.round(x.t)}` })))).catch(() => setEvents([]));
+    }, 450);
+    return () => clearTimeout(id);
+  }, [q]);
   const items = useMemo(() => {
     const s = q.trim().toLowerCase();
     const pages = ALL_PAGES.filter((p) => !s || p.label.toLowerCase().includes(s) || p.hint.includes(s)).map((p) => ({ label: p.label, hint: p.hint, go: p.href }));
@@ -21,8 +32,8 @@ function Palette({ onClose }: { onClose: () => void }) {
       { label: `Search events for "${text}"`, hint: "semantic search", go: `/search?q=${encodeURIComponent(text)}` },
       { label: `Ask: ${text}`, hint: "natural language to SQL", go: `/ask?q=${encodeURIComponent(text)}` },
     ] : [];
-    return [...actions, ...pages];
-  }, [q]);
+    return [...actions, ...events, ...pages];
+  }, [q, events]);
   const choose = (n: number) => { const it = items[n]; if (it) { onClose(); router.push(it.go); } };
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 pt-[14vh]" onClick={onClose} role="dialog" aria-modal="true" aria-label="Jump to">

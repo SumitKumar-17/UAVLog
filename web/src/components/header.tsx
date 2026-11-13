@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { CommandPalette } from "./command-palette";
+import { Tour } from "./tour";
 
 const SHORTCUTS: [string, string][] = [["Ctrl K  or  Cmd K", "Jump to any page, or turn text into a search or a question"], ["?", "Show this list"], ["Space", "Play or pause the flight replay"], ["Left, Right", "Step the replay by 5 seconds"], ["Esc", "Close a dialog"]];
 
@@ -46,6 +47,7 @@ function GitHubLink() {
 export function Header({ title, onMenu, onToggleNav, navCollapsed }: { title?: string; onMenu: () => void; onToggleNav: () => void; navCollapsed: boolean }) {
   const [palette, setPalette] = useState(false);
   const [help, setHelp] = useState(false);
+  const [tour, setTour] = useState(false);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((o) => !o); return; }
@@ -69,10 +71,12 @@ export function Header({ title, onMenu, onToggleNav, navCollapsed }: { title?: s
         <button onClick={() => setPalette(true)} className="mr-1 flex items-center gap-2 whitespace-nowrap rounded border border-rule px-2.5 py-1 text-sm text-ink-2 hover:border-route" aria-label="Jump to a page or ask a question">
           <span className="hidden sm:inline">Jump to</span><kbd className="rounded bg-rule-soft px-1.5 text-xs">Ctrl K</kbd>
         </button>
+        <button onClick={() => setTour(true)} className="mr-1 rounded border border-rule px-2.5 py-1 text-sm text-ink-2 hover:border-route" aria-label="Start the guided tour">Tour</button>
         <GitHubLink /><ThemeToggle />
       </div>
       <CommandPalette open={palette} onClose={() => setPalette(false)} />
       {help && <Shortcuts onClose={() => setHelp(false)} />}
+      <Tour open={tour} onClose={() => setTour(false)} />
     </header>
   );
 }

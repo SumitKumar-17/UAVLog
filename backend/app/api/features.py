@@ -513,3 +513,63 @@ def ask_flight(flight_id: str, body: FlightQuestion, request: Request, p=Depends
     except Exception as e:
         raise HTTPException(502, f"the model did not return a usable answer ({e})")
     return {"answer": answer, "cites": cites, "evidence": evidence}
+
+
+# --------------------------------------------------------------------------------------------------------------------------- signals
+@router.get("/signals/overview")
+def signals_overview(p=Depends(pool)):
+    """For every canonical signal: how many flights have it, and the distribution of the per-flight mean (20 bins between the 2nd and 98th percentile)."""
+    meta = {r["key"]: r for r in rows(p, "SELECT key, label, unit, description FROM concept WHERE kind = 'signal'")}
+    stats = rows(p, """
+        SELECT signal, count(*) AS n, percentile_cont(0.02) WITHIN GROUP (ORDER BY mean_value) AS lo, percentile_cont(0.5) WITHIN GROUP (ORDER BY mean_value) AS med,
+               percentile_cont(0.98) WITHIN GROUP (ORDER BY mean_value) AS hi, min(min_value) AS vmin, max(max_value) AS vmax
+        FROM semantic.signal_summary WHERE mean_value IS NOT NULL GROUP BY signal HAVING count(*) >= 10 ORDER BY signal""")
+    bins = rows(p, """
+        WITH r AS (SELECT signal, percentile_cont(0.02) WITHIN GROUP (ORDER BY mean_value) AS lo, percentile_cont(0.98) WITHIN GROUP (ORDER BY mean_value) AS hi
+                   FROM semantic.signal_summary WHERE mean_value IS NOT NULL GROUP BY signal HAVING count(*) >= 10)
+        SELECT s.signal, least(greatest(width_bucket(s.mean_value, r.lo, CASE WHEN r.hi > r.lo THEN r.hi ELSE r.lo + 1 END, 20), 1), 20) AS b, count(*) AS n
+        FROM semantic.signal_summary s JOIN r ON r.signal = s.signal WHERE s.mean_value IS NOT NULL GROUP BY 1, 2""")
+    hist: dict[str, list[int]] = {}
+    for b in bins:
+        hist.setdefault(b["signal"], [0] * 20)[b["b"] - 1] = b["n"]
+    return [{**s, "label": meta.get(s["signal"], {}).get("label", s["signal"]), "unit": meta.get(s["signal"], {}).get("unit"),
+             "description": meta.get(s["signal"], {}).get("description"), "bins": hist.get(s["signal"], [0] * 20)} for s in stats if s["signal"] in meta]
+
+
+@router.get("/signals/{signal}/top")
+def signal_top(signal: str, p=Depends(pool), by: str = Query("max", pattern="^(max|min|mean)$"), limit: int = Query(8, ge=1, le=20)):
+    """The flights with the highest (or lowest) value of a signal."""
+    col, order = {"max": ("max_value", "DESC"), "min": ("min_value", "ASC"), "mean": ("mean_value", "DESC")}[by]
+    return rows(p, f"""SELECT f.id, f.source_ref, f.metadata->>'sys_hw' AS hw, f.firmware, f.duration_s, s.{col} AS value
+                       FROM semantic.signal_summary s JOIN flight f ON f.id = s.flight_id WHERE s.signal = %s AND s.{col} IS NOT NULL
+                       ORDER BY s.{col} {order} LIMIT %s""", (signal, limit))
+
+
+@router.get("/flights/{flight_id}/correlations")
+def correlations(flight_id: str, p=Depends(pool)):
+    """Pearson correlation between the signals of one flight on a one-second grid: which signals moved together."""
+    import numpy as np
+    from app import windows
+    fid = flight_uuid(flight_id)
+    model = rows(p, "SELECT model FROM window_model WHERE id = 1")
+    if not model:
+        raise HTTPException(404, "no window model yet")
+    sigs = [s for s in model[0]["model"]["signals"] if not s.startswith(("ekf.", "gps.l", "vibration.gyro"))]
+    with p.connection() as c:
+        series = windows.load_series(c, fid, sigs)
+    keep = [s for s in sigs if s in series and len(series[s][0]) >= 30 and np.ptp(series[s][1]) > 1e-9][:14]
+    if len(keep) < 3:
+        raise HTTPException(404, "too few signals in this flight")
+    T = max(int(max(series[s][0].max() for s in keep)) + 1, 2)
+    grid = np.full((len(keep), T), np.nan)
+    for i, s in enumerate(keep):
+        t, v = series[s]
+        grid[i, np.clip(t.astype(int), 0, T - 1)] = v
+    m = np.full((len(keep), len(keep)), np.nan)
+    for i in range(len(keep)):
+        for j in range(len(keep)):
+            ok = ~np.isnan(grid[i]) & ~np.isnan(grid[j])
+            if ok.sum() >= 20 and grid[i, ok].std() > 1e-9 and grid[j, ok].std() > 1e-9:
+                m[i, j] = float(np.corrcoef(grid[i, ok], grid[j, ok])[0, 1])
+    meta = {r["key"]: r for r in rows(p, "SELECT key, label FROM concept WHERE kind = 'signal'")}
+    return {"signals": [{"key": s, "label": meta.get(s, {}).get("label", s)} for s in keep], "matrix": [[None if np.isnan(x) else round(float(x), 3) for x in row] for row in m]}

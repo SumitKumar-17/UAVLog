@@ -2,6 +2,7 @@ import { SearchBox } from "@/components/search-box";
 import { FlightBoard } from "@/components/flight-board";
 import { Corpus } from "@/components/corpus";
 import { FeatureTiles } from "@/components/feature-tiles";
+import { FleetPulse } from "@/components/fleet-pulse";
 
 export default function Home() {
   return (
@@ -11,6 +12,7 @@ export default function Home() {
         <SearchBox />
       </section>
       <FeatureTiles />
+      <FleetPulse />
 
       <div className="mt-12 grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
         <section aria-labelledby="board">

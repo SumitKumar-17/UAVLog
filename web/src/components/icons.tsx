@@ -14,6 +14,7 @@ const P: Record<IconName, string> = {
   database: "M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6",
   benchmarks: "M4 20h16M7 20V10M12 20V4M17 20v-7",
   incidents: "M12 3l10 18H2zM12 10v5M12 18v.5",
+  signals: "M3 18h3v-5h3v8h3V9h3v6h3V6h3",
   upload: "M12 16V4M7 9l5-5 5 5M4 20h16",
   rules: "M4 6h16M4 12h16M4 18h16M9 4v4M15 10v4M8 16v4",
   performance: "M3 13h4l3-8 4 14 3-6h4",

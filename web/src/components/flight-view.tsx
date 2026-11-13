@@ -14,6 +14,7 @@ import { SimilarMoments } from "./similar-moments";
 import { InvestigatePanel } from "./investigate-panel";
 import { ReplayBar } from "./replay-bar";
 import { BehaviourStrip } from "./behaviour-strip";
+import { CorrelationHeatmap } from "./correlation-heatmap";
 import { TrackPlot } from "./track-plot";
 import { FlightTimeline } from "./flight-timeline";
 import { SignalChart } from "./signal-chart";
@@ -68,7 +69,7 @@ export function FlightView({ id }: { id: string }) {
       </header>
 
       <nav aria-label="Sections of this flight" className="sticky top-14 z-20 -mx-1 mb-5 flex flex-wrap gap-1.5 bg-paper/95 px-1 py-2 backdrop-blur">
-        {[["signals", "Signals"], ["investigate", "Incident report"], ["moments", "Similar moments"], ["notes", "Notes"], ["similar", "Similar flights"]].map(([id, label]) => (
+        {[["signals", "Signals"], ["investigate", "Incident report"], ["moments", "Similar moments"], ["relations", "Relationships"], ["notes", "Notes"], ["similar", "Similar flights"]].map(([id, label]) => (
           <a key={id} href={`#${id}`} className="rounded-full border border-rule bg-panel px-3.5 py-1 text-sm text-ink-2 hover:border-route hover:text-ink">{label}</a>))}
       </nav>
       <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
@@ -89,6 +90,11 @@ export function FlightView({ id }: { id: string }) {
             <h2 id="moments" className="scroll-mt-28 font-dense text-2xl font-semibold">Moments like this one</h2>
             <p className="mb-3 mt-1 max-w-2xl text-ink-2">Pick a moment and find where, in other flights, the signals behaved the same way. Each flight is cut into overlapping 10 second windows described by the statistics of every signal.</p>
             <SimilarMoments flightId={f.id} duration={f.duration_s} />
+          </section>
+          <section className="mt-12 scroll-mt-28" aria-labelledby="relations">
+            <h2 id="relations" className="scroll-mt-28 font-dense text-2xl font-semibold">Signal relationships</h2>
+            <p className="mb-3 mt-1 max-w-2xl text-ink-2">Which signals moved together in this flight, from the correlation of every pair on a one-second grid.</p>
+            <CorrelationHeatmap flightId={f.id} />
           </section>
           <section className="mt-12 scroll-mt-28" aria-labelledby="notes"><h2 id="notes" className="scroll-mt-28 mb-3 font-dense text-2xl font-semibold">Notes</h2><NotesPanel flightId={f.id} duration={f.duration_s} /></section>
           <section className="mt-12 scroll-mt-28" aria-labelledby="similar">

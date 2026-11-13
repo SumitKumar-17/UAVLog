@@ -194,3 +194,7 @@ export type LabScore = { threshold: number; events: number; flights: number; mat
 export type LabResult = { rule: LabRule; current: LabScore; default: LabScore; sweep: LabScore[] };
 
 export type UploadJob = { id: string; log_id: string; name: string; bytes: number; status: "running" | "done" | "failed"; flight_id: string | null; error: string | null; stages: { name: string; status: "pending" | "running" | "done" | "failed"; seconds: number | null }[] };
+
+export type SignalDist = { signal: string; label: string; unit: string | null; description: string | null; n: number; lo: number; med: number; hi: number; vmin: number; vmax: number; bins: number[] };
+export type SignalTop = { id: string; source_ref: string; hw: string | null; firmware: string | null; duration_s: number; value: number };
+export type Correlations = { signals: { key: string; label: string }[]; matrix: (number | null)[][] };

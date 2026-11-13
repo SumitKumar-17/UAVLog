@@ -73,6 +73,9 @@ def compress(lo=None, hi=None) -> None:
         params = (hi, lo)
     for (chunk,) in tgt.execute(q + " ORDER BY range_start", params).fetchall():
         tgt.execute("SELECT compress_chunk(%s::regclass, if_not_compressed => true)", (chunk,))
+        # recompressing a chunk that received more rows leaves its emptied heap and index at full size until they are rewritten
+        if tgt.execute("SELECT pg_total_relation_size(%s::regclass) > 8 * 1024 * 1024", (chunk,)).fetchone()[0]:
+            tgt.execute(f"VACUUM (FULL) {chunk}")
 
 
 def copy_flight(fid) -> int:

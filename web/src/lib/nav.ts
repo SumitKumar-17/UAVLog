@@ -1,4 +1,4 @@
-export type IconName = "overview" | "flights" | "map" | "fleet" | "search" | "compare" | "ask" | "workbench" | "ontology" | "data" | "database" | "benchmarks" | "incidents" | "patterns" | "performance" | "rules" | "upload";
+export type IconName = "overview" | "flights" | "map" | "fleet" | "search" | "compare" | "ask" | "workbench" | "ontology" | "data" | "database" | "benchmarks" | "incidents" | "patterns" | "performance" | "rules" | "upload" | "signals";
 export type NavItem = { href: string; label: string; hint: string; icon: IconName };
 export const NAV: { label: string; items: NavItem[] }[] = [
   { label: "Explore", items: [
@@ -9,6 +9,7 @@ export const NAV: { label: string; items: NavItem[] }[] = [
     { href: "/map", label: "Map", hint: "where the flights happened", icon: "map" },
     { href: "/fleet", label: "Fleet", hint: "boards, firmware, the flight galaxy", icon: "fleet" } ] },
   { label: "Analyze", items: [
+    { href: "/signals", label: "Signals", hint: "every signal's distribution across flights", icon: "signals" },
     { href: "/search", label: "Search", hint: "find events by meaning", icon: "search" },
     { href: "/patterns", label: "Patterns", hint: "what happens before and after an event", icon: "patterns" },
     { href: "/rules", label: "Rule lab", hint: "tune the detectors and see the trade-off", icon: "rules" },
