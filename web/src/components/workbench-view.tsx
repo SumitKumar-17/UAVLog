@@ -1,7 +1,7 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { api, post, type SavedQuery, type SchemaView, type WorkbenchResult } from "@/lib/api";
+import { api, post, type Explained, type PlanNode, type SavedQuery, type SchemaView, type WorkbenchResult } from "@/lib/api";
 
 const EXAMPLES: { title: string; sql: string }[] = [
   { title: "Flights per board", sql: "SELECT board, count(*) AS flights\nFROM semantic.flights\nGROUP BY board\nORDER BY flights DESC\nLIMIT 10" },
@@ -9,6 +9,24 @@ const EXAMPLES: { title: string; sql: string }[] = [
   { title: "Highest vibration per flight", sql: "SELECT flight_id, max_value AS peak_vibration\nFROM semantic.signal_summary\nWHERE signal = 'vibration.accel'\nORDER BY max_value DESC\nLIMIT 10" },
   { title: "Signals and their units", sql: "SELECT key, label, unit\nFROM semantic.signals\nORDER BY key" },
 ];
+/** One node of the planner's plan, with a bar showing its share of the total cost, and its children below. */
+function PlanTree({ n, total, depth = 0 }: { n: PlanNode; total: number; depth?: number }) {
+  const what = n["Relation Name"] ?? n["Index Name"];
+  const detail = n["Index Cond"] ?? n["Hash Cond"] ?? n["Filter"] ?? (n["Group Key"] ? `group by ${n["Group Key"].join(", ")}` : n["Sort Key"] ? `sort by ${n["Sort Key"].join(", ")}` : "");
+  return (
+    <div>
+      <div className="flex items-center gap-3 border-b border-rule-soft py-1.5 text-sm" style={{ paddingLeft: depth * 22 }}>
+        <span className="text-muted">{depth > 0 ? "\u2514" : ""}</span>
+        <span className="min-w-0 flex-1"><b>{n["Node Type"]}</b>{n["Join Type"] ? ` (${n["Join Type"]})` : ""}{what ? <> on <span className="font-mono">{what}</span></> : null}{detail ? <span className="ml-2 truncate font-mono text-xs text-ink-2">{detail}</span> : null}</span>
+        <span className="hidden w-28 sm:block"><span className="block h-2 rounded bg-rule-soft"><span className="block h-2 rounded" style={{ width: `${Math.max(2, (n["Total Cost"] / total) * 100)}%`, background: "var(--s2)" }} /></span></span>
+        <span className="w-24 text-right tabular-nums text-ink-2">cost {Math.round(n["Total Cost"]).toLocaleString("en-US")}</span>
+        <span className="w-24 text-right tabular-nums text-ink-2">{n["Plan Rows"].toLocaleString("en-US")} rows</span>
+      </div>
+      {n.Plans?.map((c, i) => <PlanTree key={i} n={c} total={total} depth={depth + 1} />)}
+    </div>
+  );
+}
+
 const cell = (v: unknown) => (v === null ? "" : typeof v === "number" ? (Number.isInteger(v) ? v.toLocaleString("en-US") : Number(v.toPrecision(6)).toString()) : String(v));
 
 /** Run SQL by hand under the same four defences as the Ask page: guard, restricted role, read-only transaction, cost admission. */
@@ -19,6 +37,7 @@ export function WorkbenchView() {
   const [title, setTitle] = useState("");
   const schema = useQuery({ queryKey: ["wb-schema"], queryFn: () => api<SchemaView[]>("/workbench/schema") });
   const saved = useQuery({ queryKey: ["wb-saved"], queryFn: () => api<SavedQuery[]>("/workbench/saved") });
+  const plan = useMutation({ mutationFn: (s: string) => post<Explained>("/workbench/explain", { sql: s }) });
   const run = useMutation({ mutationFn: (s: string) => post<WorkbenchResult>("/workbench/run", { sql: s }) });
   const save = useMutation({ mutationFn: () => post("/workbench/saved", { title, sql }), onSuccess: () => { setTitle(""); qc.invalidateQueries({ queryKey: ["wb-saved"] }); } });
   const del = useMutation({ mutationFn: (id: number) => fetch(`/api/workbench/saved/${id}`, { method: "DELETE" }), onSuccess: () => qc.invalidateQueries({ queryKey: ["wb-saved"] }) });
@@ -58,13 +77,21 @@ export function WorkbenchView() {
             className="mt-2 w-full rounded border border-rule bg-panel p-3 font-mono text-[14px] leading-relaxed text-ink focus:border-route" />
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <button onClick={() => run.mutate(sql)} disabled={run.isPending} className="h-10 rounded bg-route px-6 font-semibold text-on-route hover:opacity-90 disabled:opacity-60">{run.isPending ? "Running" : "Run"}</button>
-            <span className="text-xs text-muted">Ctrl+Enter</span>
+            <button onClick={() => plan.mutate(sql)} disabled={plan.isPending} className="h-10 rounded border border-rule px-4 text-[15px] text-ink-2 hover:border-route disabled:opacity-60">{plan.isPending ? "Planning" : "Explain"}</button>
+            <span className="text-xs text-muted">Ctrl+Enter runs</span>
             <span className="ml-auto flex items-center gap-2">
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Name this query" aria-label="Name for the saved query" className="h-9 w-44 rounded border border-rule bg-panel px-2 text-sm" />
               <button onClick={() => save.mutate()} disabled={!title.trim() || save.isPending} className="h-9 rounded border border-rule px-3 text-sm text-ink-2 hover:border-route disabled:opacity-50">Save</button>
             </span>
           </div>
           {save.error && <p className="mt-2 text-sm text-critical">{(save.error as Error).message}</p>}
+          {plan.error && <p className="mt-3 text-sm text-critical" role="alert">{(plan.error as Error).message}</p>}
+          {plan.data && (
+            <div className="mt-4 rounded border border-rule bg-panel p-3">
+              <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2"><span className="font-semibold">Query plan</span>
+                <span className="text-sm text-ink-2">total cost <b className="text-ink">{Math.round(plan.data.plan["Total Cost"]).toLocaleString("en-US")}</b> of {plan.data.limit.toLocaleString("en-US")} allowed (the planner's estimate; nothing was run)</span></div>
+              <PlanTree n={plan.data.plan} total={plan.data.plan["Total Cost"] || 1} />
+            </div>)}
           {run.error && <div className="mt-4 rounded border border-critical bg-panel px-4 py-3" role="alert"><div className="font-semibold text-critical">The query was refused or failed</div><p className="mt-1 text-sm">{(run.error as Error).message}</p></div>}
           {r && (
             <div className="mt-4">

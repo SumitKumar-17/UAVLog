@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { api, type Moments } from "@/lib/api";
 import { clock } from "@/lib/format";
+import { MomentOverlay } from "./moment-overlay";
 import { useView } from "@/lib/store";
 
 const label = (k: string) => k.replaceAll("_", " ");
@@ -16,6 +17,7 @@ export function SimilarMoments({ flightId, duration }: { flightId: string; durat
   const [t, setT] = useState<number | null>(null);
   const at = Math.round(t ?? start);
   const [asked, setAsked] = useState<number | null>(null);
+  const [overlay, setOverlay] = useState<string | null>(null);
   const { data, error, isFetching } = useQuery({
     queryKey: ["moments", flightId, asked], enabled: asked != null, retry: false,
     queryFn: () => api<Moments>(`/flights/${flightId}/moments`, { t: asked!, k: 8 }),
@@ -48,12 +50,14 @@ export function SimilarMoments({ flightId, duration }: { flightId: string; durat
                     <span className="text-sm text-ink-2">{r.hw ?? "unknown board"} · {r.firmware ?? "unknown firmware"}</span>
                     <span className="text-sm tabular-nums text-ink-2">{clock(r.t0)} to {clock(r.t1)}</span>
                   </div>
+                  {overlay === r.id && <MomentOverlay a={{ id: flightId, t0: data.query.t0, name: "this flight" }} b={{ id: r.id, t0: r.t0, name: `Flight ${r.source_ref.slice(0, 8)}` }} />}
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {r.events.length === 0 && <span className="text-xs text-muted">no events in this window</span>}
                     {r.events.map((e) => <span key={e} className="rounded border border-rule px-1.5 py-0.5 text-xs text-ink-2">{label(e)}</span>)}
                   </div>
                 </div>
                 <div className="w-28 text-right">
+                  <button onClick={() => setOverlay(overlay === r.id ? null : r.id)} aria-pressed={overlay === r.id} className="mb-1.5 rounded border border-rule px-2 py-0.5 text-xs text-ink-2 hover:border-route">{overlay === r.id ? "Hide overlay" : "Overlay"}</button>
                   <div className="h-1.5 rounded bg-rule"><div className="h-1.5 rounded bg-route" style={{ width: `${Math.max(4, 100 - r.distance * 250)}%` }} /></div>
                   <div className="mt-1 text-xs tabular-nums text-muted">distance {r.distance.toFixed(3)}</div>
                 </div>

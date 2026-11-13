@@ -59,6 +59,11 @@ def fleet(p=Depends(pool)):
                    WHEN duration_s < 900 THEN '5-15 min' WHEN duration_s < 1800 THEN '15-30 min' ELSE '> 30 min' END AS bucket,
                    CASE WHEN duration_s < 60 THEN 1 WHEN duration_s < 300 THEN 2 WHEN duration_s < 900 THEN 3 WHEN duration_s < 1800 THEN 4 ELSE 5 END AS o
                    FROM flight WHERE duration_s IS NOT NULL AND duration_s < 86400) x GROUP BY bucket, o ORDER BY o"""),
+        "days": rows(p, """
+            SELECT day, count(*) AS flights, sum(crit)::int AS critical FROM (
+              SELECT f.started_at::date AS day, (SELECT count(*) FROM event e WHERE e.flight_id = f.id AND e.severity = 2) AS crit FROM flight f
+              WHERE f.started_at < now() + interval '1 day' AND f.started_at >= (SELECT max(started_at) FROM flight WHERE started_at < now() + interval '1 day') - interval '371 days') x
+            GROUP BY day ORDER BY day"""),
         "totals": rows(p, """SELECT (SELECT count(*) FROM flight) AS flights, (SELECT count(*) FROM event) AS events,
                              (SELECT count(*) FROM event WHERE severity = 2) AS critical, (SELECT count(DISTINCT metadata->>'sys_hw') FROM flight) AS boards,
                              (SELECT round(sum(duration_s) / 3600.0) FROM flight WHERE duration_s < 86400) AS hours""")[0],
@@ -247,6 +252,17 @@ def workbench_run(body: SqlBody, request: Request, p=Depends(pool)):
             "cost": res.cost, "run_ms": res.run_ms, "notes": checked.notes, "tables": checked.tables, "functions": checked.functions}
 
 
+@router.post("/workbench/explain")
+def workbench_explain(body: SqlBody, p=Depends(pool)):
+    """The planner's plan tree for a query that passes the guard; nothing is executed."""
+    try:
+        checked = guard.check(body.sql, guard.Policy.semantic())
+        plan = execute.explain(p, checked.sql, "semantic")
+    except (guard.GuardError, execute.ExecError) as e:
+        raise HTTPException(400, str(e))
+    return {"sql": checked.sql, "plan": plan, "limit": execute.MAX_COST}
+
+
 @router.get("/workbench/saved")
 def saved_list(p=Depends(pool)):
     return rows(p, "SELECT id, title, sql, created_at FROM saved_query ORDER BY id DESC LIMIT 100")
@@ -311,3 +327,67 @@ def incidents(p=Depends(pool), min_severity: int = Query(2, ge=1, le=2), kind: s
     kinds = rows(p, f"SELECT c.key AS kind, c.label, count(*) AS n {base} WHERE e.severity >= %(sev)s AND (%(hw)s::text IS NULL OR f.metadata->>'sys_hw' = %(hw)s) GROUP BY 1, 2 ORDER BY n DESC", prm)
     boards = rows(p, f"SELECT f.metadata->>'sys_hw' AS hw, count(*) AS n {base} WHERE e.severity >= %(sev)s AND (%(kind)s::text IS NULL OR c.key = %(kind)s) GROUP BY 1 ORDER BY n DESC LIMIT 15", prm)
     return {"total": total, "items": items, "kinds": kinds, "boards": boards}
+
+
+# ------------------------------------------------------------------------------------------------------------------------- anomaly
+_ref: dict = {}
+NN_SQL = """SELECT w.t0, w.t1, (SELECT avg(d) FROM (SELECT w2.embedding <=> w.embedding AS d FROM signal_window w2
+                                                     WHERE w2.flight_id <> w.flight_id ORDER BY w2.embedding <=> w.embedding LIMIT 5) x) AS score
+            FROM signal_window w WHERE {where} ORDER BY w.t0"""
+
+
+def _scores(c, where: str, params: dict) -> list[dict]:
+    c.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")
+    c.execute("SET LOCAL hnsw.ef_search = 100")
+    cur = c.execute(NN_SQL.format(where=where), params)
+    return [{"t0": r[0], "t1": r[1], "score": r[2]} for r in cur.fetchall() if r[2] is not None]
+
+
+@router.get("/flights/{flight_id}/behaviour")
+def behaviour(flight_id: str, p=Depends(pool)):
+    """How unusual each 10 second window of this flight is: the mean cosine distance to the window's 5 nearest neighbours in other flights,
+    shown as a percentile of the same score over a sample of windows from the whole corpus (so 97 means more unusual than 97% of all windows)."""
+    import bisect
+    fid = flight_uuid(flight_id)
+    with p.connection() as c:
+        if not _ref:
+            sample = _scores(c, "w.ctid IN (SELECT ctid FROM signal_window TABLESAMPLE BERNOULLI (4))", {})
+            _ref["scores"] = sorted(s["score"] for s in sample)
+        own = _scores(c, "w.flight_id = %(f)s", {"f": fid})
+    if not own:
+        raise HTTPException(404, "no signal windows for this flight yet; run scripts/build_windows.py")
+    ref = _ref["scores"]
+    for s in own:
+        s["pct"] = round(100 * bisect.bisect_left(ref, s["score"]) / len(ref), 1)
+    top = sorted(own, key=lambda s: -s["score"])[:3]
+    return {"windows": own, "top": top, "reference": {"n": len(ref), "p50": ref[len(ref) // 2], "p90": ref[int(len(ref) * 0.9)], "p99": ref[int(len(ref) * 0.99)]}}
+
+
+# ------------------------------------------------------------------------------------------------------------------------- patterns
+@router.get("/patterns")
+def patterns(p=Depends(pool), kind: str = Query("failsafe_activated", max_length=60, pattern=r"^[a-z_]+$"), seconds: int = Query(60, ge=5, le=600)):
+    """What tends to happen shortly before and after an event kind: for every other kind, the share of flights containing the target kind in which it
+    occurred within `seconds` before (or after) a target event, against how common that kind is across all flights (lift)."""
+    base = rows(p, """
+        WITH ev AS (SELECT e.flight_id, c.key AS kind FROM event e JOIN concept c ON c.id = e.kind_id)
+        SELECT (SELECT count(*) FROM flight) AS flights, (SELECT count(DISTINCT flight_id) FROM ev WHERE kind = %(k)s) AS target_flights,
+               (SELECT count(*) FROM ev WHERE kind = %(k)s) AS target_events""", {"k": kind})[0]
+    if not base["target_events"]:
+        raise HTTPException(404, "no events of this kind")
+    sql = """
+        WITH ev AS (SELECT e.flight_id, c.key AS kind, c.label, extract(epoch FROM e.ts_start - f.started_at) AS t
+                    FROM event e JOIN flight f ON f.id = e.flight_id JOIN concept c ON c.id = e.kind_id),
+        tgt AS (SELECT * FROM ev WHERE kind = %(k)s),
+        common AS (SELECT kind, count(DISTINCT flight_id) AS flights FROM ev GROUP BY kind)
+        SELECT o.kind, o.label, count(DISTINCT t.flight_id) AS flights, count(*) AS pairs, cm.flights AS kind_flights
+        FROM tgt t JOIN ev o ON o.flight_id = t.flight_id AND o.kind <> t.kind AND {cond} JOIN common cm ON cm.kind = o.kind
+        GROUP BY o.kind, o.label, cm.flights ORDER BY count(DISTINCT t.flight_id) DESC LIMIT 10"""
+    out = {}
+    for name, cond in (("before", "o.t < t.t AND o.t >= t.t - %(s)s"), ("after", "o.t > t.t AND o.t <= t.t + %(s)s")):
+        res = rows(p, sql.format(cond=cond), {"k": kind, "s": seconds})
+        for r in res:
+            r["share"] = r["flights"] / base["target_flights"]
+            r["base"] = r["kind_flights"] / base["flights"]
+            r["lift"] = r["share"] / max(r["base"], 1e-9)
+        out[name] = res
+    return {"kind": kind, "seconds": seconds, **base, **out}

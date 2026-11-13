@@ -2,6 +2,19 @@
 import { useEffect, useState } from "react";
 import { CommandPalette } from "./command-palette";
 
+const SHORTCUTS: [string, string][] = [["Ctrl K  or  Cmd K", "Jump to any page, or turn text into a search or a question"], ["?", "Show this list"], ["Space", "Play or pause the flight replay"], ["Left, Right", "Step the replay by 5 seconds"], ["Esc", "Close a dialog"]];
+
+function Shortcuts({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+      <div className="w-full max-w-md rounded-lg border border-rule bg-panel p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex items-center justify-between"><h2 className="font-dense text-xl font-semibold">Keyboard shortcuts</h2><button onClick={onClose} className="text-sm text-ink-2 underline">Close</button></div>
+        <dl className="space-y-2.5">{SHORTCUTS.map(([k, d]) => <div key={k} className="grid grid-cols-[9rem_1fr] items-baseline gap-3"><dt><kbd className="rounded border border-rule bg-rule-soft px-2 py-0.5 text-sm">{k}</kbd></dt><dd className="text-[15px] text-ink-2">{d}</dd></div>)}</dl>
+      </div>
+    </div>
+  );
+}
+
 function ThemeToggle() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   useEffect(() => { setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light"); }, []);
@@ -32,8 +45,14 @@ function GitHubLink() {
 /** The slim horizontal bar: menu and collapse buttons, the current page, Ctrl+K, source link and theme. */
 export function Header({ title, onMenu, onToggleNav, navCollapsed }: { title?: string; onMenu: () => void; onToggleNav: () => void; navCollapsed: boolean }) {
   const [palette, setPalette] = useState(false);
+  const [help, setHelp] = useState(false);
   useEffect(() => {
-    const key = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((o) => !o); } };
+    const key = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((o) => !o); return; }
+      const t = e.target as HTMLElement;
+      if (e.key === "?" && !["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName)) setHelp((o) => !o);
+      if (e.key === "Escape") setHelp(false);
+    };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, []);
@@ -53,6 +72,7 @@ export function Header({ title, onMenu, onToggleNav, navCollapsed }: { title?: s
         <GitHubLink /><ThemeToggle />
       </div>
       <CommandPalette open={palette} onClose={() => setPalette(false)} />
+      {help && <Shortcuts onClose={() => setHelp(false)} />}
     </header>
   );
 }

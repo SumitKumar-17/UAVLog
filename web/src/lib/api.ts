@@ -139,6 +139,7 @@ export type FleetStats = {
   kinds: { kind: string; label: string; events: number; flights: number; critical: number }[];
   years: { year: number; flights: number }[];
   durations: { bucket: string; flights: number }[];
+  days: { day: string; flights: number; critical: number }[];
   totals: { flights: number; events: number; critical: number; boards: number; hours: number };
 };
 export type GalaxyPoint = { id: string; x: number; y: number; unusual: number; source_ref: string; firmware: string | null; hw: string | null; duration_s: number; critical_events: number };
@@ -173,3 +174,9 @@ export type DbGraph = { nodes: (DbTable & { columns: { name: string; type: strin
 
 export type Incident = { id: number; flight_id: string; source_ref: string; hw: string | null; firmware: string | null; started_at: string; kind: string; label: string; severity: number; description: string; t: number };
 export type Incidents = { total: number; items: Incident[]; kinds: { kind: string; label: string; n: number }[]; boards: { hw: string | null; n: number }[] };
+
+export type PatternRow = { kind: string; label: string; flights: number; pairs: number; kind_flights: number; share: number; base: number; lift: number };
+export type Patterns = { kind: string; seconds: number; flights: number; target_flights: number; target_events: number; before: PatternRow[]; after: PatternRow[] };
+
+export type PlanNode = { "Node Type": string; "Relation Name"?: string; "Index Name"?: string; Alias?: string; "Startup Cost": number; "Total Cost": number; "Plan Rows": number; "Plan Width": number; "Join Type"?: string; "Parent Relationship"?: string; "Filter"?: string; "Index Cond"?: string; "Hash Cond"?: string; "Group Key"?: string[]; "Sort Key"?: string[]; Plans?: PlanNode[] };
+export type Explained = { sql: string; plan: PlanNode; limit: number };

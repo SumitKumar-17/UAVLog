@@ -13,6 +13,7 @@ import { SimilarFlights } from "./similar-flights";
 import { SimilarMoments } from "./similar-moments";
 import { InvestigatePanel } from "./investigate-panel";
 import { ReplayBar } from "./replay-bar";
+import { BehaviourStrip } from "./behaviour-strip";
 import { TrackPlot } from "./track-plot";
 import { FlightTimeline } from "./flight-timeline";
 import { SignalChart } from "./signal-chart";
@@ -73,6 +74,7 @@ export function FlightView({ id }: { id: string }) {
       <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="min-w-0">
           <FlightTimeline f={f} />
+          <BehaviourStrip flightId={f.id} duration={f.duration_s} />
           <ReplayBar f={f} />
           <div id="signals" className="mt-6 scroll-mt-28 space-y-3">
             {panels.map((p) => <SignalChart key={p.id} flightId={f.id} duration={f.duration_s} panel={p} modes={f.modes} />)}

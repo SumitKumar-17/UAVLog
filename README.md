@@ -15,9 +15,9 @@ layers. Every design choice is backed by a measurement in `bench/results/`.
 
 | | |
 |---|---|
-| **Explore** | Flights as strips of flight modes, synchronized charts with min/max envelopes, ground track, **flight replay**, **map**, **fleet galaxy** (every flight placed by how it behaved), **incidents** feed |
-| **Find** | Semantic search (vector + full text + filters, fused by reciprocal rank fusion) with a planner-aware filtered search; **similar moments** (10-second windows embedded by signal behaviour); similar flights |
-| **Ask** | Natural language to **guarded read-only SQL** with the SQL, cost and guard actions shown; **SQL workbench** under the same checks; **cited incident reports** (numbers from SQL, prose from a model, every citation verified) |
+| **Explore** | Flights as strips of flight modes, synchronized charts with min/max envelopes, ground track, **flight replay**, a **behaviour strip** (how unusual each 10 seconds were, by vector search), **map**, **fleet galaxy** (every flight placed by how it behaved), a year **calendar**, **incidents** feed, **patterns** (what happens before and after an event) |
+| **Find** | Semantic search (vector + full text + filters, fused by reciprocal rank fusion) with a planner-aware filtered search; **similar moments** (10-second windows embedded by signal behaviour, with a signal overlay); similar flights |
+| **Ask** | Natural language to **guarded read-only SQL** with the SQL, cost and guard actions shown; **SQL workbench** under the same checks, with a **query plan** view; **cited incident reports** (numbers from SQL, prose from a model, every citation verified) |
 | **Inspect the database** | **Data explorer** (schema map, tables, rows, structure), Database page (space, `EXPLAIN ANALYZE`, pipeline), Benchmarks page drawn from the saved result files |
 
 ## Architecture

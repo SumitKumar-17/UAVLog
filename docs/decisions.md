@@ -253,3 +253,11 @@ read-only transaction and cost admission, and saves only queries the guard accep
 **Interface.** Light is the default theme on every system; dark only when chosen. Navigation is a vertical bar plus a slim top bar and a command palette.
 **Continuous aggregate.** `refresh_semantic.py` no longer refreshes `telemetry_1s` by default (`--cagg` opts in): the refresh over compressed chunks ran for more than 45 minutes for 14 of 300 flights, and the
 flight page falls back to the raw path where the aggregate is empty.
+
+## D24. More visual features built on the same tables
+**Behaviour strip** (`GET /api/flights/{id}/behaviour`): for each 10-second window of a flight, the mean cosine distance to its 5 nearest windows in other flights (one HNSW search per window with
+iterative scan, about 25 searches, 80 ms), converted to a percentile against the same score over a 4% sample of all windows (680 windows, cached in the process). It is a nearest-neighbour typicality
+score, not a trained anomaly detector; a window can be unusual for harmless reasons (a rare board). **Patterns** (`GET /api/patterns`): a range self-join of the event table on flight and time
+(before or after, 15 s to 5 min), counting flights, with each kind's overall flight share as baseline and lift = share / base; a flight with many repeats counts once and the result is correlation, not cause.
+**Workbench Explain** (`POST /api/workbench/explain`): `EXPLAIN (FORMAT JSON)` as the restricted role in a read-only transaction after the guard; nothing is executed. **Calendar** and **overlay** are SQL over
+`flight`/`event` and the existing signal envelope endpoint. Reports can be downloaded as Markdown; Space and the arrow keys control the replay and `?` lists the shortcuts.

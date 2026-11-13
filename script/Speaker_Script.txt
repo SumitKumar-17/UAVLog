@@ -1,11 +1,11 @@
 SEMANTIC LOG ANALYTICS [UAV LOG]
-Speaker script for slides/UAVLog_Project_PPT.tex (83 slides)
+Speaker script for slides/UAVLog_Project_PPT.tex (88 slides)
 Presenter: Sumit Kumar (22CS30056)   Course: Advanced Database Management Systems
 
-Narrating every slide takes about 88 minutes. For a recorded or timed talk use one of the paths below (slide numbers are the page numbers in the PDF).
- - Full talk, all 83 slides: about 88 minutes.
- - Medium path (about 72 minutes): slides 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 13, 14, 15, 16, 17, 20, 21, 23, 24, 25, 29, 30, 31, 33, 35, 36, 37, 38, 39, 41, 42, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 67, 68, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 82, 83.
- - Short path (about 31 minutes): slides 1, 2, 3, 6, 8, 13, 14, 15, 21, 29, 36, 37, 42, 47, 51, 52, 55, 57, 62, 68, 76, 82, 83.
+Narrating every slide takes about 92 minutes. For a recorded or timed talk use one of the paths below (slide numbers are the page numbers in the PDF).
+ - Full talk, all 88 slides: about 92 minutes.
+ - Medium path (about 74 minutes): slides 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 14, 15, 16, 17, 18, 19, 22, 23, 26, 28, 29, 30, 34, 35, 36, 38, 40, 41, 42, 43, 44, 46, 47, 50, 51, 52, 53, 54, 55, 56, 57, 58, 60, 61, 62, 63, 64, 66, 67, 68, 69, 70, 72, 73, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 87, 88.
+ - Short path (about 32 minutes): slides 1, 2, 3, 6, 8, 14, 15, 16, 17, 23, 34, 41, 42, 47, 52, 56, 57, 60, 62, 67, 73, 81, 87, 88.
 
 For the 10-minute recorded video use script/Video_Script.txt instead: it follows the live application, not the slides.
 
@@ -71,372 +71,398 @@ SLIDE 11. ONE FLIGHT: MODES, CHARTS, TRACK AND EVENTS   (0:50)
 SAY: A single flight. The ribbon is the flight modes with event marks, the replay bar sits underneath, then the synchronized charts. On the right are the ground track and the event list. Chips at the top jump to the incident report, similar moments, notes and similar flights.
 
 ====================================================================================================
-SLIDE 12. SYNCHRONIZED CHARTS WITH MIN/MAX ENVELOPES   (0:50)
+SLIDE 12. BEHAVIOUR STRIP: HOW UNUSUAL EACH 10 SECONDS WERE   (1:00)
+====================================================================================================
+SAY: Under the mode ribbon is the behaviour strip. Each ten-second window of this flight is compared with its five nearest windows in every other flight, one vector search per window, and shown as a percentile of the same score over the whole corpus: blue is typical, red is unusual. On this flight the strip lights up around seven minutes, just after the battery and failsafe events, so the unusual behaviour is located without anyone choosing a threshold.
+ANALOGY: It is a smoke alarm that compares this room with every other room in the building.
+
+====================================================================================================
+SLIDE 13. SYNCHRONIZED CHARTS WITH MIN/MAX ENVELOPES   (0:50)
 ====================================================================================================
 SAY: The charts are synchronized: drag across one and every chart zooms to that window. The server downsamples for the visible window and keeps the minimum and maximum of each bucket as an envelope, not an average, so a short spike cannot disappear when you zoom out. When zoomed out the charts can read a continuous aggregate; zoomed in they read raw rows.
 ANALOGY: An envelope is like the high and low marks of a tide table: you still see the extremes even when the day is summarized.
 
 ====================================================================================================
-SLIDE 13. FLIGHT REPLAY   (0:50)
+SLIDE 14. FLIGHT REPLAY   (0:50)
 ====================================================================================================
 SAY: The replay bar plays the flight back. The time cursor moves across all charts and the ground track together at one to sixty-four times speed, the current flight mode is shown, and events appear as the replay passes them. It makes a failure sequence easy to follow, such as the low battery, the failsafe and the parachute here.
 
 ====================================================================================================
-SLIDE 14. INCIDENT REPORT WITH CITATIONS   (1:15)
+SLIDE 15. INCIDENT REPORT WITH CITATIONS   (1:15)
 ====================================================================================================
 SAY: This is the incident report. The design rule is that the numbers never come from the model. The database gathers numbered evidence with SQL: the events, the signals that are unusual compared with the whole corpus, and how similar flights behaved. The model only writes prose around that evidence, and it must cite item numbers. Every citation is checked against the evidence, and a finding with no valid citation is dropped. Clicking a citation jumps the charts to that moment.
 ANALOGY: It is like a lab report where every sentence has a footnote, and a clerk deletes any sentence whose footnote does not exist.
 
 ====================================================================================================
-SLIDE 15. SIMILAR MOMENTS   (1:00)
+SLIDE 16. SIMILAR MOMENTS   (1:00)
 ====================================================================================================
 SAY: Similar moments is a second use of vectors. Each flight is cut into overlapping ten-second windows, and each window is described by the statistics of every signal and compressed to thirty-two dimensions. Pick a moment and the HNSW index returns the best matching window in each other flight. I measured it against event labels, shown later: for landing and takeoff the results are up to forty times more likely to share the event than random.
 
 ====================================================================================================
-SLIDE 16. SEMANTIC SEARCH   (0:50)
+SLIDE 17. SIMILAR MOMENTS: OVERLAY   (1:00)
+====================================================================================================
+SAY: Similar moments is a second use of vectors. Each flight is cut into overlapping ten-second windows, and each window is described by the statistics of every signal and compressed to thirty-two dimensions. Pick a moment and the HNSW index returns the best matching window in each other flight. I measured it against event labels, shown later: for landing and takeoff the results are up to forty times more likely to share the event than random.
+
+====================================================================================================
+SLIDE 18. SEMANTIC SEARCH   (0:50)
 ====================================================================================================
 SAY: Semantic search works on the text of the events. It combines vector similarity, full text and structured filters, and the page shows the ranking details and which strategy the router chose for the filter. Typing motor failure during takeoff finds the events by meaning, not by exact words.
 
 ====================================================================================================
-SLIDE 17. ASK: NATURAL LANGUAGE TO GUARDED SQL   (1:00)
+SLIDE 19. ASK: NATURAL LANGUAGE TO GUARDED SQL   (1:00)
 ====================================================================================================
 SAY: On Ask you write a question in plain English. The model writes SQL, but four independent layers stand between it and the data. Expanding how this was answered shows the SQL that actually ran, the planner's cost estimate, and every action the guard took, so a confident wrong answer can be caught by reading it.
 
 ====================================================================================================
-SLIDE 18. COMPARE TWO FLIGHTS   (0:40)
+SLIDE 20. COMPARE TWO FLIGHTS   (0:40)
 ====================================================================================================
 SAY: Compare overlays the same canonical signal from two flights on different boards, aligned at takeoff. This only works because of the ontology: both boards' battery fields resolve to the same concept. The table underneath puts metadata and event counts side by side.
 
 ====================================================================================================
-SLIDE 19. ONTOLOGY   (0:40)
+SLIDE 21. ONTOLOGY   (0:40)
 ====================================================================================================
 SAY: The ontology page shows the concepts, their relations and the vendor fields mapped to them for PX4 and ArduPilot. It is stored in ordinary relational tables and walked with recursive queries.
 
 ====================================================================================================
-SLIDE 20. MAP   (0:50)
+SLIDE 22. MAP   (0:50)
 ====================================================================================================
 SAY: The map places every flight that has a GPS fix, at its mean position. Colour shows how many critical events the flight had and size shows its length. You can filter by board or show only flights with critical events, and clicking a dot opens the flight.
 
 ====================================================================================================
-SLIDE 21. FLEET GALAXY   (1:00)
+SLIDE 23. FLEET GALAXY   (1:00)
 ====================================================================================================
 SAY: The flight galaxy places each flight as a point using its behavioural signature: a thirty-two dimension vector built from signal statistics, event rates and mode shares, projected onto its two main directions. Nearby flights behaved alike. You can colour by board, firmware, critical events or how unusual a flight is, which is the average distance to its five nearest neighbours.
 
 ====================================================================================================
-SLIDE 22. FLEET STATISTICS   (0:45)
+SLIDE 24. FLEET STATISTICS   (0:45)
 ====================================================================================================
 SAY: Below the galaxy are fleet statistics computed with SQL: critical events per flight by board and by firmware family, the most common event kinds with how many flights they occur in, flights per year and flight length. HKUST boards and a few old firmware families stand out here.
 
 ====================================================================================================
-SLIDE 23. INCIDENTS   (0:50)
+SLIDE 25. A YEAR OF FLYING   (0:30)
+====================================================================================================
+SAY: A calendar of the last twelve months, one square a day, showing flights or critical events, like a contribution graph.
+
+====================================================================================================
+SLIDE 26. INCIDENTS   (0:50)
 ====================================================================================================
 SAY: Incidents is a feed of every warning and failure across all flights. Filter by severity, kind, board or a word in the description, then use Open at to land on that exact moment with every chart aligned to it.
 
 ====================================================================================================
-SLIDE 24. SQL WORKBENCH   (1:00)
+SLIDE 27. PATTERNS: WHAT HAPPENS BEFORE AND AFTER AN EVENT   (1:00)
+====================================================================================================
+SAY: Patterns answers what usually happens around an event. For the chosen event it counts, flight by flight, which other kinds occurred within the window before or after, and compares that with how common each kind is overall; the ratio is the lift. It is a windowed self-join of the event table, computed live. Counts are flights, so a flight with many repeats counts once.
+
+====================================================================================================
+SLIDE 28. SQL WORKBENCH   (1:00)
 ====================================================================================================
 SAY: The workbench lets you write your own SQL over the documented views. It goes through the same four checks as Ask: one SELECT on allow-listed views, a restricted read-only role, a timeout and a planner cost limit. It shows the planner cost, the guard's notes and the SQL as rebuilt from the parse tree, and queries can be saved. A normal query runs; reading a server file or dropping a table is refused.
 
 ====================================================================================================
-SLIDE 25. DATA EXPLORER: SCHEMA MAP   (1:00)
+SLIDE 29. SQL WORKBENCH: THE QUERY PLAN   (1:00)
+====================================================================================================
+SAY: The workbench lets you write your own SQL over the documented views. It goes through the same four checks as Ask: one SELECT on allow-listed views, a restricted read-only role, a timeout and a planner cost limit. It shows the planner cost, the guard's notes and the SQL as rebuilt from the parse tree, and queries can be saved. A normal query runs; reading a server file or dropping a table is refused.
+
+====================================================================================================
+SLIDE 30. DATA EXPLORER: SCHEMA MAP   (1:00)
 ====================================================================================================
 SAY: The data explorer is a read-only database browser built into the app. The schema map is drawn live from the catalog: every table, its keys, and the foreign keys between them. Hover a table to follow its links, click to browse it. Flight is the hub; telemetry, events, signatures and signal windows all reference it.
 
 ====================================================================================================
-SLIDE 26. DATA EXPLORER: BROWSE ROWS   (0:40)
+SLIDE 31. DATA EXPLORER: BROWSE ROWS   (0:40)
 ====================================================================================================
 SAY: Browsing shows every table and view with its row count and size on disk, and pages through the rows. Long values such as embeddings are shortened for display.
 
 ====================================================================================================
-SLIDE 27. DATA EXPLORER: STRUCTURE   (0:50)
+SLIDE 32. DATA EXPLORER: STRUCTURE   (0:50)
 ====================================================================================================
 SAY: The structure tab shows columns, types, keys and descriptions, the indexes with their method and size, and for the hypertable the chunk interval, how many chunks are compressed and the segmentby and orderby settings of the columnstore.
 
 ====================================================================================================
-SLIDE 28. CONTENTS   (0:30)
+SLIDE 33. CONTENTS   (0:30)
 ====================================================================================================
 SAY: The rest of the talk goes in four parts. First the database design: schema, hypertable and columnstore, then storage results and the comparison with DuckDB. Then the semantic layer and retrieval: ontology, events, fault injection, hybrid search, vector indexes and filtered search. Then guarded natural-language SQL and its evaluation. And finally the database and benchmark pages, and conclusions.
 
 ====================================================================================================
-SLIDE 29. RELATIONAL SCHEMA   (1:30)
+SLIDE 34. RELATIONAL SCHEMA   (1:30)
 ====================================================================================================
 SAY: This is the schema. Flight has one row per log. Telemetry is a hypertable with one row per time, flight and field. Vendor field and field mapping connect a source field to a concept with a scale and an offset. Concept and concept relation hold the ontology. Event holds text, kind, time span, a 1,536-dimension embedding and a generated tsvector. Flight signature holds a 32-dimension signal-shape vector, note holds investigation notes, and llm call records every model call with tokens, cost and latency.
 ANALOGY: The narrow telemetry table is a ledger: a new kind of expense adds a row, never a column.
 
 ====================================================================================================
-SLIDE 30. DDL: THE TELEMETRY HYPERTABLE   (1:15)
+SLIDE 35. DDL: THE TELEMETRY HYPERTABLE   (1:15)
 ====================================================================================================
 SAY: Here is the real DDL. The narrow long format means a new signal adds rows, never columns, and a new autopilot needs no schema change, because the ontology maps vendor names to a vendor field id. Chunks are seven days. As a plain rowstore this table was a problem: the index was 7.6 GB, larger than the 4.9 GB table. That observation motivates the columnstore work.
 
 ====================================================================================================
-SLIDE 31. INSPECTING THE HYPERTABLE: DIMENSIONS AND COLUMNSTORE SETTINGS   (0:50)
+SLIDE 36. INSPECTING THE HYPERTABLE: DIMENSIONS AND COLUMNSTORE SETTINGS   (0:50)
 ====================================================================================================
 SAY: This is output from the running database, not a diagram. One time dimension on ts with seven-day chunks, 134 chunks in total, compression enabled, segmented by flight id and vendor field id, ordered by ts.
 
 ====================================================================================================
-SLIDE 32. INSPECTING THE HYPERTABLE: CHUNKS   (0:45)
+SLIDE 37. INSPECTING THE HYPERTABLE: CHUNKS   (0:45)
 ====================================================================================================
 SAY: The chunk list: every chunk is compressed. The earliest ranges, 1970 and 2005, belong to logs whose device clock was implausible; the decision log, D6, describes how start times are guarded.
 
 ====================================================================================================
-SLIDE 33. THE EVENT TABLE, AS THE DATABASE REPORTS IT   (0:50)
+SLIDE 38. THE EVENT TABLE, AS THE DATABASE REPORTS IT   (0:50)
 ====================================================================================================
 SAY: The event table as Postgres describes it: the kind, the time span, severity, source, the description text, a generated tsvector for full text, and the vector column for the embedding.
 
 ====================================================================================================
-SLIDE 34. INDEXES ON THE SEARCH TABLES   (0:50)
+SLIDE 39. INDEXES ON THE SEARCH TABLES   (0:50)
 ====================================================================================================
 SAY: The indexes: an HNSW index on event embeddings of just 13 MB, a GIN index on the text vector, B-trees for the flight, kind and time filters, and a small HNSW index on the flight signatures. These are the building blocks the search experiments later compare.
 
 ====================================================================================================
-SLIDE 35. COLUMNSTORE DDL   (1:15)
+SLIDE 40. COLUMNSTORE DDL   (1:15)
 ====================================================================================================
 SAY: The columnstore is switched on with two settings. Segmentby of flight and field makes one compressed row group per signal of one flight, so reading one signal reads one group. Orderby ts gives the delta and run-length encodings long runs of similar values. Below is the compress stage. We found by testing that inserting into a compressed chunk leaves it partial, and my first stage skipped those chunks; it now selects uncompressed or partial chunks and does each in its own transaction.
 
 ====================================================================================================
-SLIDE 36. COLUMNSTORE DESIGN EXPERIMENT   (1:45)
+SLIDE 41. COLUMNSTORE DESIGN EXPERIMENT   (1:45)
 ====================================================================================================
 SAY: Experiment one. On 100 flights and 26.9 million rows I compared the rowstore with several columnstore designs, taking the median of seven warm runs. Segmenting by flight and signal, ordered by time, shrinks the data from 3.6 GB to 147 MB, 25 times, and the cross-flight query Q2 drops from about 1.5 seconds to 16 milliseconds. What did not matter is also a result: the design choices change size by under ten percent. What does matter is chunk count and the segmentby choice, which change cross-flight speed about two times.
 ANALOGY: Segmenting by flight and signal is shelving books by author and title instead of by arrival date: to find one author you open one shelf.
 
 ====================================================================================================
-SLIDE 37. STORAGE AT FULL SIZE: 32 TIMES SMALLER   (1:15)
+SLIDE 42. STORAGE AT FULL SIZE: 32 TIMES SMALLER   (1:15)
 ====================================================================================================
 SAY: At full size, the rowstore plus index takes 12,459 MB. The columnstore takes 385 MB, 32 times smaller, from 176 down to 5.4 bytes per row, with the same query results as the Parquet source. It matches sorted zstd Parquet at 392 MB and is 1.8 times smaller than DuckDB's own file, while keeping row-level ACID and live inserts.
 
 ====================================================================================================
-SLIDE 38. TIMESCALEDB AGAINST DUCKDB: QUERY LATENCY   (1:30)
+SLIDE 43. TIMESCALEDB AGAINST DUCKDB: QUERY LATENCY   (1:30)
 ====================================================================================================
 SAY: Experiment four compares TimescaleDB with DuckDB on the same 70.7 million rows, median of five warm runs. DuckDB's native table wins single-signal slices and the full-scan aggregate. The columnstore wins pruned access, such as every signal of one flight or a 90-day window, and the whole-corpus per-flight summary, 1.0 seconds against 2.0 to 2.6. I report both directions because the result is mixed.
 
 ====================================================================================================
-SLIDE 39. TIMESCALEDB AGAINST DUCKDB: LOADING AND VERDICT   (1:15)
+SLIDE 44. TIMESCALEDB AGAINST DUCKDB: LOADING AND VERDICT   (1:15)
 ====================================================================================================
 SAY: On loading, Timescale COPY runs at 287 thousand rows per second. DuckDB bulk insert from Parquet is far faster at over six million, but row-by-row insert is 603 rows per second, which shows how engine-specific the load path is. The verdict: DuckDB is excellent for scans, but Postgres adds concurrent writers, transactions, roles and vectors in the same engine, so DuckDB stays a comparator.
 
 ====================================================================================================
-SLIDE 40. LOADING: ARROW TO CSV TO COPY   (0:50)
+SLIDE 45. LOADING: ARROW TO CSV TO COPY   (0:50)
 ====================================================================================================
 SAY: How the data gets in: columns are canonicalised in Arrow, with the scale and offset from the field mapping, and streamed as CSV into COPY, one transaction per flight.
 
 ====================================================================================================
-SLIDE 41. ONE QUERY, FROM THE DATABASE PAGE: HOW A SIGNAL IS READ   (1:15)
+SLIDE 46. ONE QUERY, FROM THE DATABASE PAGE: HOW A SIGNAL IS READ   (1:15)
 ====================================================================================================
 SAY: This is a real plan. A ColumnarScan reads only the compressed segments for one flight and one signal, buffer hits only, and a hash aggregate buckets them into one-second minimum, maximum and mean. A 901-bucket envelope takes 8.4 milliseconds.
 
 ====================================================================================================
-SLIDE 42. THE SEMANTIC LAYER   (1:30)
+SLIDE 47. THE SEMANTIC LAYER   (1:30)
 ====================================================================================================
 SAY: The semantic layer is an ontology in ordinary relational tables: 63 concepts and 55 relations, made of 34 signals, 7 subsystems, 7 failure modes and 15 event kinds. The chain is signal, subsystem, failure mode, event, and I walk it with recursive common table expressions. Each vendor field maps to a signal with a scale, an offset and a note. So a query says battery voltage, not a vendor field name.
 ANALOGY: The ontology is a translation dictionary between two dialects.
 
 ====================================================================================================
-SLIDE 43. DOCUMENTED SEMANTIC VIEWS   (1:00)
+SLIDE 48. DOCUMENTED SEMANTIC VIEWS   (1:00)
 ====================================================================================================
 SAY: There are six views: flights, events, signals, signal summary, ontology and telemetry. They are the only objects the natural-language role can read, and their comments are the documentation the model's prompt is built from. That detail matters later, because documentation turns out to be the biggest effect in the accuracy experiment.
 
 ====================================================================================================
-SLIDE 44. A SEMANTIC VIEW DEFINITION   (0:45)
+SLIDE 49. A SEMANTIC VIEW DEFINITION   (0:45)
 ====================================================================================================
 SAY: Here is one definition: events joined to their concepts so the model sees kind, severity and source names, never raw ids.
 
 ====================================================================================================
-SLIDE 45. ARDUPILOT MAPPING: A WRONG MAPPING IS WORSE THAN A GAP   (1:15)
+SLIDE 50. ARDUPILOT MAPPING: A WRONG MAPPING IS WORSE THAN A GAP   (1:15)
 ====================================================================================================
 SAY: For ArduPilot I mapped attitude, GPS, position, velocity and battery, 52 field mappings in total. I deliberately did not map vibration, motor outputs, EKF ratios, barometric altitude or flight mode, because they mean different things across the two systems. A wrong mapping is worse than a gap, since it produces confident wrong answers, while a gap produces an honest not available.
 ANALOGY: A good dictionary says no exact word when there is none, instead of guessing.
 
 ====================================================================================================
-SLIDE 46. EVENTS: THREE SOURCES   (1:15)
+SLIDE 51. EVENTS: THREE SOURCES   (1:15)
 ====================================================================================================
 SAY: Events come from three sources: log transitions and warnings, the failure detector flags, and gaps-and-islands rules over telemetry. Gaps and islands is a window-function pattern that finds runs of consecutive abnormal rows. Rules fire only against a baseline in the same flight, near-duplicate messages collapse from 3,846 to 3,401, and flight duration uses a robust estimate because one garbage timestamp once made a flight ten to the thirteen seconds long.
 
 ====================================================================================================
-SLIDE 47. FAULT INJECTION: DO THE DETECTORS FIND FAULTS OF KNOWN SIZE?   (1:45)
+SLIDE 52. FAULT INJECTION: DO THE DETECTORS FIND FAULTS OF KNOWN SIZE?   (1:45)
 ====================================================================================================
 SAY: Experiment: I held a constant fault value for a stated duration at a random time in a real flight, on 30 flights and 1,043 variants including controls, and asked whether the unchanged rule engine found the right event. Below each rule's minimum duration, two to three seconds, detection is near zero by design. From five seconds, 90 to 100 percent are found, within about a second of onset. The weakness is the battery rule: it raises false alarms on 23 percent of unmodified controls, against 3 to 7 percent for the others.
 
 ====================================================================================================
-SLIDE 48. FAULT INJECTION: THE TABLE BEHIND THE CHART   (0:50)
+SLIDE 53. FAULT INJECTION: THE TABLE BEHIND THE CHART   (0:50)
 ====================================================================================================
 SAY: The table behind the chart. The small detections at one to three seconds for the battery rule are matches elsewhere in the flight, with onset errors of 100 to 200 seconds, so they are not real detections.
 
 ====================================================================================================
-SLIDE 49. HYBRID SEARCH: VECTOR, FULL TEXT, FILTERS, FUSED BY RRF   (1:15)
+SLIDE 54. HYBRID SEARCH: VECTOR, FULL TEXT, FILTERS, FUSED BY RRF   (1:15)
 ====================================================================================================
 SAY: Search combines three signals: vector similarity, full text, and SQL filters. Event text is embedded with text-embedding-3-small into a vector column with an HNSW index; full text is a generated tsvector with a GIN index. Rankings are fused by reciprocal rank fusion, which adds one over k plus rank from each ranker, so rank, not raw score, decides. The default hybrid weights are 1.0 for vector and 0.1 for full text.
 ANALOGY: When two judges score on different scales, you compare their rankings, not their scores.
 
 ====================================================================================================
-SLIDE 50. HYBRID SEARCH SQL   (0:50)
+SLIDE 55. HYBRID SEARCH SQL   (0:50)
 ====================================================================================================
 SAY: The whole thing is one SQL statement: vector candidates, full-text candidates and filters are ranked separately and fused by RRF inside the database.
 
 ====================================================================================================
-SLIDE 51. SEARCH QUALITY: THE HYBRID DID NOT WIN   (1:30)
+SLIDE 56. SEARCH QUALITY: THE HYBRID DID NOT WIN   (1:30)
 ====================================================================================================
 SAY: I expected hybrid search to win. It did not. On 65 concept queries, 39 of them hard paraphrases, vector only scores 0.710 nDCG at ten and a light full-text weight ties at 0.709. Plain rank fusion drops to 0.600, a significant loss, with a paired difference of minus 0.109 and an interval from minus 0.172 to minus 0.051. Ten exact-term lookups scored 1.000 for every method, and cosine distances sit in a narrow 0.40 to 0.60 band, so there is no honest relevance cutoff.
 
 ====================================================================================================
-SLIDE 52. VECTOR INDEXES AT 100,000 VECTORS: RECALL AGAINST LATENCY   (1:30)
+SLIDE 57. VECTOR INDEXES AT 100,000 VECTORS: RECALL AGAINST LATENCY   (1:30)
 ====================================================================================================
 SAY: Experiment two. On 100,000 vectors of 1,536 dimensions, exact search takes 362 milliseconds. The chart plots recall against median latency, up and to the left is better. HNSW with m equal to 32 reaches 0.95 recall in 2.4 milliseconds, over a hundred times faster than exact search. DiskANN never passes 0.74 recall here.
 
 ====================================================================================================
-SLIDE 53. VECTOR INDEXES: BUILD TIME, SIZE AND SPEED AT A RECALL TARGET   (1:15)
+SLIDE 58. VECTOR INDEXES: BUILD TIME, SIZE AND SPEED AT A RECALL TARGET   (1:15)
 ====================================================================================================
 SAY: The table adds cost. HNSW builds in 56 to 149 seconds. IVFFlat builds in 8.5 to 17 seconds, three to seventeen times faster, but queries are slower. DiskANN is 68 MB against 819 MB, twelve times smaller, but loses recall on this data. So the choice depends on whether build time, size or latency matters most.
 
 ====================================================================================================
-SLIDE 54. DOES DATA DIFFICULTY CHANGE THE WINNER? (50,000 VECTORS)   (1:30)
+SLIDE 59. DOES DATA DIFFICULTY CHANGE THE WINNER? (50,000 VECTORS)   (1:30)
 ====================================================================================================
 SAY: A fair worry is that my benchmark vectors are perturbed copies of real ones, so they might be too easy. I measured relative contrast, which says how much farther the tenth neighbour is than the nearest. The real corpus has 20.5, while my two synthetic sets have 6.0 and 2.0, so both are harder than real data. Holding size fixed at 50,000 and changing only the noise, HNSW with m 32 is still fastest at 0.99 recall in both and DiskANN still peaks below 0.9. The ranking is stable. An earlier comparison confounded size and noise, so this controlled run replaced it.
 
 ====================================================================================================
-SLIDE 55. FILTERED SEARCH: POST-FILTERING UNDER-RETURNS   (1:45)
+SLIDE 60. FILTERED SEARCH: POST-FILTERING UNDER-RETURNS   (1:45)
 ====================================================================================================
 SAY: Experiment three, the headline one. With the default setting the index scan returns 0.0 rows of the 10 requested when the filter keeps 0.1 percent of rows, and only 4.1 when it keeps 10 percent. Iterative scan restores the row count but not the base recall, and costs 50 milliseconds at 0.1 percent. An exact sort over a B-tree filter returns the right 10 rows in 1.0 millisecond there.
 ANALOGY: If only ten people in a stadium match your description, do not ask the crowd to point them out. Walk the list of ten.
 
 ====================================================================================================
-SLIDE 56. FILTERED SEARCH: LATENCY AND THE CROSSOVER   (1:15)
+SLIDE 61. FILTERED SEARCH: LATENCY AND THE CROSSOVER   (1:15)
 ====================================================================================================
 SAY: The latency chart shows the trade-off. Exact sort is fast when the filter is selective but costs 55 milliseconds at 10 percent and 329 at 50 percent, while iterative HNSW stays flat at a few milliseconds. The lines cross near 1,000 rows, which is what sets the router's threshold of about 1,500.
 
 ====================================================================================================
-SLIDE 57. THE PLANNER PICKS WRONG, SO THE SEARCH ROUTES ITSELF   (1:30)
+SLIDE 62. THE PLANNER PICKS WRONG, SO THE SEARCH ROUTES ITSELF   (1:30)
 ====================================================================================================
 SAY: Here is the surprising part. With both indexes present and a filter keeping ten percent, Postgres itself chose HNSW post-filtering: 4.0 rows of 10, recall 0.37, in 1.6 milliseconds. It is fast and wrong, because a cost model estimates time, not completeness. So the search routes itself: it asks the planner for the estimated filtered row count with EXPLAIN on the filter alone. At about 1,500 rows or fewer it filters first and sorts exactly; otherwise it uses HNSW with an iterative scan.
 
 ====================================================================================================
-SLIDE 58. ROUTER CODE   (0:50)
+SLIDE 63. ROUTER CODE   (0:50)
 ====================================================================================================
 SAY: The decision itself: the estimate picks the exact path or the HNSW path, and the chosen path and the estimate are returned and shown to the user.
 
 ====================================================================================================
-SLIDE 59. ROUTER CODE: ESTIMATING THE FILTERED ROWS   (0:50)
+SLIDE 64. ROUTER CODE: ESTIMATING THE FILTERED ROWS   (0:50)
 ====================================================================================================
 SAY: The estimate comes from the planner via EXPLAIN in JSON, not from a count, so the filtered rows are not scanned to decide how to scan them.
 
 ====================================================================================================
-SLIDE 60. FILTER CORRELATED WITH THE QUERY: HARMLESS   (1:00)
+SLIDE 65. FILTER CORRELATED WITH THE QUERY: HARMLESS   (1:00)
 ====================================================================================================
 SAY: One more case: a filter on the query's own event kind. It is harmless: every variant returned ten rows, and partial indexes and partitions added nothing at this size. Builds took 62 seconds for HNSW, 62 in total for partial indexes, 101 for partitions and 621 for DiskANN with labels.
 
 ====================================================================================================
-SLIDE 61. VECTOR SEARCH PLAN FROM THE DATABASE PAGE   (0:50)
+SLIDE 66. VECTOR SEARCH PLAN FROM THE DATABASE PAGE   (0:50)
 ====================================================================================================
 SAY: A real plan: an index scan on the HNSW index returns ten events in 41 milliseconds from a cold cache, with buffer reads shown.
 
 ====================================================================================================
-SLIDE 62. NATURAL-LANGUAGE SQL: FOUR DEFENCES   (1:45)
+SLIDE 67. NATURAL-LANGUAGE SQL: FOUR DEFENCES   (1:45)
 ====================================================================================================
 SAY: Letting a model write SQL is risky, and only running SELECT is not a security boundary. So there are four independent layers. One, a guard built on sqlglot: exactly one SELECT, allow-lists for tables and functions, and the SQL that runs is regenerated from the parse tree so what was checked is what runs. Two, a database role that can read only the documented views. Three, a read-only transaction with an eight-second timeout. Four, cost admission: EXPLAIN first, and refuse anything the planner estimates above 100,000.
 ANALOGY: Four locks on one door, each with a different key.
 
 ====================================================================================================
-SLIDE 63. GUARD CODE: STATEMENT CHECKS   (1:00)
+SLIDE 68. GUARD CODE: STATEMENT CHECKS   (1:00)
 ====================================================================================================
 SAY: The guard parses once and rejects anything that is not a single SELECT, any nested or recursive WITH, table-valued functions in FROM, and catalog-qualified names.
 
 ====================================================================================================
-SLIDE 64. GUARD CODE: ALLOW-LISTS AND THE REBUILT STATEMENT   (1:00)
+SLIDE 69. GUARD CODE: ALLOW-LISTS AND THE REBUILT STATEMENT   (1:00)
 ====================================================================================================
 SAY: Then tables and functions must be on the allow-lists, a sentinel row limit is injected, and the statement is regenerated from the tree.
 
 ====================================================================================================
-SLIDE 65. EXECUTION: ROLE, READ-ONLY TRANSACTION, COST ADMISSION   (1:15)
+SLIDE 70. EXECUTION: ROLE, READ-ONLY TRANSACTION, COST ADMISSION   (1:15)
 ====================================================================================================
 SAY: Execution switches to the restricted role, opens a read-only transaction with timeouts, runs EXPLAIN first and refuses when the planner estimate exceeds the limit.
 
 ====================================================================================================
-SLIDE 66. THE ROLE BOUNDARY, TESTED IN THE RUNNING DATABASE   (0:50)
+SLIDE 71. THE ROLE BOUNDARY, TESTED IN THE RUNNING DATABASE   (0:50)
 ====================================================================================================
 SAY: The role boundary in the live database: the restricted role sees the 300 flights through the semantic view, is denied the base table, and is denied pg read file.
 
 ====================================================================================================
-SLIDE 67. HOSTILE QUERIES   (1:15)
+SLIDE 72. HOSTILE QUERIES   (1:15)
 ====================================================================================================
 SAY: I tested 46 hostile queries covering stacked statements, file reads, COPY to a program, dblink, catalog access, sleeps and system settings. Each was refused for the intended reason, and 18 legitimate queries still pass. Realistic questions plan under 5,000, while a telemetry self-join plans at 515 million and is refused before it runs. A fake model that obeys prompt injection is still stopped.
 
 ====================================================================================================
-SLIDE 68. DOES THE SEMANTIC LAYER HELP NL-TO-SQL?   (1:45)
+SLIDE 73. DOES THE SEMANTIC LAYER HELP NL-TO-SQL?   (1:45)
 ====================================================================================================
 SAY: Experiment five, on 27 held-out questions. Semantic views score 0.89 strict execution accuracy, raw tables with the same documentation 0.70, and raw tables alone 0.26. The big effect is documentation: 0.26 to 0.70, twelve questions gained and none lost, p of 0.0005. The views add 0.19 more, but with six gained and one lost, p of 0.125, that is not significant. Without documentation the model rarely fails loudly: 17 of 27 answers were confident and wrong, though it never fabricated an answer to an unanswerable question.
 
 ====================================================================================================
-SLIDE 69. NL-TO-SQL EVALUATION: PROTOCOL AND HONESTY   (1:30)
+SLIDE 74. NL-TO-SQL EVALUATION: PROTOCOL AND HONESTY   (1:30)
 ====================================================================================================
 SAY: The protocol: a development set for prompt work and a separate held-out set scored once per condition, strict and lenient execution accuracy, and paired sign tests, using gpt-4o-mini behind an OpenAI-compatible client. The honesty note: my first run overstated the gap, 0.65 against 0.24, because my comparison treated numbers as strings and my guard rejected a safe operator. I fixed both, froze the prompts, re-ran, and kept both runs.
 
 ====================================================================================================
-SLIDE 70. SIMILAR FLIGHTS BY BEHAVIOUR: SIGNAL-SHAPE SIGNATURES   (1:30)
+SLIDE 75. SIMILAR FLIGHTS BY BEHAVIOUR: SIGNAL-SHAPE SIGNATURES   (1:30)
 ====================================================================================================
 SAY: Beyond text, I find flights that behaved alike. 145 statistical and spectral features over 30 signals are scaled and reduced by PCA to 32 dimensions, keeping 86 percent of the variance, and stored as a vector with an HNSW index. The sanity check is the share of a flight's five nearest neighbours on the same board: chance is 6.9 percent, scaled features 25.3 and the 32-dimension signature 25.0, so compression loses nothing measurable. It is a sanity check, not ground truth, since hardware influences sensor scale.
 
 ====================================================================================================
-SLIDE 71. CONCURRENT WORK IN THE DATABASE: SKIP LOCKED JOB TABLES   (1:15)
+SLIDE 76. CONCURRENT WORK IN THE DATABASE: SKIP LOCKED JOB TABLES   (1:15)
 ====================================================================================================
 SAY: Batch stages run from job tables in Postgres. Each stage claims items with FOR UPDATE SKIP LOCKED, status, attempts and last error live in the row, and data and status commit together, so a crash returns only that item to the queue. Testing found that without a materialized CTE the planner claimed 52 rows for a limit of 25.
 ANALOGY: A deli counter with a ticket machine: nobody serves the same ticket twice.
 
 ====================================================================================================
-SLIDE 72. DATABASE PAGE: WHERE THE SPACE GOES   (0:50)
+SLIDE 77. DATABASE PAGE: WHERE THE SPACE GOES   (0:50)
 ====================================================================================================
 SAY: The Database page is read live from the database that serves the app. The top shows where the space goes: the telemetry takes twelve point five gigabytes as row storage and three hundred eighty-five megabytes compressed, thirty-two times smaller, and all chunks are compressed. Below, you can pick a query and see its plan.
 
 ====================================================================================================
-SLIDE 73. DATABASE PAGE: EXPLAIN ANALYZE   (0:45)
+SLIDE 78. DATABASE PAGE: EXPLAIN ANALYZE   (0:45)
 ====================================================================================================
 SAY: A real EXPLAIN ANALYZE with buffer counts for the query that draws a chart envelope. It reads the compressed chunks for one flight and one signal and aggregates them into one-second buckets.
 
 ====================================================================================================
-SLIDE 74. BENCHMARKS: VECTOR INDEXES   (0:40)
+SLIDE 79. BENCHMARKS: VECTOR INDEXES   (0:40)
 ====================================================================================================
 SAY: The Benchmarks page draws every experiment from the saved result files. This is the vector index run: recall against median latency for each index and setting, with build time and size in the table.
 
 ====================================================================================================
-SLIDE 75. BENCHMARKS: FILTERED SEARCH   (0:40)
+SLIDE 80. BENCHMARKS: FILTERED SEARCH   (0:40)
 ====================================================================================================
 SAY: Filtered search: rows returned, recall and latency by strategy and filter selectivity. The default post-filter returns far fewer rows than requested when the filter is selective.
 
 ====================================================================================================
-SLIDE 76. BENCHMARKS: SIMILAR MOMENTS   (0:50)
+SLIDE 81. BENCHMARKS: SIMILAR MOMENTS   (0:50)
 ====================================================================================================
 SAY: The similar-moments experiment: for each event kind, query windows that overlap an event of that kind, and count how many of the ten results overlap one too. The dark tick is what random results would score. Landing and takeoff are far above it. Without iterative scan, seven percent of queries returned fewer than ten rows, because the nearest windows are the query flight's own neighbouring windows and the filter removes them after the index scan.
 
 ====================================================================================================
-SLIDE 77. BENCHMARKS: FAULT INJECTION   (0:45)
+SLIDE 82. BENCHMARKS: FAULT INJECTION   (0:45)
 ====================================================================================================
 SAY: Fault injection: a constant fault is held for one to twenty seconds in real flights, and the unchanged rules look for it. Faults shorter than a rule's minimum duration are missed by design; from five seconds, ninety to a hundred percent are found. The false-alarm rates on unmodified flights are listed underneath, and battery low is the weakest at twenty-three percent.
 
 ====================================================================================================
-SLIDE 78. BENCHMARKS: COLUMNSTORE DESIGN   (0:45)
+SLIDE 83. BENCHMARKS: COLUMNSTORE DESIGN   (0:45)
 ====================================================================================================
 SAY: The columnstore design experiment: size and four query shapes for each physical design. Segmenting by flight and signal ordered by time is the smallest and the fastest for cross-flight queries.
 
 ====================================================================================================
-SLIDE 79. BENCHMARKS: TIMESCALEDB AGAINST DUCKDB   (0:45)
+SLIDE 84. BENCHMARKS: TIMESCALEDB AGAINST DUCKDB   (0:45)
 ====================================================================================================
 SAY: The engine comparison: storage in each system, the six query shapes, and the load throughput. DuckDB wins full scans and point slices on its own file; the columnstore wins pruned access and the whole-corpus summary.
 
 ====================================================================================================
-SLIDE 80. DARK THEME   (0:20)
+SLIDE 85. DARK THEME   (0:20)
 ====================================================================================================
 SAY: Light is the default on every system. Dark is a toggle in the top bar and is remembered, and the charts and diagrams redraw with their own colour set.
 
 ====================================================================================================
-SLIDE 81. ENVIRONMENT AND METHOD   (1:00)
+SLIDE 86. ENVIRONMENT AND METHOD   (1:00)
 ====================================================================================================
 SAY: Everything ran on four cores and 15 GB of RAM with no GPU, in Docker: PostgreSQL 17.11, TimescaleDB 2.30.2, pgvector 0.8.7, pgvectorscale 0.9.1 and DuckDB 1.5.6. Timings use one connection, a warm cache, and three measured passes or the median of five to seven runs. Recall is against exact search with 200 held-out queries. For the language model I used a development set and a held-out set with bootstrap intervals and paired tests.
 
 ====================================================================================================
-SLIDE 82. KEY RESULTS   (1:15)
+SLIDE 87. KEY RESULTS   (1:15)
 ====================================================================================================
 SAY: The numbers to remember. Telemetry is 32 times smaller, 12.46 GB down to 385 MB. Cross-flight queries are up to 95 times faster. HNSW is over 100 times faster than exact search at 0.95 recall. The planner's wrong choice returned 4 of 10 rows. NL-to-SQL reaches 0.89 on held-out questions, plain rank fusion hurts, 46 hostile queries were refused, and 90 to 100 percent of injected faults are found once they last five seconds.
 
 ====================================================================================================
-SLIDE 83. CONCLUSIONS AND LIMITS   (1:45)
+SLIDE 88. CONCLUSIONS AND LIMITS   (1:45)
 ====================================================================================================
 SAY: To conclude. One PostgreSQL instance can hold the time series, the ontology, the vectors and a guarded natural-language interface. Physical design cut storage 32 times, and filtering strategy mattered more than the choice of vector index. Documentation drives language-model accuracy, and four independent layers keep it safe. Hybrid fusion did not help, and I reported that as found. The limits: 300 flights, one machine, one model, questions written by me, benchmark vectors that are perturbed copies of real ones, heuristic event thresholds, and a battery-low rule with 23 percent false alarms on controls. Next are 10,000 or more logs, ArduPilot at scale and a concurrency benchmark. Thank you; I am happy to take questions.
 

@@ -44,6 +44,44 @@ function Columns({ rows, label }: { rows: { name: string; value: number }[]; lab
   );
 }
 
+/** A year of flying, one square per day (like a contribution graph): how many flights, or how many critical events. */
+function Calendar({ days }: { days: FleetStats["days"] }) {
+  const [by, setBy] = useState<"flights" | "critical">("flights");
+  const [tip, setTip] = useState<string | null>(null);
+  if (days.length === 0) return null;
+  const map = new Map(days.map((d) => [d.day.slice(0, 10), d]));
+  const end = new Date(days[days.length - 1].day.slice(0, 10) + "T00:00:00Z");
+  const start = new Date(end); start.setUTCDate(start.getUTCDate() - 52 * 7 - end.getUTCDay());
+  const cells: { date: string; v: number; fl: number; cr: number; col: number; row: number }[] = [];
+  for (let i = 0; i <= 52 * 7 + end.getUTCDay(); i++) {
+    const d = new Date(start); d.setUTCDate(start.getUTCDate() + i);
+    const k = d.toISOString().slice(0, 10), r = map.get(k);
+    cells.push({ date: k, fl: r?.flights ?? 0, cr: r?.critical ?? 0, v: by === "flights" ? r?.flights ?? 0 : r?.critical ?? 0, col: Math.floor(i / 7), row: i % 7 });
+  }
+  const max = Math.max(...cells.map((c) => c.v), 1);
+  const month = (c: { date: string; row: number }) => (c.row === 0 && +c.date.slice(8) <= 7 ? new Date(c.date + "T00:00:00Z").toLocaleString("en", { month: "short", timeZone: "UTC" }) : "");
+  const S = 14, G = 3;
+  return (
+    <div>
+      <div className="mb-2 flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="Show">
+        <span className="text-ink-2">Show</span>
+        {([["flights", "Flights"], ["critical", "Critical events"]] as const).map(([k, l]) => <button key={k} onClick={() => setBy(k)} aria-pressed={by === k} className={`rounded border px-3 py-1 ${by === k ? "border-route bg-route text-on-route" : "border-rule text-ink-2 hover:border-route"}`}>{l}</button>)}
+        <span className="ml-auto min-h-5 text-ink-2" aria-live="polite">{tip}</span>
+      </div>
+      <div className="overflow-x-auto rounded border border-rule bg-panel p-3">
+        <svg width={(cells[cells.length - 1].col + 1) * (S + G) + 30} height={7 * (S + G) + 22} role="img" aria-label="Calendar of flights">
+          {cells.filter((c) => month(c)).map((c) => <text key={c.date} x={30 + c.col * (S + G)} y={11} fontSize={11} fill="var(--muted)">{month(c)}</text>)}
+          {["Mon", "Wed", "Fri"].map((d, i) => <text key={d} x={0} y={22 + (1 + 2 * i) * (S + G) + 11} fontSize={10} fill="var(--muted)">{d}</text>)}
+          {cells.map((c) => (
+            <rect key={c.date} x={30 + c.col * (S + G)} y={20 + c.row * (S + G)} width={S} height={S} rx={3}
+              fill={c.v === 0 ? "var(--rule-soft)" : by === "critical" ? "var(--critical)" : "var(--data)"} fillOpacity={c.v === 0 ? 1 : 0.25 + 0.75 * Math.min(1, c.v / max)}
+              onPointerEnter={() => setTip(`${c.date}: ${c.fl} flight${c.fl === 1 ? "" : "s"}, ${c.cr} critical event${c.cr === 1 ? "" : "s"}`)} onPointerLeave={() => setTip(null)} />))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 /** Each flight is a point; flights that behaved alike sit close together. Colour by board, firmware, critical events or how unusual the flight is. */
 function GalaxyPlot({ g }: { g: Galaxy }) {
   const router = useRouter();
@@ -132,6 +170,8 @@ export function FleetView() {
 
       {f && (
         <>
+          <section className="mt-12" aria-labelledby="cal"><h2 id="cal" className="font-dense text-2xl font-semibold">A year of flying</h2>
+            <p className="mb-3 mt-1 max-w-2xl text-ink-2">The last 12 months of the corpus, one square a day.</p><Calendar days={f.days} /></section>
           <div className="mt-12 grid gap-x-12 gap-y-10 lg:grid-cols-2">
             <section aria-labelledby="boards"><h2 id="boards" className="font-dense text-2xl font-semibold">Critical events per flight, by board</h2>
               <p className="mb-3 mt-1 text-sm text-ink-2">The 12 most common boards; the number after each bar is flights.</p>

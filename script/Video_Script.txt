@@ -70,9 +70,9 @@ megabytes in the columnstore, thirty-two times smaller. Below it is a real EXPLA
 ======================================================================================================================
 SEGMENT 4. ONE FLIGHT: REPLAY AND CHARTS (2:50 to 3:40)
 ======================================================================================================================
-ON SCREEN: the flight page (Flight 968d313d). Click Replay at 16x and let it run about 15 seconds. Then pause, drag across the battery chart to zoom, then double-click to reset.
+ON SCREEN: the flight page (Flight 968d313d). Point at the behaviour strip. Click Replay at 16x and let it run about 15 seconds. Then pause, drag across the battery chart to zoom, then double-click to reset.
 SAY: "Here is one flight. The ribbon shows the flight modes, and the red marks are critical events. I will replay it. The time cursor sweeps every chart and the ground track together, and events
-surface as the replay passes them. Around six minutes forty the parachute fires. The charts are synchronized: I drag across one and all of them zoom. Server-side downsampling keeps minimum
+surface as the replay passes them. Around six minutes forty the parachute fires. Above the replay is the behaviour strip: every ten seconds are compared with the same moments in all other flights, and the red windows are the ones unlike anything else; it lights up right after the failure. The charts are synchronized: I drag across one and all of them zoom. Server-side downsampling keeps minimum
 and maximum envelopes, so a short spike can never be averaged away."
 
 ======================================================================================================================
@@ -87,30 +87,30 @@ sequence."
 ======================================================================================================================
 SEGMENT 6. SIMILAR MOMENTS AND SEMANTIC SEARCH (4:35 to 5:30)
 ======================================================================================================================
-ON SCREEN: "Similar moments": press Find similar moments. Then open Search and type "motor failure during takeoff".
+ON SCREEN: "Similar moments": press Find similar moments, then Overlay on the first result. Then open Search and type "motor failure during takeoff".
 SAY: "Each flight is also cut into overlapping ten-second windows, and each window is embedded by how every signal behaved. Here I pick a moment and search all flights for moments that behaved the
-same way, with an HNSW index. I measured it: for events such as landing and takeoff, precision at ten is up to forty times higher than random. Semantic search works on the event text. It fuses
+same way, with an HNSW index. Overlay draws the two matching windows on top of each other so you can see the match. I measured it: for events such as landing and takeoff, precision at ten is up to forty times higher than random. Semantic search works on the event text. It fuses
 vector similarity, full text and filters. One finding surprised me: plain rank fusion was worse than vector search alone, so I report that as found. Filters were the real problem: with a
 selective filter, pgvector can return no rows at all, so the search asks the planner how many rows the filter keeps and picks exact search or HNSW accordingly."
 
 ======================================================================================================================
 SEGMENT 7. ASK, THE WORKBENCH AND THE FOUR DEFENCES (5:30 to 6:45)
 ======================================================================================================================
-ON SCREEN: Ask page: click the example "Which three boards had the most critical events?", open "How this was answered". Then the SQL workbench: run the prepared query, then type
+ON SCREEN: Ask page: click the example "Which three boards had the most critical events?", open "How this was answered". Then the SQL workbench: run the prepared query, click Explain on it (show the plan tree), then type
 SELECT pg_read_file('/etc/passwd') and run it to show the refusal. Then type DROP TABLE flight to show the second refusal.
 SAY: "On the Ask page I write a question in English. The model writes SQL, but four independent layers stand between that SQL and the data. A parser-based guard allows one SELECT on allow-listed views and
 rebuilds the statement from the parse tree. The query runs as a restricted role, in a read-only transaction with a timeout, and the planner's cost estimate is checked first. The page shows
-the SQL, the cost and the guard actions. The SQL workbench lets me type my own queries under the same checks. A normal query runs. Reading a server file is refused by name. A DROP is refused.
+the SQL, the cost and the guard actions. The SQL workbench lets me type my own queries under the same checks. Explain shows the planner's plan as a tree with its cost against the limit. A normal query runs. Reading a server file is refused by name. A DROP is refused.
 I tested forty-six hostile queries, and each was refused for the intended reason."
 
 ======================================================================================================================
 SEGMENT 8. FLEET VIEWS: MAP, GALAXY, INCIDENTS (6:45 to 7:30)
 ======================================================================================================================
 ON SCREEN: Map (hover over the dots; click a red one and show the card), then Fleet: click "Critical events" and "How unusual" under Flight galaxy, then Incidents: filter Kind to Failsafe activated and
-click Open at on the first row.
+click Open at on the first row. Then open Patterns (Failsafe activated, 1 min) for 5 seconds.
 SAY: "These views use the whole corpus. The map places every flight that has a GPS fix, coloured by critical events. The flight galaxy places each flight by how it behaved, using a thirty-two dimension
 behavioural signature projected to two dimensions, so I can colour it by board, firmware, or how unusual the flight is. The incidents feed lists every warning and failure across flights; I filter to failsafes
-and open one at the exact moment."
+and open one at the exact moment. Patterns shows what usually happens before and after an event, computed live with a windowed self-join."
 
 ======================================================================================================================
 SEGMENT 9. THE EXPERIMENTS (7:30 to 9:00)

@@ -77,3 +77,19 @@ def run(pool, sql: str, mode: str = "semantic", max_cost: float = MAX_COST) -> R
         except Exception as e:  # database error text is useful to the model for self-repair
             raise ExecError(f"{type(e).__name__}: {str(e).splitlines()[0]}") from e
     return Result(cols, [[_plain(v) for v in r] for r in fetched[:MAX_ROWS]], len(fetched) > MAX_ROWS, cost, run_ms)
+
+
+def explain(pool, sql: str, mode: str = "semantic") -> dict:
+    """The planner's plan for a guarded query (no ANALYZE: the query is not run), as the restricted role in a read-only transaction."""
+    role = ROLES[mode]
+    source, set_role = _connection_source(pool, mode)
+    with source.connection() as c:
+        try:
+            with c.transaction():
+                c.execute("SET TRANSACTION READ ONLY")
+                if set_role:
+                    c.execute(f"SET LOCAL ROLE {role}")
+                c.execute(f"SET LOCAL statement_timeout = {TIMEOUT_MS}")
+                return c.execute("EXPLAIN (FORMAT JSON) " + sql).fetchone()[0][0]["Plan"]
+        except Exception as e:
+            raise ExecError(f"{type(e).__name__}: {str(e).splitlines()[0]}") from e

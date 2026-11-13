@@ -26,6 +26,17 @@ export function ReplayBar({ f }: { f: FlightDetail }) {
     return () => clearInterval(id);
   }, [playing, speed, f.duration_s]);
 
+  useEffect(() => { // space plays or pauses, the arrow keys step 5 seconds; ignored while typing in a field
+    const key = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable || e.ctrlKey || e.metaKey) return;
+      if (e.key === " ") { e.preventDefault(); setPlaying((p) => !p); }
+      else if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const v = Math.min(f.duration_s, Math.max(0, tRef.current + (e.key === "ArrowRight" ? 5 : -5))); tRef.current = v; setT(v); useView.getState().setFocus({ t0: v, t1: v }); }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [f.duration_s]);
+
   const seek = (v: number) => { tRef.current = v; setT(v); useView.getState().setFocus({ t0: v, t1: v }); };
   const mode = f.modes.find((m) => t >= m.t0 && t < m.t1)?.mode ?? f.modes[f.modes.length - 1]?.mode ?? "Other";
   const recent = marks.filter((e) => e.t_start <= t && t - e.t_start < 12 * Math.max(1, speed / 4)).slice(-3);

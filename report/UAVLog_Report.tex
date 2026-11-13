@@ -516,14 +516,20 @@ log warning & 60 & 0.347 & 0.377 & 1.1$\times$\\
 \caption{A result counts when it overlaps an event of the same kind as the query window. HNSW with iterative scan returns the same results as exact search (recall 0.99, p50 0.3 ms). Without iterative scan 7\% of queries returned fewer than 10 rows, because the nearest windows are the query flight's own neighbours and the filter removes them after the index scan: the filtered-search pitfall, on real data.}
 \end{table}
 
+\shot[0.95]{deck-flight-behaviour-light-1440.png}{Behaviour strip: each 10-second window coloured by how unlike the same moments in other flights it was (nearest-neighbour distance as a corpus percentile).}
+\shot[0.95]{deck-flight-overlay-light-1440.png}{Overlay: the same signal in two matching windows drawn on top of each other.}
+
 \subsection{Fleet views}
 \shot[0.95]{deck-map-light-1440.png}{Map: every flight with a GPS fix at its mean position, coloured by critical events (from the signal summary view).}
 \shot[0.95]{deck-fleet-galaxy-light-1440.png}{Flight galaxy: the 32-dimension behavioural signature projected onto its two main directions (23\% of the variation); colour by board, firmware, critical events or unusualness (mean distance to the 5 nearest flights).}
 \shot[0.95]{deck-incidents-light-1440.png}{Incidents: every warning and failure across flights, filterable by severity, kind, board and wording, with a link to the exact moment.}
 
+\shot[0.95]{deck-patterns-light-1440.png}{Patterns: for the chosen event, the share of flights in which each other kind occurred within the window before and after, against its overall frequency (lift); a range self-join of the event table.}
+\shot[0.95]{deck-fleet-calendar-light-1440.png}{A year of flying: one square per day, flights or critical events.}
+
 \subsection{Asking questions}
 \shot[0.95]{deck-ask-light-1440.png}{Ask: natural language to guarded SQL; the SQL, the planner's cost and each guard action are shown.}
-\shot[0.95]{deck-workbench-light-1440.png}{SQL workbench: hand-written SQL under the same four checks (guard, restricted role, read-only transaction with a timeout, planner cost admission); a schema browser and saved queries.}
+\shot[0.95]{deck-workbench-plan-light-1440.png}{The workbench's Explain: the planner's plan tree with each node's cost share and the admission limit; nothing is executed.}\n\\shot[0.95]{deck-workbench-light-1440.png}{SQL workbench: hand-written SQL under the same four checks (guard, restricted role, read-only transaction with a timeout, planner cost admission); a schema browser and saved queries.}
 
 \subsection{Looking inside the database}
 \shot[0.95]{deck-data-map-light-1440.png}{Data explorer, schema map: tables, keys and foreign keys drawn live from the catalog.}
@@ -594,7 +600,7 @@ The decision log (\code{docs/decisions.md}) records what, why and the alternativ
   \item[D20] Columnstore physical design and the TimescaleDB against DuckDB comparison.
   \item[D21] Fault injection on the event detectors, with the battery-low rule as the weakest result.
   \item[D22] Flight signatures, and the ArduPilot log loaded through the same ontology.
-  \item[D23] Signal windows for similar moments; cited incident reports (evidence by SQL, prose by a model); read-only data explorer and guarded workbench.
+  \item[D24] Behaviour strip (nearest-neighbour typicality per window), patterns (range self-join) and the workbench's plan view.\n  \item[D23] Signal windows for similar moments; cited incident reports (evidence by SQL, prose by a model); read-only data explorer and guarded workbench.
 \end{description}
 
 % =====================================================================

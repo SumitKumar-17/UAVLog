@@ -26,6 +26,17 @@ export function InvestigatePanel({ flightId, duration }: { flightId: string; dur
   const data = make.data ?? existing.data;
   const byId = new Map<string, Evidence>((data?.evidence ?? []).map((e) => [e.id, e]));
 
+  const download = () => {
+    if (!data) return;
+    const r = data.report, cite = (ids: string[]) => (ids.length ? ` [${ids.join(", ")}]` : "");
+    const md = [`# ${r.headline}`, "", "## Findings", ...r.findings.map((f, i) => `${i + 1}. ${f.text}${cite(f.cites)}`), "", `## Probable cause (${r.probable_cause.confidence} confidence)`, `${r.probable_cause.text}${cite(r.probable_cause.cites)}`, "",
+      "## Next checks", ...r.next_checks.map((c) => `- ${c}`), "", "## Evidence (computed by SQL)", ...data.evidence.map((e) => `- **${e.id}** ${e.text}`), "", `_Written by ${data.model} from the evidence above; numbers and times come from SQL._`].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([md], { type: "text/markdown" }));
+    a.download = `incident-report-${flightId.slice(0, 8)}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
   const jump = (e: Evidence) => {
     setOpen(e.id);
     if (e.t != null) { const { setFocus, setRange } = useView.getState(); setFocus({ t0: e.t, t1: e.t }); setRange([Math.max(0, e.t - 20), Math.min(duration, e.t + 20)]); window.scrollTo({ top: 0, behavior: "smooth" }); }
@@ -66,7 +77,8 @@ export function InvestigatePanel({ flightId, duration }: { flightId: string; dur
             </ul>
           </details>
           <p className="mt-3 text-xs text-muted">Written by {data.model} from the evidence above; numbers and times come from SQL, not the model.{data.report.dropped_citations ? ` ${data.report.dropped_citations} citation(s) that did not match any evidence were removed.` : ""}{" "}
-            <button onClick={() => make.mutate(true)} disabled={make.isPending} className="underline hover:text-ink">{make.isPending ? "Rewriting" : "Rewrite"}</button></p>
+            <button onClick={() => make.mutate(true)} disabled={make.isPending} className="underline hover:text-ink">{make.isPending ? "Rewriting" : "Rewrite"}</button>{" "}
+            <button onClick={download} className="underline hover:text-ink">Download as Markdown</button></p>
         </div>
       )}
     </div>

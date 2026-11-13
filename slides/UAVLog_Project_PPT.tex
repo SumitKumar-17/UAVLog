@@ -234,6 +234,12 @@
 {\footnotesize The mode ribbon with event marks, a replay bar, synchronized charts, the ground track and the event list.}
 \end{frame}
 
+\begin{frame}{Behaviour strip: how unusual each 10 seconds were}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-behaviour-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Every window is compared with its 5 nearest windows in other flights (one vector search each) and shown as a percentile of the whole corpus: blue typical, red unusual.}
+\end{frame}
+
 \begin{frame}{Synchronized charts with min/max envelopes}
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-signals-light-1440.png}\par\vspace{0.15em}
@@ -256,6 +262,12 @@
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-moments-light-1440.png}\par\vspace{0.15em}
 {\footnotesize Pick a moment and find where, in other flights, the signals behaved the same way: 10-second window embeddings searched with HNSW.}
+\end{frame}
+
+\begin{frame}{Similar moments: overlay}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-overlay-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Overlay draws the same signal over the two matching windows, so the similarity can be seen, not just a distance.}
 \end{frame}
 
 \begin{frame}{Semantic search}
@@ -300,16 +312,34 @@
 {\footnotesize Critical events per flight by board and firmware, event kinds, flights per year and flight length.}
 \end{frame}
 
+\begin{frame}{A year of flying}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-fleet-calendar-light-1440.png}\par\vspace{0.15em}
+{\footnotesize One square per day for the last 12 months: flights or critical events.}
+\end{frame}
+
 \begin{frame}{Incidents}
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-incidents-light-1440.png}\par\vspace{0.15em}
 {\footnotesize Every warning and failure across flights; filter by severity, kind, board and wording; open at the exact moment.}
 \end{frame}
 
+\begin{frame}{Patterns: what happens before and after an event}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-patterns-light-1440.png}\par\vspace{0.15em}
+{\footnotesize A windowed self-join of the event table: for each other kind, the share of flights in which it occurred within the window before or after, against its overall frequency (lift).}
+\end{frame}
+
 \begin{frame}{SQL workbench}
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-workbench-light-1440.png}\par\vspace{0.15em}
 {\footnotesize Write your own SQL under the same four checks as Ask; schema browser, saved queries, planner cost and the rebuilt SQL.}
+\end{frame}
+
+\begin{frame}{SQL workbench: the query plan}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-workbench-plan-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Explain shows the planner's plan as a tree with each node's share of the total cost and the cost limit used for admission; nothing is executed.}
 \end{frame}
 
 \begin{frame}{Data explorer: schema map}
