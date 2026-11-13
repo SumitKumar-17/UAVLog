@@ -1,5 +1,7 @@
 # Semantic Log Analytics [UAV Log]
 
+**Sumit Kumar (22CS30056)** · Advanced Database Management Systems (CS60113) · Term Project
+
 UAV flight logs treated as a **database problem**: high-rate telemetry in a TimescaleDB columnstore, a semantic layer that maps PX4 and ArduPilot
 field names onto shared concepts, hybrid SQL and vector retrieval with pgvector, and natural-language SQL that is guarded by four independent
 layers. Every design choice is backed by a measurement in `bench/results/`.
@@ -77,7 +79,7 @@ Signal windows for "similar moments": `docker compose exec backend python script
 | `web/` | Next.js 16 application (pages in `src/app`, components in `src/components`) |
 | `bench/` | benchmark results (`results/`) and the evaluation question sets (`eval/`) |
 | `docs/` | decision log, architecture, design, status, ontology coverage, data attribution; `docs/assets/` holds the diagram sources, figures, screenshots, code listings, terminal captures and chart data used by the slides and report |
-| `slides/`, `report/`, `script/` | the Beamer project deck, the report, and the speaker and video scripts (build PDFs with `./bin/latex <file.tex>`) |
+| `slides/`, `script/` | the Beamer project deck and the speaker and video scripts (build the PDF with `./bin/latex slides/UAVLog_Project_PPT.tex`) |
 | `bin/` | `uavlog` (pipeline), `snapshot`, `psql`, `shot` and `deck-shots` (screenshots), `figures`, `latex` |
 | `tools/` | helpers behind `bin/` (screenshot, diagram, listing and chart-data generators, the LaTeX image) |
 | `research/` | background notes on datasets, database technology and related work |

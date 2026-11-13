@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ./bin/latex slides/UAVLog_Project_PPT.tex   (or report/UAVLog_Report.tex)  -> the PDF next to the .tex file
+# ./bin/latex slides/UAVLog_Project_PPT.tex     -> the PDF next to the .tex file
 # Compiles twice with pdflatex in Docker (image uavlog-latex, built from tools/latex/Dockerfile on first use). Paths inside the documents are relative to the repository root.
 set -euo pipefail
 cd "$(dirname "$0")/.."
