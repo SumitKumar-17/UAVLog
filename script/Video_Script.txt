@@ -65,20 +65,20 @@ ON SCREEN: tab "Data explorer", Schema map. Hover the flight table so its links 
 SAY: "This is the data explorer, built into the app and read live from the database catalog. Flight is the center. Telemetry, events, signatures and signal windows all point to it. Telemetry is a
 narrow table: one row per time, flight and signal, so a new signal or even a new autopilot never changes the schema. It is a TimescaleDB hypertable with seven-day chunks, compressed into the
 columnstore, segmented by flight and signal. On the Database page you can see the result: seventy million rows take twelve point five gigabytes as a normal table, and three hundred eighty-five
-megabytes in the columnstore, thirty-two times smaller. Below it is a real EXPLAIN ANALYZE of the query the charts use, reading only the compressed segments it needs."
+megabytes in the columnstore, thirty-two times smaller. Below it is a real EXPLAIN ANALYZE of the query the charts use, reading only the compressed segments it needs. The Performance page shows the live cache hit ratio and the costliest statements."
 
 ======================================================================================================================
 SEGMENT 4. ONE FLIGHT: REPLAY AND CHARTS (2:50 to 3:40)
 ======================================================================================================================
 ON SCREEN: the flight page (Flight 968d313d). Point at the behaviour strip. Click Replay at 16x and let it run about 15 seconds. Then pause, drag across the battery chart to zoom, then double-click to reset.
 SAY: "Here is one flight. The ribbon shows the flight modes, and the red marks are critical events. I will replay it. The time cursor sweeps every chart and the ground track together, and events
-surface as the replay passes them. Around six minutes forty the parachute fires. Above the replay is the behaviour strip: every ten seconds are compared with the same moments in all other flights, and the red windows are the ones unlike anything else; it lights up right after the failure. The charts are synchronized: I drag across one and all of them zoom. Server-side downsampling keeps minimum
+surface as the replay passes them. Around six minutes forty the parachute fires. Above the replay is the behaviour strip: every ten seconds are compared with the same moments in all other flights, and the red windows are the ones unlike anything else; it lights up right after the failure. Clicking a red window lists the signal statistics that make it unusual. The charts are synchronized: I drag across one and all of them zoom. Server-side downsampling keeps minimum
 and maximum envelopes, so a short spike can never be averaged away."
 
 ======================================================================================================================
 SEGMENT 5. INCIDENT REPORT WITH CITATIONS (3:40 to 4:35)
 ======================================================================================================================
-ON SCREEN: click the "Incident report" chip. Show the headline and findings. Click one citation chip (for example E6) so the charts jump to that moment. Expand "Evidence".
+ON SCREEN: click the "Incident report" chip. Show the headline and findings. Click one citation chip (for example E6) so the charts jump to that moment. Expand "Evidence". Type a question under "Ask about this flight" (for example: did the low battery cause the parachute to open?).
 SAY: "This section writes an incident report. The important design point is that the numbers do not come from the model. The database gathers numbered evidence with SQL: the events, the
 signals that are unusual compared with the whole corpus, and what similar flights did. The model only writes prose, and it must cite evidence items. Every citation is checked against the
 evidence, and a statement with no valid citation is dropped. If I click a citation, the charts jump to that moment. Here the evidence shows a low battery, a failsafe, and the parachute
@@ -110,7 +110,7 @@ ON SCREEN: Map (hover over the dots; click a red one and show the card), then Fl
 click Open at on the first row. Then open Patterns (Failsafe activated, 1 min) for 5 seconds.
 SAY: "These views use the whole corpus. The map places every flight that has a GPS fix, coloured by critical events. The flight galaxy places each flight by how it behaved, using a thirty-two dimension
 behavioural signature projected to two dimensions, so I can colour it by board, firmware, or how unusual the flight is. The incidents feed lists every warning and failure across flights; I filter to failsafes
-and open one at the exact moment. Patterns shows what usually happens before and after an event, computed live with a windowed self-join."
+and open one at the exact moment. Patterns shows what usually happens before and after an event, computed live with a windowed self-join. The Rule lab lets me move a detector's threshold and see precision and recall against the autopilot's own warnings change immediately."
 
 ======================================================================================================================
 SEGMENT 9. THE EXPERIMENTS (7:30 to 9:00)
