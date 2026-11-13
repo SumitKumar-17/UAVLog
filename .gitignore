@@ -16,3 +16,4 @@ UAVLog_*.toc
 .prev/
 password.txt
 .syncer/
+syncer.sh
