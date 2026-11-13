@@ -75,7 +75,7 @@ export function LineChart({ series, xLabel, yLabel, xLog, yLog, xDomain, yDomain
                 <polyline fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={s.dashed ? "5 4" : undefined} points={pts.map((p) => `${sx(p.x)},${sy(p.y)}`).join(" ")} />
                 {pts.map((p, i) => <circle key={i} cx={sx(p.x)} cy={sy(p.y)} r={4} fill={s.color} stroke="var(--panel)" strokeWidth={2} />)}
                 {last && <text x={sx(last.x) + 10} y={sy(last.y) + 4} fontSize={12} fill="var(--ink-2)">{s.name.length > 24 ? s.name.slice(0, 23) + "…" : s.name}</text>}
-                {pts.map((p, i) => <circle key={`h${i}`} cx={sx(p.x)} cy={sy(p.y)} r={12} fill="transparent" tabIndex={0} aria-label={p.tip}
+                {pts.map((p, i) => <circle key={`h${i}`} cx={sx(p.x)} cy={sy(p.y)} r={12} fill="transparent" tabIndex={0} role="img" aria-label={p.tip}
                   onPointerEnter={() => setTip({ x: sx(p.x), y: sy(p.y), text: p.tip })} onPointerLeave={() => setTip(null)} onFocus={() => setTip({ x: sx(p.x), y: sy(p.y), text: p.tip })} onBlur={() => setTip(null)} />)}
               </g>
             );
