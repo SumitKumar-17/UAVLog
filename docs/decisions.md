@@ -277,3 +277,9 @@ free plan's 750 MiB is never approached for long. Two mistakes found on the way:
 (the database grew to 1 GB before this was noticed; the fix selects chunks that overlap the range), and column names such as `offset` need quoting in generated COPY statements. Compression on the target:
 1,908 MB of rows became 55 MB for the first 47 chunks (35x). The throughput was about 11 thousand rows per second whatever the parallelism (the target's shared CPU or the link, not the client), so the 70.7 M rows took
 about two hours.
+
+**Upload (D25 addendum).** `POST /api/uploads` takes the raw file as the request body (no multipart dependency), checks the ULog header, the size (60 MB) and that its SHA-256 is not already a flight,
+saves it beside the downloaded logs, queues it in `ingest_job` and runs the same stage scripts as the batch pipeline (ingest, events, embed events, signal windows, summaries) in one background thread,
+one upload at a time; the page polls the stage status. A real 17.6 MB public log went through in about 18 s. Tests that were wrong the first time: a file of zeros with a valid header was accepted as a
+flight of duration 0, so the pipeline now deletes a flight with under 5 s or under 100 telemetry rows and fails the upload; and the API's `--reload` killed an upload that overlapped a code sync
+(development only). Flight-level signatures are not rebuilt per upload (that refits the whole model), so similar flights is unavailable for an uploaded flight until the batch step is run.

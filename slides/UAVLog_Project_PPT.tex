@@ -330,6 +330,12 @@
 {\footnotesize Every warning and failure across flights; filter by severity, kind, board and wording; open at the exact moment.}
 \end{frame}
 
+\begin{frame}{Upload a log}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{docs/assets/screens/deck-upload-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Drop a PX4 .ulg file: it is validated (header, size, not a duplicate), queued like any other log and run through ingest, events, event embeddings, window embeddings and summaries, with each stage shown as it finishes (about 20 seconds for a 17 MB log).}
+\end{frame}
+
 \begin{frame}{Patterns: what happens before and after an event}
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-patterns-light-1440.png}\par\vspace{0.15em}

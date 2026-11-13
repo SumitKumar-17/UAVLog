@@ -33,6 +33,7 @@ FILL='textarea|SELECT f.board, count(*) AS events FROM semantic.flights f JOIN s
 SCROLL='#cal' S /fleet deck-fleet-calendar light 1440 810
 CLICK='button:has-text("Find similar moments")' CLICK2='button:has-text("Overlay") >> nth=0' WAIT_MS=3000 SCROLL='#moments' S /flights/$F deck-flight-overlay light 1440 810
 S /rules deck-rules light 1440 810
+S /upload deck-upload light 1440 810
 S /performance deck-performance light 1440 810
 CLICK='text=/\\(top \\d+%\\)/' SCROLLY=300 WAIT_MS=3500 S /flights/$F deck-flight-why light 1440 810
 THEME=dark S / deck-overview-dark light 1440 810
