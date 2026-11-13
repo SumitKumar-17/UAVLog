@@ -240,6 +240,12 @@
 {\footnotesize Every window is compared with its 5 nearest windows in other flights (one vector search each) and shown as a percentile of the whole corpus: blue typical, red unusual.}
 \end{frame}
 
+\begin{frame}{Why a window is unusual}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{docs/assets/screens/deck-flight-why-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Click a window or one of the most unusual moments: the signal statistics furthest from the typical flight, in units of the typical spread, with the value and the corpus median.}
+\end{frame}
+
 \begin{frame}{Synchronized charts with min/max envelopes}
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-flight-signals-light-1440.png}\par\vspace{0.15em}
@@ -330,6 +336,12 @@
 {\footnotesize A windowed self-join of the event table: for each other kind, the share of flights in which it occurred within the window before or after, against its overall frequency (lift).}
 \end{frame}
 
+\begin{frame}{Rule lab: tune a detector}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{docs/assets/screens/deck-rules-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Move a threshold and the rule is re-run over every flight, then scored against the autopilot's own warnings; precision, recall and F1 across the range, with the shipped threshold marked.}
+\end{frame}
+
 \begin{frame}{SQL workbench}
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-workbench-light-1440.png}\par\vspace{0.15em}
@@ -358,6 +370,12 @@
 \centering
 \fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{deck-data-structure-light-1440.png}\par\vspace{0.15em}
 {\footnotesize Columns, types, keys, indexes with sizes and, for the hypertable, the chunk and columnstore settings.}
+\end{frame}
+
+\begin{frame}{Performance: live database statistics}
+\centering
+\fig{width=0.97\textwidth,height=0.8\textheight,keepaspectratio}{docs/assets/screens/deck-performance-light-1440.png}\par\vspace{0.15em}
+{\footnotesize Buffer cache hit ratio, connections, the costliest statements from pg_stat_statements, how tables are scanned and the settings that matter, refreshed every few seconds.}
 \end{frame}
 
 \begin{frame}[shrink=5]{Contents}

@@ -15,10 +15,10 @@ layers. Every design choice is backed by a measurement in `bench/results/`.
 
 | | |
 |---|---|
-| **Explore** | Flights as strips of flight modes, synchronized charts with min/max envelopes, ground track, **flight replay**, a **behaviour strip** (how unusual each 10 seconds were, by vector search), **map**, **fleet galaxy** (every flight placed by how it behaved), a year **calendar**, **incidents** feed, **patterns** (what happens before and after an event) |
+| **Explore** | Flights as strips of flight modes, synchronized charts with min/max envelopes, ground track, **flight replay**, a **behaviour strip** (how unusual each 10 seconds were, by vector search), **map**, **fleet galaxy** (every flight placed by how it behaved), a year **calendar**, **incidents** feed, **patterns** (what happens before and after an event), **why a window is unusual** |
 | **Find** | Semantic search (vector + full text + filters, fused by reciprocal rank fusion) with a planner-aware filtered search; **similar moments** (10-second windows embedded by signal behaviour, with a signal overlay); similar flights |
-| **Ask** | Natural language to **guarded read-only SQL** with the SQL, cost and guard actions shown; **SQL workbench** under the same checks, with a **query plan** view; **cited incident reports** (numbers from SQL, prose from a model, every citation verified) |
-| **Inspect the database** | **Data explorer** (schema map, tables, rows, structure), Database page (space, `EXPLAIN ANALYZE`, pipeline), Benchmarks page drawn from the saved result files |
+| **Ask** | Natural language to **guarded read-only SQL** with the SQL, cost and guard actions shown; **SQL workbench** under the same checks, with a **query plan** view; **rule lab** (tune a detector's threshold and see precision and recall live); **ask about one flight** (answers cite the flight's numbered evidence); **cited incident reports** (numbers from SQL, prose from a model, every citation verified) |
+| **Inspect the database** | **Data explorer** (schema map, tables, rows, structure), Database page (space, `EXPLAIN ANALYZE`, pipeline), **Performance** page (cache, scans, costliest statements), Benchmarks page drawn from the saved result files |
 
 ## Architecture
 
@@ -87,6 +87,13 @@ Signal windows for "similar moments": `docker compose exec backend python script
 `docker compose exec backend python -m unittest discover -s tests` runs 38 tests: the SQL guard (46 hostile and 18 legitimate queries), the NL-to-SQL
 pipeline (a fake model that obeys prompt injection must still be stopped), rate limiting, the embedding cache, the MAVLink parser and the window features.
 CI (`.github/workflows/ci.yml`) runs the guard tests, applies the migrations to an empty database and builds the web app.
+
+## Using a hosted TimescaleDB
+
+Set `DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:PORT/DB?sslmode=require` in `.env` and the application uses it instead of the local `db` container (which is an optional compose profile:
+`docker compose --profile local up -d`). To move a finished database there: apply the schema (`docker compose exec -e DATABASE_URL=<hosted url> backend alembic upgrade head`), copy the data
+(`python scripts/migrate_database.py --target <hosted url>`, resumable, compresses as it goes), then `python scripts/refresh_semantic.py`. The hosted service needs TimescaleDB with columnstore
+(the Timescale licence, not the Apache build) and pgvector; Tiger Cloud's free plan has both and 750 MiB, which this database fits in (about 0.35 GB compressed). `./bin/psql` opens a shell on whichever database is configured.
 
 ## Snapshots: move the finished database
 

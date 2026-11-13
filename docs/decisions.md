@@ -261,3 +261,19 @@ score, not a trained anomaly detector; a window can be unusual for harmless reas
 (before or after, 15 s to 5 min), counting flights, with each kind's overall flight share as baseline and lift = share / base; a flight with many repeats counts once and the result is correlation, not cause.
 **Workbench Explain** (`POST /api/workbench/explain`): `EXPLAIN (FORMAT JSON)` as the restricted role in a read-only transaction after the guard; nothing is executed. **Calendar** and **overlay** are SQL over
 `flight`/`event` and the existing signal envelope endpoint. Reports can be downloaded as Markdown; Space and the arrow keys control the replay and `?` lists the shortcuts.
+
+## D25. Rule lab, performance page, window explanations, flight Q&A and a hosted database
+**Rule lab** (`/api/rules/*`): the threshold rules are re-run live over a one-second table of the signals they use (`rule_signal_1s`, migration 0010, a materialized view of per-second min and max,
+about 0.53 M rows) with the same gaps-and-islands SQL, in one statement across all flights (about 80 ms), and scored against the autopilot's own warnings (log messages that mention the topic):
+precision = share of rule events with a warning within 60 s, recall = share of warnings with a rule event within 60 s. The warnings are a proxy, not ground truth. Battery low at the shipped 20%/5 s
+gives 58 events, precision 59%, recall 56%; the vibration rule fires 88 events with precision 9%, i.e. it is far more sensitive than the autopilot's own vibration messages.
+**Window explanations** (`/behaviour/why`): each statistic of a window is compared with the window model's median in units of the robust spread; the six largest deviations are shown.
+**Flight Q&A** (`POST /flights/{id}/ask`): answers only from the numbered evidence, with checked citations. **Performance page** reads `pg_stat_database`, `pg_stat_user_tables` and `pg_stat_statements`.
+**Hosted database.** The database was moved to a managed TimescaleDB (Tiger Cloud free plan: PostgreSQL 18.6, TimescaleDB 2.32 with the Timescale licence, pgvector 0.8.7, 750 MiB of storage). Neon was
+rejected after a probe: its TimescaleDB is the Apache build (no columnstore, no continuous aggregates) and pgvectorscale is absent, which would turn 385 MB of telemetry into about 12.5 GB.
+A snapshot cannot be restored across TimescaleDB versions (it comes from 2.30.2, the target is 2.32.0), so `scripts/migrate_database.py` copies with COPY: schema from Alembic, small tables through a
+temporary table and `ON CONFLICT DO NOTHING`, telemetry one flight at a time with a progress marker committed in the same transaction, four flights in parallel, and chunks compressed after every batch so the
+free plan's 750 MiB is never approached for long. Two mistakes found on the way: `show_chunks(newer_than, older_than)` selects only chunks wholly inside the range, which skipped the chunks at the batch edges
+(the database grew to 1 GB before this was noticed; the fix selects chunks that overlap the range), and column names such as `offset` need quoting in generated COPY statements. Compression on the target:
+1,908 MB of rows became 55 MB for the first 47 chunks (35x). The throughput was about 11 thousand rows per second whatever the parallelism (the target's shared CPU or the link, not the client), so the 70.7 M rows took
+about two hours.
