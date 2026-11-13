@@ -3,6 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+
+/** The pathname after mount: the server-rendered shell is shared between routes, so the active item is only marked on the client. */
+function useClientPath() {
+  const path = usePathname();
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  return ready ? path : "";
+}
 import { api, type Stats } from "@/lib/api";
 import { compact } from "@/lib/format";
 import { ALL_PAGES, NAV, isActive } from "@/lib/nav";
@@ -19,7 +27,7 @@ function Brand({ small }: { small?: boolean }) {
 }
 
 function SideNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
-  const path = usePathname();
+  const path = useClientPath();
   const stats = useQuery({ queryKey: ["stats"], queryFn: () => api<Stats>("/stats"), staleTime: 60_000 });
   return (
     <nav aria-label="Main" className="flex h-full flex-col">
@@ -55,7 +63,7 @@ function SideNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: (
 
 /** Vertical navigation on the left (collapsible, a drawer on phones) and a slim horizontal bar on top. */
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const path = usePathname();
+  const path = useClientPath();
   const [collapsed, setCollapsed] = useState(false);
   const [drawer, setDrawer] = useState(false);
   useEffect(() => { try { setCollapsed(localStorage.getItem("nav") === "collapsed"); } catch {} }, []);
