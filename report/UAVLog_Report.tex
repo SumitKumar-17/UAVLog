@@ -519,6 +519,8 @@ log warning & 60 & 0.347 & 0.377 & 1.1$\times$\\
 \shot[0.95]{deck-flight-behaviour-light-1440.png}{Behaviour strip: each 10-second window coloured by how unlike the same moments in other flights it was (nearest-neighbour distance as a corpus percentile).}
 \shot[0.95]{deck-flight-overlay-light-1440.png}{Overlay: the same signal in two matching windows drawn on top of each other.}
 
+\shot[0.95]{docs/assets/screens/deck-flight-why-light-1440.png}{Why a window is unusual: the signal statistics furthest from the typical flight, in units of the typical spread, with the value and the corpus median.}
+
 \subsection{Fleet views}
 \shot[0.95]{deck-map-light-1440.png}{Map: every flight with a GPS fix at its mean position, coloured by critical events (from the signal summary view).}
 \shot[0.95]{deck-fleet-galaxy-light-1440.png}{Flight galaxy: the 32-dimension behavioural signature projected onto its two main directions (23\% of the variation); colour by board, firmware, critical events or unusualness (mean distance to the 5 nearest flights).}
@@ -526,6 +528,13 @@ log warning & 60 & 0.347 & 0.377 & 1.1$\times$\\
 
 \shot[0.95]{deck-patterns-light-1440.png}{Patterns: for the chosen event, the share of flights in which each other kind occurred within the window before and after, against its overall frequency (lift); a range self-join of the event table.}
 \shot[0.95]{deck-fleet-calendar-light-1440.png}{A year of flying: one square per day, flights or critical events.}
+
+\subsection{Tuning the detectors}
+The event rules are plain thresholds. The rule lab re-runs a rule over every flight's one-second data (materialized view \code{rule\_signal\_1s}, about 0.53 M rows) in about 80 ms with the same gaps-and-islands SQL, and scores it against the autopilot's own warnings: precision is the share of rule events with a warning within 60 s, recall the share of warnings with a rule event within 60 s. The warnings are a proxy rather than ground truth. At the shipped 20\%/5 s the battery rule gives 58 events with precision 59\% and recall 56\%; the vibration rule raises 88 events with precision 9\%, which shows it is far more sensitive than the autopilot's own vibration messages.
+\shot[0.95]{docs/assets/screens/deck-rules-light-1440.png}{Rule lab: precision, recall and F1 across the threshold range, the chosen setting and the shipped one.}
+
+\subsection{Uploading a log}
+\shot[0.95]{docs/assets/screens/deck-upload-light-1440.png}{Upload: a PX4 log is validated (header, size, not a duplicate), queued like any other log and run through ingest, events, event embeddings, window embeddings and summaries with live stage progress.}
 
 \subsection{Asking questions}
 \shot[0.95]{deck-ask-light-1440.png}{Ask: natural language to guarded SQL; the SQL, the planner's cost and each guard action are shown.}
@@ -535,6 +544,7 @@ log warning & 60 & 0.347 & 0.377 & 1.1$\times$\\
 \subsection{Looking inside the database}
 \shot[0.95]{deck-data-map-light-1440.png}{Data explorer, schema map: tables, keys and foreign keys drawn live from the catalog.}
 \shot[0.95]{deck-data-structure-light-1440.png}{Data explorer, structure: columns, keys, indexes with sizes, and the hypertable's chunk and columnstore settings.}
+\shot[0.95]{deck-performance-light-1440.png}{Performance: buffer cache hit ratio, connections, the costliest statements from \code{pg\_stat\_statements}, scan patterns and the settings that matter, refreshed every few seconds.}
 \shot[0.95]{deck-database-light-1440.png}{Database page: space used (row storage against columnar) and a selectable query with its \code{EXPLAIN ANALYZE}.}
 \shot[0.95]{deck-bench-ann-light-1440.png}{Benchmarks page: every experiment in this report is a section drawn from the saved result files.}
 
