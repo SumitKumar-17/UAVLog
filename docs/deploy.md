@@ -4,7 +4,7 @@ The web app proxies `/api/*` to the API, so deploy the API first and give its ad
 
 ## 1. API project (FastAPI, read-only)
 - Import the GitHub repository. **Root Directory:** the repository root (leave empty). **Framework Preset:** Other.
-- Build settings: leave the defaults (`vercel.json`, `api/index.py` and the slim `requirements.txt` are already in the repository).
+- Build settings: leave the defaults (`api/index.py` and the root `pyproject.toml` (slim dependencies and the entry point) are already in the repository).
 - **Settings, Deployment Protection:** turn Vercel Authentication off for this project (the web project calls it server to server).
 - Environment variables (Production):
 
