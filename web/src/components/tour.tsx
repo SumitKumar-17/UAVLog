@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { tourSteps, type Action, type Step } from "@/lib/tour-steps";
 
-const STORE = "uavlog.tour.step", HIDE = "uavlog.tour.hidden";
+const STORE = "uavlog.tour.step", HIDE = "uavlog.tour.hidden", POS = "uavlog.tour.pos";
 const visible = (e: Element) => { const r = e.getBoundingClientRect(); return r.width > 2 && r.height > 2; };
 
 /** Resolve `css`, `css@N` (Nth match) or `text:phrase` (smallest visible element whose text contains it). */
@@ -81,6 +81,8 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
   const [menu, setMenu] = useState(false);
   const target = useRef<HTMLElement | null>(null);
   const acted = useRef(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);   // set by dragging the card; null = placed beside the target
+  const drag = useRef<{ dx: number; dy: number } | null>(null);
 
   useEffect(() => {
     if (!open || ids.flight) return;
@@ -98,7 +100,7 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
   useEffect(() => {
     if (!open) return;
     setI(0); setMenu(false); setNotes(false);
-    try { setHidden(!!localStorage.getItem(HIDE)); } catch {}
+    try { setHidden(!!localStorage.getItem(HIDE)); const p = JSON.parse(localStorage.getItem(POS) || "null"); if (p && typeof p.x === "number") setPos(p); } catch {}
     try { const n = Number(localStorage.getItem(STORE)); if (n > 0) setI(n); } catch {}
   }, [open]);
 
@@ -183,6 +185,20 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
     else if (box.x > cw + 24) cardStyle = { left: box.x - cw - 18, top: Math.min(Math.max(12, box.y), vh - 300) };
   }
 
+  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    const r = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
+    drag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!drag.current) return;
+    setPos({ x: Math.min(Math.max(0, e.clientX - drag.current.dx), vw - 120), y: Math.min(Math.max(0, e.clientY - drag.current.dy), vh - 60) });
+  };
+  const onUp = () => { if (drag.current) { drag.current = null; try { localStorage.setItem(POS, JSON.stringify(pos)); } catch {} } };
+  const resetPos = () => { setPos(null); try { localStorage.removeItem(POS); } catch {} };
+  const placed: React.CSSProperties = pos ? { left: pos.x, top: pos.y } : cardStyle;
+
   return (
     <>
       {box && (
@@ -192,8 +208,8 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
         </div>
       )}
       {!hidden ? (
-        <div data-tour-card style={{ ...cardStyle, width: cw, position: "fixed" }} className="z-[60] rounded-lg border border-route bg-panel p-4 shadow-2xl" role="dialog" aria-label="Guided tour">
-          <div className="flex items-baseline justify-between text-xs text-muted">
+        <div data-tour-card style={{ ...placed, width: cw, position: "fixed" }} className="z-[60] rounded-lg border border-route bg-panel p-4 shadow-2xl" role="dialog" aria-label="Guided tour">
+          <div className="-mx-1 -mt-1 flex cursor-grab touch-none select-none items-baseline justify-between rounded px-1 pt-1 text-xs text-muted active:cursor-grabbing" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onDoubleClick={resetPos} title="Drag to move this card; double-click to put it back">
             <button onClick={() => setMenu((v) => !v)} className="underline hover:text-ink" aria-expanded={menu}>{s.section} · step {i + 1} of {list.length}</button>
             <button onClick={onClose} className="underline hover:text-ink">End tour</button>
           </div>
@@ -222,7 +238,7 @@ export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) 
             </span>
           </div>
           <div className="mt-3 h-1.5 rounded bg-rule"><div className="h-1.5 rounded bg-route" style={{ width: `${((i + 1) / list.length) * 100}%` }} /></div>
-          <div className="mt-2 text-[11px] text-muted">Enter: do it, then next · ← ↑ back · → ↓ next · H hide this card · N notes · Esc end</div>
+          <div className="mt-2 text-[11px] text-muted">Enter: do it, then next · ← ↑ back · → ↓ next · drag the top to move · H hide · N notes · Esc end</div>
         </div>
       ) : (
         <button data-tour-card onClick={() => setHidden(false)} className="fixed bottom-4 right-4 z-[60] rounded-full border border-route bg-panel px-3 py-1.5 text-xs font-semibold text-route opacity-0 shadow-lg hover:opacity-100 focus:opacity-100">Tour ({i + 1}/{list.length})</button>
