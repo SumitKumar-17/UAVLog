@@ -68,13 +68,32 @@ export type Ontology = { concepts: OntologyConcept[]; relations: { src: string; 
 
 export type Stats = { flights: number; events: number; telemetry_rows: number; concepts: number; db_bytes: number };
 
+// At most four API calls in flight, and a retry after a server error. A managed database with little memory can fail when a page
+// asks for a dozen compressed-column queries at the same instant; queueing them keeps every chart working and costs about a second.
+const LIMIT = 4;
+let active = 0;
+const waiting: (() => void)[] = [];
+async function slot<T>(run: () => Promise<T>): Promise<T> {
+  if (active >= LIMIT) await new Promise<void>((go) => waiting.push(go));
+  active++;
+  try { return await run(); } finally { active--; waiting.shift()?.(); }
+}
+export function qfetch(url: string, init?: RequestInit): Promise<Response> {
+  const retryable = !init?.method || init.method === "GET";
+  return slot(async () => {
+    let r = await fetch(url, init);
+    for (let n = 0; retryable && r.status >= 500 && n < 2; n++) { await new Promise((t) => setTimeout(t, 700 * (n + 1))); r = await fetch(url, init); }
+    return r;
+  });
+}
+
 export async function api<T>(path: string, params: Record<string, string | number | string[] | undefined> = {}): Promise<T> {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === "") continue;
     for (const x of Array.isArray(v) ? v : [v]) qs.append(k, String(x));
   }
-  const res = await fetch(`/api${path}${qs.size ? `?${qs}` : ""}`);
+  const res = await qfetch(`/api${path}${qs.size ? `?${qs}` : ""}`);
   if (!res.ok) {
     const detail = await res.json().then((j) => j.detail).catch(() => res.statusText);
     throw new Error(typeof detail === "string" ? detail : res.statusText);
@@ -111,7 +130,7 @@ export type AskAnswer = {
 };
 
 export async function ask(question: string): Promise<AskAnswer> {
-  const res = await fetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question, explain: true }) });
+  const res = await qfetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question, explain: true }) });
   if (!res.ok) {
     const detail = await res.json().then((j) => j.detail).catch(() => res.statusText);
     throw new Error(typeof detail === "string" ? detail : res.status === 422 ? "Ask a question of at least three characters." : res.statusText);
@@ -154,7 +173,7 @@ export type WorkbenchResult = { sql: string; columns: string[]; rows: (string | 
 export type SavedQuery = { id: number; title: string; sql: string; created_at: string };
 
 export async function post<T>(path: string, body: unknown): Promise<T> {
-  const r = await fetch(`/api${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const r = await qfetch(`/api${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(typeof data.detail === "string" ? data.detail : `HTTP ${r.status}`);
   return data as T;
